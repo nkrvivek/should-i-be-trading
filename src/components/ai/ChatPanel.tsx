@@ -127,10 +127,11 @@ export function ChatPanel({ cri, portfolio, verdict }: Props) {
       </div>
 
       {/* Input */}
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(e); } }}
           placeholder="Ask about the market..."
           disabled={loading}
           style={{
@@ -146,7 +147,8 @@ export function ChatPanel({ cri, portfolio, verdict }: Props) {
           }}
         />
         <button
-          type="submit"
+          type="button"
+          onClick={handleSubmit}
           disabled={loading || !input.trim()}
           style={{
             padding: "6px 16px",
@@ -163,7 +165,7 @@ export function ChatPanel({ cri, portfolio, verdict }: Props) {
         >
           SEND
         </button>
-      </form>
+      </div>
     </div>
   );
 }

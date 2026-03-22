@@ -39,10 +39,18 @@ export async function exaSearch(
   });
 
   if (!response.ok) {
-    throw new Error(`Exa API ${response.status}`);
+    let detail = `Exa API ${response.status}`;
+    try {
+      const body = await response.json();
+      detail = body.error || body.message || detail;
+    } catch {
+      // response wasn't JSON
+    }
+    throw new Error(detail);
   }
 
-  return response.json();
+  const data = await response.json();
+  return { results: data.results ?? [] };
 }
 
 export async function exaCompanyResearch(

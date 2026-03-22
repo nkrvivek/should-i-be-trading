@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { useAppStore } from "../../stores/appStore";
+import { AppNav } from "../../App";
 import { StatusBar } from "./StatusBar";
 import type { CriData } from "../../api/types";
 
@@ -9,8 +9,6 @@ type Props = {
 };
 
 export function TerminalShell({ children, cri }: Props) {
-  const { theme, toggleTheme } = useAppStore();
-
   return (
     <div
       style={{
@@ -33,6 +31,7 @@ export function TerminalShell({ children, cri }: Props) {
           background: "var(--bg-panel)",
           borderBottom: "1px solid var(--border-dim)",
           flexShrink: 0,
+          zIndex: 50,
         }}
       >
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -58,22 +57,7 @@ export function TerminalShell({ children, cri }: Props) {
           </span>
         </div>
 
-        <button
-          onClick={toggleTheme}
-          style={{
-            background: "none",
-            border: "1px solid var(--border-dim)",
-            borderRadius: 4,
-            padding: "2px 8px",
-            fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            color: "var(--text-secondary)",
-            cursor: "pointer",
-          }}
-          title="Toggle theme"
-        >
-          {theme === "dark" ? "LIGHT" : "DARK"}
-        </button>
+        <AppNav />
       </header>
 
       {/* Content */}

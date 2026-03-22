@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { BrowserRouter, Routes, Route, NavLink, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
 import { DashboardPage } from "./pages/DashboardPage";
 import { TerminalPage } from "./pages/TerminalPage";
 import { AnalysisPage } from "./pages/AnalysisPage";
@@ -10,12 +10,14 @@ import { AlertsPage } from "./pages/AlertsPage";
 import { TermsPage } from "./pages/TermsPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { GlossaryPage } from "./pages/GlossaryPage";
+import { PricingPage } from "./pages/PricingPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
 import { useAuthStore } from "./stores/authStore";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { hasFeature } from "./lib/featureGates";
+import type { Feature } from "./lib/featureGates";
 
 export default function App() {
   const { theme } = useAppStore();
@@ -29,28 +31,20 @@ export default function App() {
       <AuthProvider>
         <Routes>
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<WithNav><DashboardPage /></WithNav>} />
-          <Route path="/terminal" element={<WithNav><GatedPage feature="terminal"><TerminalPage /></GatedPage></WithNav>} />
-          <Route path="/analysis" element={<WithNav><GatedPage feature="ai_analysis"><AnalysisPage /></GatedPage></WithNav>} />
-          <Route path="/macro" element={<WithNav><MacroPage /></WithNav>} />
-          <Route path="/alerts" element={<WithNav><GatedPage feature="alerts"><AlertsPage /></GatedPage></WithNav>} />
-          <Route path="/settings" element={<WithNav><RequireAuth><SettingsPage /></RequireAuth></WithNav>} />
-          <Route path="/glossary" element={<WithNav><GlossaryPage /></WithNav>} />
-          <Route path="/terms" element={<WithNav><TermsPage /></WithNav>} />
-          <Route path="/privacy" element={<WithNav><PrivacyPage /></WithNav>} />
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/terminal" element={<GatedPage feature="terminal"><TerminalPage /></GatedPage>} />
+          <Route path="/analysis" element={<GatedPage feature="ai_analysis"><AnalysisPage /></GatedPage>} />
+          <Route path="/macro" element={<MacroPage />} />
+          <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
+          <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+          <Route path="/pricing" element={<PricingPage />} />
+          <Route path="/glossary" element={<GlossaryPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
-  );
-}
-
-function WithNav({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <NavBar />
-      {children}
-    </>
   );
 }
 
@@ -62,45 +56,32 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function GatedPage({ feature, children }: { feature: "terminal" | "ai_analysis" | "scanner" | "alerts"; children: React.ReactNode }) {
+function GatedPage({ feature, children }: { feature: Feature; children: React.ReactNode }) {
   const { profile } = useAuthStore();
-
-  // If no auth configured (local dev), allow everything
   if (!isSupabaseConfigured()) return <>{children}</>;
-
   if (!hasFeature(profile?.tier, feature)) {
     return <UpgradePrompt feature={feature} />;
   }
-
   return <>{children}</>;
 }
 
-function NavBar() {
-  const { user } = useAuthStore();
+/** Exported for use in TerminalShell header */
+export function AppNav() {
+  const { user, profile } = useAuthStore();
+  const navigate = useNavigate();
+  const { toggleTheme, theme } = useAppStore();
 
   const links = [
     { to: "/", label: "DASHBOARD" },
-    { to: "/terminal", label: "TERMINAL" },
+    { to: "/terminal", label: "TERMINAL", pro: true },
     { to: "/macro", label: "MACRO" },
-    { to: "/analysis", label: "ANALYSIS" },
-    { to: "/glossary", label: "GLOSSARY" },
-    ...(user ? [{ to: "/settings", label: "SETTINGS" }] : []),
+    { to: "/analysis", label: "ANALYSIS", pro: true },
+    { to: "/glossary", label: "LEARN" },
   ];
 
   return (
-    <nav
-      style={{
-        position: "fixed",
-        top: 0,
-        right: 16,
-        zIndex: 100,
-        display: "flex",
-        gap: 4,
-        padding: "8px 0",
-        alignItems: "center",
-      }}
-    >
-      {links.map(({ to, label }) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+      {links.map(({ to, label, pro }) => (
         <NavLink
           key={to}
           to={to}
@@ -116,12 +97,52 @@ function NavBar() {
             borderRadius: 4,
             textDecoration: "none",
             cursor: "pointer",
+            position: "relative" as const,
           })}
         >
           {label}
+          {pro && !hasFeature(profile?.tier, "terminal") && (
+            <span style={{ fontSize: 7, color: "var(--warning)", marginLeft: 3, verticalAlign: "super" }}>PRO</span>
+          )}
         </NavLink>
       ))}
-      {isSupabaseConfigured() && !user && (
+
+      {/* Theme toggle */}
+      <button
+        onClick={toggleTheme}
+        style={{
+          background: "none",
+          border: "1px solid var(--border-dim)",
+          borderRadius: 4,
+          padding: "3px 8px",
+          fontFamily: "var(--font-mono)",
+          fontSize: 9,
+          color: "var(--text-muted)",
+          cursor: "pointer",
+          marginLeft: 4,
+        }}
+      >
+        {theme === "dark" ? "LIGHT" : "DARK"}
+      </button>
+
+      {/* Auth buttons */}
+      {user ? (
+        <button
+          onClick={() => navigate("/settings")}
+          style={{
+            background: "none",
+            border: "1px solid var(--border-dim)",
+            borderRadius: 4,
+            padding: "3px 10px",
+            fontFamily: "var(--font-mono)",
+            fontSize: 10,
+            color: "var(--text-secondary)",
+            cursor: "pointer",
+          }}
+        >
+          {profile?.display_name?.charAt(0)?.toUpperCase() ?? "U"}
+        </button>
+      ) : isSupabaseConfigured() ? (
         <NavLink
           to="/login"
           style={{
@@ -130,6 +151,7 @@ function NavBar() {
             fontSize: 10,
             fontWeight: 500,
             color: "var(--signal-core)",
+            background: "rgba(5, 173, 152, 0.1)",
             border: "1px solid var(--signal-core)",
             borderRadius: 4,
             textDecoration: "none",
@@ -137,7 +159,7 @@ function NavBar() {
         >
           SIGN IN
         </NavLink>
-      )}
-    </nav>
+      ) : null}
+    </div>
   );
 }

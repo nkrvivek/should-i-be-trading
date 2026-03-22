@@ -17,6 +17,16 @@ export default defineConfig({
         ws: true,
         rewrite: (path) => path.replace(/^\/ws/, ""),
       },
+      "/anthropic": {
+        target: "https://api.anthropic.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/anthropic/, ""),
+      },
+      "/exa-api": {
+        target: "https://api.exa.ai",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/exa-api/, ""),
+      },
     },
   },
 });

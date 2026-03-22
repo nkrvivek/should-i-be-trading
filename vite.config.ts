@@ -20,7 +20,13 @@ export default defineConfig({
       "/anthropic": {
         target: "https://api.anthropic.com",
         changeOrigin: true,
+        secure: true,
         rewrite: (path) => path.replace(/^\/anthropic/, ""),
+        configure: (proxy) => {
+          proxy.on("error", (err) => {
+            console.error("Anthropic proxy error:", err.message);
+          });
+        },
       },
       "/exa-api": {
         target: "https://api.exa.ai",

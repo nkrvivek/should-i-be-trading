@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { chatWithClaude } from "../../api/anthropicClient";
+import { renderMarkdown } from "../../lib/renderMarkdown";
 import type { CriData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
 
@@ -7,113 +8,6 @@ type Props = {
   cri: CriData;
   verdict: TrafficLightVerdict;
 };
-
-/** Lightweight markdown-to-JSX for briefing content */
-function renderMarkdown(md: string) {
-  // Split into blocks by double newline
-  const blocks = md.split(/\n{2,}/);
-
-  return blocks.map((block, i) => {
-    const trimmed = block.trim();
-    if (!trimmed) return null;
-
-    // Horizontal rule
-    if (/^-{3,}$/.test(trimmed)) {
-      return <hr key={i} style={{ border: "none", borderTop: "1px solid var(--border-dim)", margin: "12px 0" }} />;
-    }
-
-    // H2 heading
-    if (trimmed.startsWith("## ")) {
-      return (
-        <div key={i} style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          fontWeight: 600,
-          color: "var(--signal-core)",
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-          marginBottom: 4,
-        }}>
-          {trimmed.replace(/^##\s*/, "")}
-        </div>
-      );
-    }
-
-    // Section header (bold text like **WHAT'S HAPPENING**)
-    const headerMatch = trimmed.match(/^\*\*(.+?)\*\*$/);
-    if (headerMatch) {
-      const label = headerMatch[1].replace(/^[📊⚡🔍🎯]\s*/, "");
-      return (
-        <div key={i} style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          fontWeight: 600,
-          color: "var(--signal-strong)",
-          textTransform: "uppercase",
-          letterSpacing: "0.05em",
-          marginTop: i > 0 ? 16 : 0,
-          marginBottom: 6,
-          paddingBottom: 4,
-          borderBottom: "1px solid var(--border-dim)",
-        }}>
-          {label}
-        </div>
-      );
-    }
-
-    // Paragraph with inline bold/italic
-    return (
-      <p key={i} style={{ margin: "0 0 8px 0" }}>
-        {renderInline(trimmed)}
-      </p>
-    );
-  });
-}
-
-/** Render inline markdown: **bold**, *italic*, `code` */
-function renderInline(text: string) {
-  // Split on markdown patterns, preserving delimiters
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
-
-  return parts.map((part, i) => {
-    // Bold
-    if (part.startsWith("**") && part.endsWith("**")) {
-      const inner = part.slice(2, -2).replace(/^[📊⚡🔍🎯]\s*/, "");
-      return (
-        <span key={i} style={{
-          fontWeight: 600,
-          color: "var(--text-primary)",
-          fontFamily: "var(--font-mono)",
-          fontSize: 10,
-          textTransform: "uppercase",
-          letterSpacing: "0.04em",
-        }}>
-          {inner}
-        </span>
-      );
-    }
-    // Italic
-    if (part.startsWith("*") && part.endsWith("*") && !part.startsWith("**")) {
-      return <em key={i} style={{ fontStyle: "italic", color: "var(--text-muted)" }}>{part.slice(1, -1)}</em>;
-    }
-    // Inline code
-    if (part.startsWith("`") && part.endsWith("`")) {
-      return (
-        <code key={i} style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          color: "var(--signal-core)",
-          background: "var(--bg-panel-raised)",
-          padding: "1px 4px",
-          borderRadius: 2,
-        }}>
-          {part.slice(1, -1)}
-        </code>
-      );
-    }
-    return part;
-  });
-}
 
 export function DailyBriefing({ cri, verdict }: Props) {
   const [briefing, setBriefing] = useState<string | null>(null);

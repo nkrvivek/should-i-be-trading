@@ -43,7 +43,7 @@ export function StatusBar({ cri }: Props) {
       <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
         {cri && (
           <span>
-            CRI: <span style={{ color: criColor(cri.cri_level) }}>{cri.cri.toFixed(1)} {cri.cri_level}</span>
+            CRI: <span style={{ color: criColor(cri.cri?.level ?? "") }}>{(cri.cri?.score ?? 0).toFixed(1)} {cri.cri?.level ?? "---"}</span>
           </span>
         )}
         <span style={{ color: status === "OPEN" ? "var(--positive)" : "var(--text-muted)" }}>

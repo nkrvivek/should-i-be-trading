@@ -237,11 +237,11 @@ export type CriHistoryEntry = {
   market_open: boolean;
 };
 
+/** Matches the actual Radon /regime/scan response shape */
 export type CriData = {
+  scan_time: string;
   date: string;
   market_open: boolean;
-  cri: number;
-  cri_level: string;
   vix: number;
   vvix: number;
   spy: number;
@@ -251,17 +251,24 @@ export type CriData = {
   vix_5d_roc: number;
   vvix_vix_ratio: number;
   spx_distance_pct: number;
-  components: {
-    vix: number;
-    vvix: number;
-    correlation: number;
-    momentum: number;
+  spx_100d_ma: number;
+  cri: {
+    score: number;
+    level: string;
+    components: {
+      vix: number;
+      vvix: number;
+      correlation: number;
+      momentum: number;
+    };
   };
   crash_trigger: {
-    spx_below_ma: boolean;
-    rvol_above_25: boolean;
-    cor1m_above_60: boolean;
     triggered: boolean;
+    conditions: {
+      spx_below_100d_ma: boolean;
+      realized_vol_gt_25: boolean;
+      cor1m_gt_60: boolean;
+    };
   };
   history: CriHistoryEntry[];
 };

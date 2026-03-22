@@ -14,11 +14,15 @@ function barColor(score: number): string {
 }
 
 export function ComponentBars({ components }: Props) {
+  if (!components) return null;
+
+  const safe = (v: unknown): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
+
   const bars = [
-    { label: "VIX", value: components.vix },
-    { label: "VVIX", value: components.vvix },
-    { label: "CORR", value: components.correlation },
-    { label: "MOM", value: components.momentum },
+    { label: "VIX", value: safe(components.vix) },
+    { label: "VVIX", value: safe(components.vvix) },
+    { label: "CORR", value: safe(components.correlation) },
+    { label: "MOM", value: safe(components.momentum) },
   ];
 
   return (

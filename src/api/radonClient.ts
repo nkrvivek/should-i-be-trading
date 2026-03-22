@@ -18,9 +18,17 @@ export async function radonFetch<T>(
   path: string,
   opts: RequestInit & { timeout?: number } = {},
 ): Promise<T> {
-  const { timeout = 30_000, ...fetchOpts } = opts;
+  const { timeout = 30_000, signal: externalSignal, ...fetchOpts } = opts;
+
+  // Use external signal if provided, otherwise create timeout-based one
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
+
+  // If caller provides a signal, abort our controller when it aborts
+  if (externalSignal) {
+    if (externalSignal.aborted) { controller.abort(); }
+    else { externalSignal.addEventListener("abort", () => controller.abort(), { once: true }); }
+  }
 
   const base = getApiBaseUrl();
 

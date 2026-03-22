@@ -2,12 +2,12 @@ import { describe, it, expect } from "vitest";
 import { computeVerdict, computeVixRegime } from "../../src/lib/trafficLight";
 import type { CriData } from "../../src/api/types";
 
-function makeCri(overrides: Partial<CriData> = {}): CriData {
+function makeCri(overrides: Partial<CriData> & { criScore?: number; criLevel?: string } = {}): CriData {
+  const { criScore = 20, criLevel = "LOW", ...rest } = overrides;
   return {
+    scan_time: "2026-03-21T10:00:00",
     date: "2026-03-21",
     market_open: true,
-    cri: 20,
-    cri_level: "LOW",
     vix: 16,
     vvix: 90,
     spy: 570,
@@ -17,10 +17,11 @@ function makeCri(overrides: Partial<CriData> = {}): CriData {
     vix_5d_roc: 5,
     vvix_vix_ratio: 5.6,
     spx_distance_pct: 1.5,
-    components: { vix: 2, vvix: 3, correlation: 4, momentum: 0 },
-    crash_trigger: { spx_below_ma: false, rvol_above_25: false, cor1m_above_60: false, triggered: false },
+    spx_100d_ma: 560,
+    cri: { score: criScore, level: criLevel, components: { vix: 2, vvix: 3, correlation: 4, momentum: 0 } },
+    crash_trigger: { triggered: false, conditions: { spx_below_100d_ma: false, realized_vol_gt_25: false, cor1m_gt_60: false } },
     history: [],
-    ...overrides,
+    ...rest,
   };
 }
 
@@ -69,7 +70,7 @@ describe("computeVerdict", () => {
 
   it("returns NO_TRADE when CRI is CRITICAL", () => {
     const v = computeVerdict({
-      cri: makeCri({ cri: 80, cri_level: "CRITICAL" }),
+      cri: makeCri({ criScore: 80, criLevel: "CRITICAL" }),
       marketStatus: "OPEN",
     });
     expect(v.signal).toBe("NO_TRADE");
@@ -100,7 +101,7 @@ describe("computeVerdict", () => {
 
   it("returns CAUTION when CRI is HIGH", () => {
     const v = computeVerdict({
-      cri: makeCri({ cri: 55, cri_level: "HIGH" }),
+      cri: makeCri({ criScore: 55, criLevel: "HIGH" }),
       marketStatus: "OPEN",
     });
     expect(v.signal).toBe("CAUTION");

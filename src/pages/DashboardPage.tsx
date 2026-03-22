@@ -87,14 +87,14 @@ export function DashboardPage() {
           {/* Left column: Traffic Light + Gauge + Crash Trigger */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <TrafficLight verdict={verdict} />
-            <RegimeGauge score={cri.cri} level={cri.cri_level} />
-            <CrashTrigger trigger={cri.crash_trigger} />
+            <RegimeGauge score={cri.cri?.score ?? 0} level={cri.cri?.level ?? "LOW"} />
+            {cri.crash_trigger && <CrashTrigger trigger={cri.crash_trigger} />}
           </div>
 
           {/* Right column: Strip + Components + History */}
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <RegimeStrip cri={cri} prices={prices} connected={connected} />
-            <ComponentBars components={cri.components} />
+            {cri.cri?.components && <ComponentBars components={cri.cri.components} />}
             <RegimeHistory history={cri.history ?? []} />
           </div>
         </div>

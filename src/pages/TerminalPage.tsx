@@ -73,7 +73,7 @@ export function TerminalPage() {
         {/* Left column: verdict + regime */}
         <div style={{ gridRow: "1 / -1", display: "flex", flexDirection: "column", gap: 8 }}>
           <TrafficLight verdict={verdict} />
-          {cri && <ComponentBars components={cri.components} />}
+          {cri?.cri?.components && <ComponentBars components={cri.cri.components} />}
         </div>
 
         {/* Top middle: regime strip */}

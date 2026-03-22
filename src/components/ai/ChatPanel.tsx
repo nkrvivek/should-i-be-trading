@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { chatWithClaude, type ChatMessage } from "../../api/anthropicClient";
+import { renderMarkdown } from "../../lib/renderMarkdown";
 import type { CriData, PortfolioData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
 
@@ -104,13 +105,18 @@ export function ChatPanel({ cri, portfolio, verdict }: Props) {
               fontFamily: "var(--font-sans)",
               fontSize: 12,
               color: "var(--text-primary)",
-              whiteSpace: "pre-wrap",
             }}
           >
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", marginBottom: 4, textTransform: "uppercase" }}>
               {msg.role}
             </div>
-            {msg.content}
+            {msg.role === "assistant" ? (
+              <div style={{ lineHeight: 1.7, color: "var(--text-secondary)" }}>
+                {renderMarkdown(msg.content)}
+              </div>
+            ) : (
+              msg.content
+            )}
           </div>
         ))}
         {loading && (

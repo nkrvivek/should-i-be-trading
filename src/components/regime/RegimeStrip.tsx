@@ -15,10 +15,10 @@ export function RegimeStrip({ cri, prices, connected }: Props) {
   const vvixPrice = prices["VVIX"];
   const spyPrice = prices["SPY"];
 
-  const liveVix = vixPrice?.last ?? cri.vix;
-  const liveVvix = vvixPrice?.last ?? cri.vvix;
-  const liveSpy = spyPrice?.last ?? cri.spy;
-  const vvixVixRatio = liveVix > 0 ? liveVvix / liveVix : cri.vvix_vix_ratio;
+  const liveVix = vixPrice?.last ?? cri.vix ?? 0;
+  const liveVvix = vvixPrice?.last ?? cri.vvix ?? 0;
+  const liveSpy = spyPrice?.last ?? cri.spy ?? 0;
+  const vvixVixRatio = liveVix > 0 ? liveVvix / liveVix : (cri.vvix_vix_ratio ?? 0);
 
   return (
     <div

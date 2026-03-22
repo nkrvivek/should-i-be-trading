@@ -1,17 +1,17 @@
+import type { CriData } from "../../api/types";
+
 type Props = {
-  trigger: {
-    spx_below_ma: boolean;
-    rvol_above_25: boolean;
-    cor1m_above_60: boolean;
-    triggered: boolean;
-  };
+  trigger: CriData["crash_trigger"];
 };
 
 export function CrashTrigger({ trigger }: Props) {
+  if (!trigger) return null;
+
+  const conds = trigger.conditions ?? {};
   const conditions = [
-    { label: "SPX below 100d MA", met: trigger.spx_below_ma },
-    { label: "Realized Vol > 25%", met: trigger.rvol_above_25 },
-    { label: "COR1M > 60", met: trigger.cor1m_above_60 },
+    { label: "SPX below 100d MA", met: conds.spx_below_100d_ma ?? false },
+    { label: "Realized Vol > 25%", met: conds.realized_vol_gt_25 ?? false },
+    { label: "COR1M > 60", met: conds.cor1m_gt_60 ?? false },
   ];
 
   return (

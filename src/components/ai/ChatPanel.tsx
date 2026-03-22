@@ -26,12 +26,12 @@ function buildSystemPrompt(cri: CriData | null, portfolio: PortfolioData | null,
     parts.push(
       "",
       "--- REGIME DATA ---",
-      `CRI: ${cri.cri.toFixed(1)} (${cri.cri_level})`,
+      `CRI: ${(cri.cri?.score ?? 0).toFixed(1)} (${cri.cri?.level ?? "N/A"})`,
       `VIX: ${cri.vix.toFixed(1)} | VVIX: ${cri.vvix.toFixed(1)} | VVIX/VIX: ${cri.vvix_vix_ratio.toFixed(1)}`,
       `COR1M: ${cri.cor1m.toFixed(1)} (5d chg: ${cri.cor1m_5d_change.toFixed(1)})`,
       `RVOL: ${cri.realized_vol.toFixed(1)}% | SPX dist from MA: ${cri.spx_distance_pct.toFixed(1)}%`,
       `Crash trigger: ${cri.crash_trigger.triggered ? "ACTIVE" : "inactive"}`,
-      `Components — VIX: ${cri.components.vix}/25, VVIX: ${cri.components.vvix}/25, CORR: ${cri.components.correlation}/25, MOM: ${cri.components.momentum}/25`,
+      `Components — VIX: ${cri.cri?.components?.vix ?? 0}/25, VVIX: ${cri.cri?.components?.vvix ?? 0}/25, CORR: ${cri.cri?.components?.correlation ?? 0}/25, MOM: ${cri.cri?.components?.momentum ?? 0}/25`,
     );
   }
 

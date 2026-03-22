@@ -84,8 +84,8 @@ export function computeVerdict(inputs: TrafficLightInputs): TrafficLightVerdict 
   const vix = liveVix ?? cri.vix;
   const vvix = liveVvix ?? cri.vvix;
   const vvixVixRatio = vix > 0 ? vvix / vix : cri.vvix_vix_ratio;
-  const criScore = cri.cri;
-  const criLvl = cri.cri_level;
+  const criScore = cri.cri?.score ?? 0;
+  const criLvl = cri.cri?.level ?? "LOW";
   const vixRegime = computeVixRegime(vix);
 
   // ─── NO_TRADE conditions ─────────────────────────

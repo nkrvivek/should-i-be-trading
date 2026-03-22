@@ -18,7 +18,7 @@ export type ChatResponse = {
 export async function chatWithClaude(
   messages: ChatMessage[],
   systemPrompt: string,
-  model = "claude-sonnet-4-5-20250514",
+  model = "claude-sonnet-4-6",
 ): Promise<ChatResponse> {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   if (!apiKey) {
@@ -42,13 +42,25 @@ export async function chatWithClaude(
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error?.message || `Claude API ${response.status}`);
+    const text = await response.text();
+    let msg = `Claude API ${response.status}`;
+    try {
+      const body = JSON.parse(text);
+      msg = body.error?.message || msg;
+    } catch {
+      msg = text.slice(0, 200) || msg;
+    }
+    throw new Error(msg);
   }
 
   const data = await response.json();
+  const text = data.content?.[0]?.text;
+  if (!text) {
+    console.error("Unexpected Claude API response:", JSON.stringify(data).slice(0, 500));
+    throw new Error("Claude returned an empty response. Check the console for details.");
+  }
   return {
-    content: data.content[0]?.text ?? "",
+    content: text,
     model: data.model,
     usage: data.usage,
   };

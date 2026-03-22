@@ -43,7 +43,7 @@ export function AnalysisPage() {
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: 8,
-          height: "100%",
+          minHeight: 500,
         }}
       >
         <Panel title="Claude Analysis">

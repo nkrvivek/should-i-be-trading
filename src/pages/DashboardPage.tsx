@@ -18,7 +18,7 @@ const REGIME_INDEXES: IndexContract[] = [
 ];
 
 export function DashboardPage() {
-  const { data: cri, loading, error } = useRegime(true);
+  const { data: cri, loading, scanning, error } = useRegime(true);
   const { status } = useMarketHours();
 
   const { prices, connected } = usePrices({
@@ -40,7 +40,29 @@ export function DashboardPage() {
 
   return (
     <TerminalShell cri={cri}>
-      {error && (
+      {/* Scanning indicator — shown as a banner, doesn't block content */}
+      {scanning && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 16px",
+            background: "rgba(5, 173, 152, 0.08)",
+            border: "1px solid rgba(5, 173, 152, 0.2)",
+            borderRadius: 4,
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            color: "var(--signal-core)",
+            marginBottom: 12,
+          }}
+        >
+          <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--signal-core)", animation: "pulse 1.5s infinite" }} />
+          {cri ? "Refreshing regime data..." : "Running initial CRI scan — this may take up to 2 minutes..."}
+        </div>
+      )}
+
+      {error && !cri && (
         <div
           style={{
             padding: "8px 16px",
@@ -57,7 +79,8 @@ export function DashboardPage() {
         </div>
       )}
 
-      {loading && !cri && (
+      {/* Show loading skeleton only when no data at all */}
+      {loading && !cri && !scanning && (
         <div
           style={{
             display: "flex",
@@ -69,10 +92,11 @@ export function DashboardPage() {
             color: "var(--text-muted)",
           }}
         >
-          Running CRI scan...
+          Connecting to Radon...
         </div>
       )}
 
+      {/* Dashboard content — renders as soon as we have ANY data (cached or fresh) */}
       {cri && (
         <div
           style={{
@@ -100,7 +124,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      {!loading && !cri && !error && (
+      {!loading && !scanning && !cri && !error && (
         <div
           style={{
             display: "flex",

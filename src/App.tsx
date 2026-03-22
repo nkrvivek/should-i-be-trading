@@ -9,6 +9,7 @@ import { SettingsPage } from "./pages/SettingsPage";
 import { AlertsPage } from "./pages/AlertsPage";
 import { TermsPage } from "./pages/TermsPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
+import { GlossaryPage } from "./pages/GlossaryPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
@@ -34,6 +35,7 @@ export default function App() {
           <Route path="/macro" element={<WithNav><MacroPage /></WithNav>} />
           <Route path="/alerts" element={<WithNav><GatedPage feature="alerts"><AlertsPage /></GatedPage></WithNav>} />
           <Route path="/settings" element={<WithNav><RequireAuth><SettingsPage /></RequireAuth></WithNav>} />
+          <Route path="/glossary" element={<WithNav><GlossaryPage /></WithNav>} />
           <Route path="/terms" element={<WithNav><TermsPage /></WithNav>} />
           <Route path="/privacy" element={<WithNav><PrivacyPage /></WithNav>} />
           <Route path="*" element={<Navigate to="/" replace />} />
@@ -81,6 +83,7 @@ function NavBar() {
     { to: "/terminal", label: "TERMINAL" },
     { to: "/macro", label: "MACRO" },
     { to: "/analysis", label: "ANALYSIS" },
+    { to: "/glossary", label: "GLOSSARY" },
     ...(user ? [{ to: "/settings", label: "SETTINGS" }] : []),
   ];
 

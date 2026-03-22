@@ -1,3 +1,5 @@
+import { getApiBaseUrl } from "../lib/connectionConfig";
+
 export class RadonApiError extends Error {
   constructor(
     public readonly status: number,
@@ -10,7 +12,7 @@ export class RadonApiError extends Error {
 
 /**
  * Typed fetch wrapper for Radon's FastAPI.
- * In dev, Vite proxies /api/* to localhost:8321.
+ * Resolves API base from user settings (localStorage) or Vite proxy default.
  */
 export async function radonFetch<T>(
   path: string,
@@ -20,8 +22,10 @@ export async function radonFetch<T>(
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
 
+  const base = getApiBaseUrl();
+
   try {
-    const response = await fetch(`/api${path}`, {
+    const response = await fetch(`${base}${path}`, {
       ...fetchOpts,
       signal: controller.signal,
       headers: {

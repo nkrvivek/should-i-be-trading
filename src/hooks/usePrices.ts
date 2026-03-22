@@ -42,11 +42,10 @@ export type UsePricesReturn = {
 
 type ConnState = "idle" | "connecting" | "open" | "closed";
 
+import { getWsUrl } from "../lib/connectionConfig";
+
 const STALENESS_CHECK_MS = 15_000;
 const STALENESS_THRESHOLD_MS = 60_000;
-
-// In dev, Vite proxies /ws to localhost:8765
-const WS_URL = `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.host}/ws`;
 
 export function usePrices(options: UsePricesOptions): UsePricesReturn {
   const {
@@ -200,7 +199,7 @@ export function usePrices(options: UsePricesOptions): UsePricesReturn {
       wsRef.current = null;
     }
 
-    const ws = new WebSocket(WS_URL);
+    const ws = new WebSocket(getWsUrl());
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -325,7 +324,7 @@ export function usePrices(options: UsePricesOptions): UsePricesReturn {
       if (symbolsToRequest.length === 0) return {};
 
       return new Promise<Record<string, PriceData>>((resolve, reject) => {
-        const ws = new WebSocket(WS_URL);
+        const ws = new WebSocket(getWsUrl());
         const results: Record<string, PriceData> = {};
         const pending = new Set(symbolsToRequest);
 

@@ -1,18 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InsiderTransaction, InsiderActivitySummary, InsiderSignal } from "../api/types";
+import { getCredential } from "../lib/credentials";
 
-const FINNHUB_KEY_STORAGE = "sibt_finnhub_key";
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
 
 type CacheEntry = { data: InsiderActivitySummary; ts: number };
 const cache = new Map<string, CacheEntry>();
 
 function getApiKey(): string | null {
-  return (
-    localStorage.getItem(FINNHUB_KEY_STORAGE) ||
-    import.meta.env.VITE_FINNHUB_API_KEY ||
-    null
-  );
+  return getCredential("finnhub");
 }
 
 function classifySignal(buyValue: number, sellValue: number): { signal: InsiderSignal; score: number } {

@@ -15,6 +15,9 @@ import { SignalTimeline } from "../components/regime/SignalTimeline";
 import { DailyBriefing } from "../components/regime/DailyBriefing";
 import { InsiderActivityPanel } from "../components/insider/InsiderActivityPanel";
 import { InsiderMarketOverview } from "../components/insider/InsiderMarketOverview";
+import { CongressTradingPanel } from "../components/congress/CongressTradingPanel";
+import { SectorHeatMap } from "../components/market/SectorHeatMap";
+import { TickerChart } from "../components/market/TickerChart";
 import { WatchlistManager } from "../components/watchlist/WatchlistManager";
 import { Panel } from "../components/layout/Panel";
 import type { IndexContract } from "../api/types";
@@ -137,14 +140,25 @@ export function DashboardPage() {
             <RegimeHistory history={cri.history ?? []} />
           </div>
 
+          {/* Full-width: Sector Heat Map + Chart */}
+          <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+            <SectorHeatMap />
+            <TickerChart />
+          </div>
+
           {/* Full-width: Watchlist Manager */}
           <div style={{ gridColumn: "1 / -1" }}>
             <WatchlistManager />
           </div>
 
-          {/* Full-width: Insider Activity (per-ticker) + Market Overview (aggregate) */}
+          {/* Full-width: Insider Activity + Congress Trading */}
           <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <InsiderActivityPanel />
+            <CongressTradingPanel />
+          </div>
+
+          {/* Full-width: Insider Market Overview */}
+          <div style={{ gridColumn: "1 / -1" }}>
             <InsiderMarketOverview />
           </div>
 

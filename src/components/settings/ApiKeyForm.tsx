@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useUserCredentials, PROVIDER_CONFIG, type CredentialProvider } from "../../hooks/useUserCredentials";
 import { useAuthStore } from "../../stores/authStore";
 import { Badge } from "../shared/Badge";
+import { saveLocalCredential, removeLocalCredential, getCredential } from "../../lib/credentials";
 
 export function ApiKeyForm() {
   const { credentials } = useAuthStore();
@@ -18,7 +19,10 @@ export function ApiKeyForm() {
     setSaving(true);
     setError(null);
     try {
-      await saveCredential(provider, keyInput.trim());
+      // Always save to localStorage (works without Supabase)
+      saveLocalCredential(provider, keyInput.trim());
+      // Also save to Supabase if configured
+      try { await saveCredential(provider, keyInput.trim()); } catch { /* Supabase optional */ }
       setEditingProvider(null);
       setKeyInput("");
     } catch (e) {
@@ -30,7 +34,8 @@ export function ApiKeyForm() {
 
   const handleRemove = async (provider: CredentialProvider) => {
     try {
-      await removeCredential(provider);
+      removeLocalCredential(provider);
+      try { await removeCredential(provider); } catch { /* Supabase optional */ }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to remove");
     }
@@ -53,6 +58,8 @@ export function ApiKeyForm() {
 
       {providers.map(([provider, config]) => {
         const cred = credentials.find((c) => c.provider === provider);
+        const hasLocal = !!getCredential(provider);
+        const isConnected = cred?.is_valid || hasLocal;
         const isEditing = editingProvider === provider;
 
         return (
@@ -61,14 +68,14 @@ export function ApiKeyForm() {
             style={{
               padding: 12,
               background: "var(--bg-panel-raised)",
-              border: `1px solid ${cred?.is_valid ? "var(--positive)" : "var(--border-dim)"}`,
+              border: `1px solid ${isConnected ? "var(--positive)" : "var(--border-dim)"}`,
               borderRadius: 4,
             }}
           >
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, fontWeight: 500 }}>{config.label}</span>
-                {cred?.is_valid && <Badge label="CONNECTED" variant="positive" />}
+                {isConnected && <Badge label="CONNECTED" variant="positive" />}
               </div>
               <div style={{ display: "flex", gap: 4 }}>
                 {cred && (

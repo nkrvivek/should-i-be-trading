@@ -3,6 +3,24 @@ import { create } from "zustand";
 export type Theme = "dark" | "light";
 export type ActivePage = "dashboard" | "terminal" | "analysis";
 
+const THEME_KEY = "sibt_theme";
+
+function loadTheme(): Theme {
+  try {
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+  } catch { /* ignore */ }
+  return "light"; // default to light
+}
+
+function persistTheme(theme: Theme) {
+  try { localStorage.setItem(THEME_KEY, theme); } catch { /* ignore */ }
+  document.documentElement.setAttribute("data-theme", theme);
+}
+
+// Set theme on document immediately (before React mounts) to prevent flash
+persistTheme(loadTheme());
+
 type AppState = {
   theme: Theme;
   activePage: ActivePage;
@@ -12,16 +30,16 @@ type AppState = {
 };
 
 export const useAppStore = create<AppState>((set) => ({
-  theme: "dark",
+  theme: loadTheme(),
   activePage: "dashboard",
   setTheme: (theme) => {
-    document.documentElement.setAttribute("data-theme", theme);
+    persistTheme(theme);
     set({ theme });
   },
   toggleTheme: () =>
     set((s) => {
       const next = s.theme === "dark" ? "light" : "dark";
-      document.documentElement.setAttribute("data-theme", next);
+      persistTheme(next);
       return { theme: next };
     }),
   setActivePage: (activePage) => set({ activePage }),

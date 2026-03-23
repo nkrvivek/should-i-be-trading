@@ -33,6 +33,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/exa-api/, ""),
       },
+      "/finnhub-api": {
+        target: "https://finnhub.io",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/finnhub-api/, ""),
+      },
     },
   },
 });

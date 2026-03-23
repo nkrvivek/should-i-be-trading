@@ -97,100 +97,75 @@ export function DashboardPage() {
         </div>
       )}
 
-      {/* Show loading skeleton only when no data at all */}
-      {loading && !cri && !scanning && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "60vh",
-            fontFamily: "var(--font-mono)",
-            fontSize: 13,
-            color: "var(--text-muted)",
-          }}
-        >
-          Connecting to Radon...
+      {/* Dashboard content — always renders, CRI panels are optional */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "280px 1fr",
+          gridTemplateRows: "auto auto auto",
+          gap: 16,
+          maxWidth: 1200,
+          margin: "0 auto",
+        }}
+      >
+        {/* Left column: Traffic Light + Gauge + Crash Trigger */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          <TrafficLight verdict={verdict} />
+          <RegimeGauge score={cri?.cri?.score ?? 0} level={cri?.cri?.level ?? "UNKNOWN"} />
+          {cri?.crash_trigger && <CrashTrigger trigger={cri.crash_trigger} />}
         </div>
-      )}
 
-      {/* Dashboard content — renders as soon as we have ANY data (cached or fresh) */}
-      {cri && (
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "280px 1fr",
-            gridTemplateRows: "auto auto auto",
-            gap: 16,
-            maxWidth: 1200,
-            margin: "0 auto",
-          }}
-        >
-          {/* Left column: Traffic Light + Gauge + Crash Trigger */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <TrafficLight verdict={verdict} />
-            <RegimeGauge score={cri.cri?.score ?? 0} level={cri.cri?.level ?? "LOW"} />
-            {cri.crash_trigger && <CrashTrigger trigger={cri.crash_trigger} />}
-          </div>
-
-          {/* Right column: Strip + Components + History */}
-          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-            <RegimeStrip cri={cri} prices={prices} connected={connected} />
-            {cri.cri?.components && <ComponentBars components={cri.cri.components} />}
-            <RegimeHistory history={cri.history ?? []} />
-          </div>
-
-          {/* Full-width: Sector Heat Map + Chart */}
-          <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <SectorHeatMap />
-            <TickerChart />
-          </div>
-
-          {/* Full-width: Watchlist Manager */}
-          <div style={{ gridColumn: "1 / -1" }}>
-            <WatchlistManager />
-          </div>
-
-          {/* Full-width: Insider Activity + Congress Trading */}
-          <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <InsiderActivityPanel />
-            <CongressTradingPanel />
-          </div>
-
-          {/* Full-width: Insider Market Overview */}
-          <div style={{ gridColumn: "1 / -1" }}>
-            <InsiderMarketOverview />
-          </div>
-
-          {/* Full-width: Daily Briefing */}
-          <div style={{ gridColumn: "1 / -1" }}>
-            <DailyBriefing cri={cri} verdict={verdict} />
-          </div>
-
-          {/* Full-width: Signal Timeline */}
-          <div style={{ gridColumn: "1 / -1" }}>
-            <Panel title={`Signal History (${history.length})`}>
-              <SignalTimeline history={history} />
+        {/* Right column: Strip + Components + History */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+          {cri ? (
+            <>
+              <RegimeStrip cri={cri} prices={prices} connected={connected} />
+              {cri.cri?.components && <ComponentBars components={cri.cri.components} />}
+              <RegimeHistory history={cri.history ?? []} />
+            </>
+          ) : (
+            <Panel title="Market Regime">
+              <div style={{ padding: "16px 0", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+                {loading || scanning ? "Loading regime data..." : "Radon not connected. Regime data unavailable."}
+              </div>
             </Panel>
-          </div>
+          )}
         </div>
-      )}
 
-      {!loading && !scanning && !cri && !error && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            height: "60vh",
-            fontFamily: "var(--font-mono)",
-            fontSize: 13,
-            color: "var(--text-muted)",
-          }}
-        >
-          No regime data. Ensure Radon FastAPI is running on localhost:8321.
+        {/* Full-width: Sector Heat Map + Chart */}
+        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <SectorHeatMap />
+          <TickerChart />
         </div>
-      )}
+
+        {/* Full-width: Watchlist Manager */}
+        <div style={{ gridColumn: "1 / -1" }}>
+          <WatchlistManager />
+        </div>
+
+        {/* Full-width: Insider Activity + Congress Trading */}
+        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <InsiderActivityPanel />
+          <CongressTradingPanel />
+        </div>
+
+        {/* Full-width: Insider Market Overview */}
+        <div style={{ gridColumn: "1 / -1" }}>
+          <InsiderMarketOverview />
+        </div>
+
+        {/* Full-width: Daily Briefing */}
+        <div style={{ gridColumn: "1 / -1" }}>
+          <DailyBriefing cri={cri} verdict={verdict} />
+        </div>
+
+        {/* Full-width: Signal Timeline */}
+        <div style={{ gridColumn: "1 / -1" }}>
+          <Panel title={`Signal History (${history.length})`}>
+            <SignalTimeline history={history} />
+          </Panel>
+        </div>
+      </div>
     </TerminalShell>
   );
 }

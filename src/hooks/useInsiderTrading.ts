@@ -1,15 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InsiderTransaction, InsiderActivitySummary, InsiderSignal } from "../api/types";
 import { getCredential } from "../lib/credentials";
+import { hasUWToken, fetchUWInsiderByTicker } from "../api/uwClient";
 
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
 
 type CacheEntry = { data: InsiderActivitySummary; ts: number };
 const cache = new Map<string, CacheEntry>();
-
-function getApiKey(): string | null {
-  return getCredential("finnhub");
-}
 
 function classifySignal(buyValue: number, sellValue: number): { signal: InsiderSignal; score: number } {
   const total = buyValue + sellValue;
@@ -17,8 +14,6 @@ function classifySignal(buyValue: number, sellValue: number): { signal: InsiderS
 
   const buyRatio = buyValue / total;
   const sellRatio = sellValue / total;
-
-  // Score: -100 (all selling) to +100 (all buying)
   const score = Math.round((buyRatio - sellRatio) * 100);
 
   if (score >= 40) return { signal: "HEAVY_BUYING", score };
@@ -29,17 +24,13 @@ function classifySignal(buyValue: number, sellValue: number): { signal: InsiderS
 }
 
 function processTransactions(symbol: string, raw: InsiderTransaction[]): InsiderActivitySummary {
-  // Filter to last 90 days
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - 90);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
 
   const recent = raw.filter((t) => t.transactionDate >= cutoffStr);
 
-  let totalBuys = 0;
-  let totalSells = 0;
-  let buyValue = 0;
-  let sellValue = 0;
+  let totalBuys = 0, totalSells = 0, buyValue = 0, sellValue = 0;
 
   for (const t of recent) {
     const value = Math.abs(t.change) * (t.transactionPrice || 0);
@@ -56,10 +47,57 @@ function processTransactions(symbol: string, raw: InsiderTransaction[]): Insider
 
   return {
     symbol,
-    transactions: recent.slice(0, 50), // keep last 50 for display
+    transactions: recent.slice(0, 50),
     totalBuys,
     totalSells,
     netShares: recent.reduce((sum, t) => sum + t.change, 0),
+    netValue: buyValue - sellValue,
+    buyValue,
+    sellValue,
+    signal,
+    signalScore: score,
+    period: "90d",
+    lastUpdated: new Date().toISOString(),
+  };
+}
+
+function processUWTransactions(symbol: string, raw: { amount: number; price: string | null; stock_price: string | null; transaction_code: string; owner_name: string; transaction_date: string }[]): InsiderActivitySummary {
+  let totalBuys = 0, totalSells = 0, buyValue = 0, sellValue = 0;
+  const transactions: InsiderTransaction[] = [];
+
+  for (const t of raw) {
+    const price = parseFloat(t.price ?? "0") || parseFloat(t.stock_price ?? "0") || 0;
+    const shares = Math.abs(t.amount);
+    const value = shares * price;
+
+    if (t.transaction_code === "P" || t.amount > 0) {
+      totalBuys++;
+      buyValue += value;
+    } else if (t.transaction_code === "S" || t.transaction_code === "D" || t.amount < 0) {
+      totalSells++;
+      sellValue += value;
+    }
+
+    transactions.push({
+      symbol,
+      name: t.owner_name,
+      share: shares,
+      change: t.amount,
+      transactionDate: t.transaction_date,
+      transactionType: t.transaction_code === "P" ? "P - Purchase" : "S - Sale",
+      transactionCode: t.transaction_code,
+      transactionPrice: price,
+    });
+  }
+
+  const { signal, score } = classifySignal(buyValue, sellValue);
+
+  return {
+    symbol,
+    transactions: transactions.slice(0, 50),
+    totalBuys,
+    totalSells,
+    netShares: raw.reduce((sum, t) => sum + t.amount, 0),
     netValue: buyValue - sellValue,
     buyValue,
     sellValue,
@@ -79,12 +117,6 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
   const fetchData = useCallback(async () => {
     if (!symbol || !enabled) return;
 
-    const apiKey = getApiKey();
-    if (!apiKey) {
-      setError("Finnhub API key not configured. Add it in Settings or .env (VITE_FINNHUB_API_KEY).");
-      return;
-    }
-
     // Check cache
     const cached = cache.get(symbol);
     if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
@@ -98,6 +130,32 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
     abortRef.current = ctrl;
 
     setLoading(true);
+
+    // Try UW first
+    if (hasUWToken()) {
+      try {
+        const raw = await fetchUWInsiderByTicker(symbol);
+        if (raw.length > 0) {
+          const summary = processUWTransactions(symbol, raw);
+          cache.set(symbol, { data: summary, ts: Date.now() });
+          setData(summary);
+          setError(null);
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.warn(`UW insider fetch failed for ${symbol}, falling back:`, e);
+      }
+    }
+
+    // Fallback: Finnhub
+    const apiKey = getCredential("finnhub");
+    if (!apiKey) {
+      setError("No insider data source. Add UW token (recommended) or Finnhub key in Settings.");
+      setLoading(false);
+      return;
+    }
+
     try {
       const res = await fetch(
         `/finnhub-api/api/v1/stock/insider-transactions?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`,

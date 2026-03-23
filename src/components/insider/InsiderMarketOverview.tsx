@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { Panel } from "../layout/Panel";
-import type { InsiderActivitySummary, InsiderSignal } from "../../api/types";
+import type { InsiderSignal } from "../../api/types";
 import { getCredential } from "../../lib/credentials";
+import { hasUWToken, fetchUWInsiderTransactions, type UWInsiderTransaction } from "../../api/uwClient";
 
 const SCAN_TICKERS = [
   "AAPL", "MSFT", "NVDA", "GOOG", "AMZN", "META", "TSLA", "AMD", "CRM", "NFLX",
@@ -11,10 +12,6 @@ const SCAN_TICKERS = [
   "XOM", "CVX", "COP", "SLB", "EOG",
   "DIS", "HD", "MCD", "NKE", "SBUX",
 ];
-
-function getApiKey(): string | null {
-  return getCredential("finnhub");
-}
 
 function classifySignal(buyValue: number, sellValue: number): InsiderSignal {
   const total = buyValue + sellValue;
@@ -34,6 +31,8 @@ type TickerSummary = {
   sellValue: number;
   buyValue: number;
   totalTx: number;
+  topInsider?: string;
+  officerTitle?: string;
 };
 
 function formatDollar(n: number): string {
@@ -60,30 +59,103 @@ const SIGNAL_LABELS: Record<InsiderSignal, string> = {
   HEAVY_SELLING: "HEAVY SELL",
 };
 
+function processUWData(transactions: UWInsiderTransaction[]): TickerSummary[] {
+  // Group by ticker
+  const byTicker = new Map<string, UWInsiderTransaction[]>();
+  for (const t of transactions) {
+    if (!t.ticker || !SCAN_TICKERS.includes(t.ticker)) continue;
+    const arr = byTicker.get(t.ticker) ?? [];
+    arr.push(t);
+    byTicker.set(t.ticker, arr);
+  }
+
+  const results: TickerSummary[] = [];
+  for (const [symbol, txs] of byTicker) {
+    let buyValue = 0, sellValue = 0, buys = 0, sells = 0;
+    let biggestInsider = "", biggestAmount = 0, officerTitle = "";
+
+    for (const t of txs) {
+      const price = parseFloat(t.price ?? "0") || parseFloat(t.stock_price ?? "0") || 0;
+      const shares = Math.abs(t.amount);
+      const value = shares * price;
+
+      if (t.transaction_code === "P" || t.amount > 0) {
+        buys++;
+        buyValue += value;
+      } else if (t.transaction_code === "S" || t.transaction_code === "D" || t.amount < 0) {
+        sells++;
+        sellValue += value;
+      }
+
+      if (value > biggestAmount) {
+        biggestAmount = value;
+        biggestInsider = t.owner_name;
+        officerTitle = t.officer_title ?? "";
+      }
+    }
+
+    if (buys + sells === 0) continue;
+
+    results.push({
+      symbol,
+      signal: classifySignal(buyValue, sellValue),
+      netValue: buyValue - sellValue,
+      sellValue, buyValue,
+      totalTx: buys + sells,
+      topInsider: biggestInsider,
+      officerTitle,
+    });
+  }
+
+  return results.sort((a, b) => Math.abs(b.netValue) - Math.abs(a.netValue));
+}
+
 export function InsiderMarketOverview() {
   const [tickers, setTickers] = useState<TickerSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [lastScan, setLastScan] = useState<string | null>(null);
+  const [source, setSource] = useState<"uw" | "finnhub" | "">("");
 
   const scan = useCallback(async () => {
-    const apiKey = getApiKey();
+    setLoading(true);
+    setError(null);
+
+    // Try UW first (single API call, no rate limiting, richer data)
+    if (hasUWToken()) {
+      try {
+        setProgress({ done: 0, total: 1 });
+        const transactions = await fetchUWInsiderTransactions();
+        const results = processUWData(transactions);
+        setProgress({ done: 1, total: 1 });
+
+        if (results.length > 0) {
+          setTickers(results);
+          setSource("uw");
+          setLastScan(new Date().toLocaleTimeString());
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.warn("UW insider fetch failed, falling back to Finnhub:", e);
+      }
+    }
+
+    // Fallback: Finnhub (requires scanning each ticker individually)
+    const apiKey = getCredential("finnhub");
     if (!apiKey) {
-      setError("Finnhub API key required. Add in Settings or .env.");
+      setError("No insider data source configured. Add UW_TOKEN (recommended) or Finnhub API key in Settings.");
+      setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
     setProgress({ done: 0, total: SCAN_TICKERS.length });
-
     const results: TickerSummary[] = [];
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 90);
     const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-    // Batch in groups of 5 to respect Finnhub rate limits (60/min)
     for (let i = 0; i < SCAN_TICKERS.length; i += 5) {
       const batch = SCAN_TICKERS.slice(i, i + 5);
       const promises = batch.map(async (sym) => {
@@ -116,13 +188,12 @@ export function InsiderMarketOverview() {
       for (const r of batchResults) { if (r) results.push(r); }
       setProgress({ done: Math.min(i + 5, SCAN_TICKERS.length), total: SCAN_TICKERS.length });
 
-      // Rate limit pause between batches
       if (i + 5 < SCAN_TICKERS.length) await new Promise((r) => setTimeout(r, 1200));
     }
 
-    // Sort by absolute net value (most significant first)
     results.sort((a, b) => Math.abs(b.netValue) - Math.abs(a.netValue));
     setTickers(results);
+    setSource("finnhub");
     setLastScan(new Date().toLocaleTimeString());
     setLoading(false);
   }, []);
@@ -130,11 +201,12 @@ export function InsiderMarketOverview() {
   // Load cached results on mount
   useEffect(() => {
     try {
-      const cached = localStorage.getItem("sibt_insider_overview");
+      const cached = localStorage.getItem("sibt_insider_overview_v2");
       if (cached) {
-        const { data, ts } = JSON.parse(cached);
+        const { data, ts, source: src } = JSON.parse(cached);
         if (Date.now() - ts < 30 * 60 * 1000) {
           setTickers(data);
+          setSource(src ?? "finnhub");
           setLastScan(new Date(ts).toLocaleTimeString());
         }
       }
@@ -145,10 +217,10 @@ export function InsiderMarketOverview() {
   useEffect(() => {
     if (tickers.length > 0) {
       try {
-        localStorage.setItem("sibt_insider_overview", JSON.stringify({ data: tickers, ts: Date.now() }));
+        localStorage.setItem("sibt_insider_overview_v2", JSON.stringify({ data: tickers, source, ts: Date.now() }));
       } catch { /* ignore */ }
     }
-  }, [tickers]);
+  }, [tickers, source]);
 
   const heavySellers = tickers.filter((t) => t.signal === "HEAVY_SELLING");
   const netSellers = tickers.filter((t) => t.signal === "NET_SELLING");
@@ -157,6 +229,8 @@ export function InsiderMarketOverview() {
   const totalSellValue = [...heavySellers, ...netSellers].reduce((s, t) => s + t.sellValue, 0);
   const totalBuyValue = [...heavyBuyers, ...netBuyers].reduce((s, t) => s + t.buyValue, 0);
 
+  const hasAnyKey = hasUWToken() || !!getCredential("finnhub");
+
   return (
     <Panel title="Insider Market Overview" onRefresh={scan} loading={loading}>
       {/* Scan button */}
@@ -164,22 +238,25 @@ export function InsiderMarketOverview() {
         <div style={{ textAlign: "center", padding: "16px 0" }}>
           <button
             onClick={scan}
-            disabled={!getApiKey()}
+            disabled={!hasAnyKey}
             style={{
               padding: "8px 24px", background: "var(--signal-core)", color: "#000",
               border: "none", borderRadius: 4, fontFamily: "var(--font-mono)",
-              fontSize: 12, fontWeight: 600, cursor: getApiKey() ? "pointer" : "not-allowed",
-              opacity: getApiKey() ? 1 : 0.5,
+              fontSize: 12, fontWeight: 600, cursor: hasAnyKey ? "pointer" : "not-allowed",
+              opacity: hasAnyKey ? 1 : 0.5,
             }}
           >
             SCAN {SCAN_TICKERS.length} TICKERS
           </button>
           <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
-            Scans SEC Form 4 filings across top stocks for insider buying/selling patterns.
+            {hasUWToken()
+              ? "Scans insider transactions via Unusual Whales (single API call, fast)."
+              : "Scans SEC Form 4 filings across top stocks for insider buying/selling patterns."
+            }
           </div>
-          {!getApiKey() && (
+          {!hasAnyKey && (
             <div style={{ marginTop: 4, fontSize: 10, color: "var(--warning)" }}>
-              Add Finnhub API key in Settings first.
+              Add UW token (recommended) or Finnhub API key in Settings.
             </div>
           )}
         </div>
@@ -189,7 +266,7 @@ export function InsiderMarketOverview() {
       {loading && (
         <div style={{ padding: "8px 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", marginBottom: 4 }}>
-            <span>Scanning insider filings...</span>
+            <span>{source === "uw" || hasUWToken() ? "Fetching insider data from UW..." : "Scanning insider filings..."}</span>
             <span>{progress.done}/{progress.total}</span>
           </div>
           <div style={{ height: 4, background: "var(--border-dim)", borderRadius: 2, overflow: "hidden" }}>
@@ -215,9 +292,7 @@ export function InsiderMarketOverview() {
       {tickers.length > 0 && (
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {/* Summary strip */}
-          <div style={{
-            display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8,
-          }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
             <SummaryCard label="Heavy Sellers" count={heavySellers.length} value={totalSellValue} tone="negative" />
             <SummaryCard label="Net Sellers" count={netSellers.length} value={0} tone="negative" />
             <SummaryCard label="Net Buyers" count={netBuyers.length} value={0} tone="positive" />
@@ -231,10 +306,10 @@ export function InsiderMarketOverview() {
             fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6,
           }}>
             {heavySellers.length > heavyBuyers.length * 2
-              ? `Broad insider selling detected — ${heavySellers.length} tickers with heavy insider sales (${formatDollar(totalSellValue)}). This pattern often precedes market weakness. Exercise caution.`
+              ? `Broad insider selling detected across ${heavySellers.length} tickers (${formatDollar(totalSellValue)}). This pattern often precedes market weakness. Exercise caution.`
               : heavyBuyers.length > heavySellers.length * 2
-              ? `Broad insider buying detected — ${heavyBuyers.length} tickers with heavy insider purchases (${formatDollar(totalBuyValue)}). Insider buying is often a bullish signal.`
-              : `Mixed insider activity — ${heavySellers.length + netSellers.length} selling vs ${heavyBuyers.length + netBuyers.length} buying. No strong directional bias from insiders.`}
+              ? `Broad insider buying detected across ${heavyBuyers.length} tickers (${formatDollar(totalBuyValue)}). Insider buying is often a bullish signal.`
+              : `Mixed insider activity: ${heavySellers.length + netSellers.length} selling vs ${heavyBuyers.length + netBuyers.length} buying. No strong directional bias from insiders.`}
           </div>
 
           {/* Table */}
@@ -248,6 +323,7 @@ export function InsiderMarketOverview() {
                   <th style={{ ...thStyle, textAlign: "right" }}>Buy Value</th>
                   <th style={{ ...thStyle, textAlign: "right" }}>Net</th>
                   <th style={{ ...thStyle, textAlign: "right" }}>Txns</th>
+                  {source === "uw" && <th style={thStyle}>Top Insider</th>}
                 </tr>
               </thead>
               <tbody>
@@ -272,6 +348,12 @@ export function InsiderMarketOverview() {
                       {t.netValue >= 0 ? "+" : ""}{formatDollar(t.netValue)}
                     </td>
                     <td style={{ ...tdStyle, textAlign: "right", color: "var(--text-muted)" }}>{t.totalTx}</td>
+                    {source === "uw" && (
+                      <td style={{ ...tdStyle, fontSize: 9, color: "var(--text-muted)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {t.topInsider ?? ""}
+                        {t.officerTitle && <span style={{ fontSize: 8, marginLeft: 4 }}>({t.officerTitle})</span>}
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>
@@ -280,7 +362,7 @@ export function InsiderMarketOverview() {
 
           {lastScan && (
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", textAlign: "right" }}>
-              Last scan: {lastScan} · {tickers.length} tickers with activity
+              Last scan: {lastScan} · {tickers.length} tickers · Source: {source === "uw" ? "Unusual Whales" : "Finnhub"}
             </div>
           )}
         </div>

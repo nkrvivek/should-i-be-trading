@@ -18,6 +18,7 @@ const ENV_MAP: Partial<Record<CredentialProvider, string>> = {
   anthropic: "VITE_ANTHROPIC_API_KEY",
   exa: "VITE_EXA_API_KEY",
   finnhub: "VITE_FINNHUB_API_KEY",
+  unusual_whales: "VITE_UW_TOKEN",
   alpha_vantage: "VITE_ALPHA_VANTAGE_API_KEY",
 };
 

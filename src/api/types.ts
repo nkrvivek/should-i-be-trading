@@ -403,6 +403,12 @@ export type InsiderTransaction = {
   transactionCode: string;
   transactionPrice: number;
   symbol: string;
+  transactionType?: string;
+  officerTitle?: string;
+  sector?: string;
+  company?: string;
+  securityTitle?: string;
+  is10b51?: boolean;
 };
 
 export type InsiderSignal = "HEAVY_SELLING" | "NET_SELLING" | "NEUTRAL" | "NET_BUYING" | "HEAVY_BUYING";

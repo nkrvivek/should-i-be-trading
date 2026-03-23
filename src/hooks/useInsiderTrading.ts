@@ -61,7 +61,7 @@ function processTransactions(symbol: string, raw: InsiderTransaction[]): Insider
   };
 }
 
-function processUWTransactions(symbol: string, raw: { amount: number; price: string | null; stock_price: string | null; transaction_code: string; owner_name: string; transaction_date: string }[]): InsiderActivitySummary {
+function processUWTransactions(symbol: string, raw: { amount: number; price: string | null; stock_price: string | null; transaction_code: string; owner_name: string; transaction_date: string; filing_date?: string; officer_title?: string; sector?: string; security_title?: string; is_10b5_1?: boolean }[]): InsiderActivitySummary {
   let totalBuys = 0, totalSells = 0, buyValue = 0, sellValue = 0;
   const transactions: InsiderTransaction[] = [];
 
@@ -84,9 +84,14 @@ function processUWTransactions(symbol: string, raw: { amount: number; price: str
       share: shares,
       change: t.amount,
       transactionDate: t.transaction_date,
+      filingDate: t.filing_date ?? "",
       transactionType: t.transaction_code === "P" ? "P - Purchase" : "S - Sale",
       transactionCode: t.transaction_code,
       transactionPrice: price,
+      officerTitle: t.officer_title ?? "",
+      sector: t.sector ?? "",
+      securityTitle: t.security_title ?? "",
+      is10b51: t.is_10b5_1 ?? false,
     });
   }
 
@@ -169,7 +174,11 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
       }
 
       const json = await res.json();
-      const transactions: InsiderTransaction[] = json.data ?? [];
+      const transactions: InsiderTransaction[] = (json.data ?? []).map((t: Record<string, unknown>) => ({
+        ...t,
+        filingDate: (t.filingDate as string) ?? "",
+        officerTitle: (t.officerTitle as string) ?? "",
+      }));
       const summary = processTransactions(symbol, transactions);
 
       cache.set(symbol, { data: summary, ts: Date.now() });

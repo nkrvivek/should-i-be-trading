@@ -1,8 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { Panel } from "../layout/Panel";
 import type { InsiderActivitySummary, InsiderSignal } from "../../api/types";
+import { getCredential } from "../../lib/credentials";
 
-const FINNHUB_KEY_STORAGE = "sibt_finnhub_key";
 const SCAN_TICKERS = [
   "AAPL", "MSFT", "NVDA", "GOOG", "AMZN", "META", "TSLA", "AMD", "CRM", "NFLX",
   "AVGO", "ORCL", "ADBE", "INTC", "CSCO", "QCOM", "TXN", "MU", "SNOW", "PLTR",
@@ -13,7 +13,7 @@ const SCAN_TICKERS = [
 ];
 
 function getApiKey(): string | null {
-  return localStorage.getItem(FINNHUB_KEY_STORAGE) || import.meta.env.VITE_FINNHUB_API_KEY || null;
+  return getCredential("finnhub");
 }
 
 function classifySignal(buyValue: number, sellValue: number): InsiderSignal {

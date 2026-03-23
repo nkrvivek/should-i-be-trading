@@ -14,6 +14,8 @@ import { RegimeHistory } from "../components/regime/RegimeHistory";
 import { SignalTimeline } from "../components/regime/SignalTimeline";
 import { DailyBriefing } from "../components/regime/DailyBriefing";
 import { InsiderActivityPanel } from "../components/insider/InsiderActivityPanel";
+import { InsiderMarketOverview } from "../components/insider/InsiderMarketOverview";
+import { WatchlistManager } from "../components/watchlist/WatchlistManager";
 import { Panel } from "../components/layout/Panel";
 import type { IndexContract } from "../api/types";
 
@@ -135,9 +137,15 @@ export function DashboardPage() {
             <RegimeHistory history={cri.history ?? []} />
           </div>
 
-          {/* Full-width: Insider Activity */}
+          {/* Full-width: Watchlist Manager */}
           <div style={{ gridColumn: "1 / -1" }}>
+            <WatchlistManager />
+          </div>
+
+          {/* Full-width: Insider Activity (per-ticker) + Market Overview (aggregate) */}
+          <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             <InsiderActivityPanel />
+            <InsiderMarketOverview />
           </div>
 
           {/* Full-width: Daily Briefing */}

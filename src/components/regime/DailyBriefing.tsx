@@ -5,7 +5,7 @@ import type { CriData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
 
 type Props = {
-  cri: CriData;
+  cri: CriData | null;
   verdict: TrafficLightVerdict;
 };
 
@@ -40,12 +40,8 @@ export function DailyBriefing({ cri, verdict }: Props) {
         "- This is NOT investment advice — you're providing market context.",
       ].join("\n");
 
-      const userPrompt = [
-        `Generate a daily market briefing for ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`,
-        "",
+      const regimeLines = cri ? [
         "Current regime data:",
-        `- Verdict: ${verdict.signal} (confidence: ${verdict.confidence}%)`,
-        `- VIX Regime: ${verdict.vixRegime.label}`,
         `- CRI Score: ${(cri.cri?.score ?? 0).toFixed(1)} (${cri.cri?.level ?? "N/A"})`,
         `- VIX: ${cri.vix?.toFixed(1)} | VVIX: ${cri.vvix?.toFixed(1)} | VVIX/VIX: ${cri.vvix_vix_ratio?.toFixed(1)}`,
         `- COR1M: ${cri.cor1m?.toFixed(1)} (5d change: ${cri.cor1m_5d_change?.toFixed(1)})`,
@@ -53,6 +49,14 @@ export function DailyBriefing({ cri, verdict }: Props) {
         `- SPY: ${cri.spy?.toFixed(2)} | SPX distance from 100d MA: ${cri.spx_distance_pct?.toFixed(1)}%`,
         `- Crash trigger: ${cri.crash_trigger?.triggered ? "ACTIVE" : "inactive"}`,
         `- Market: ${cri.market_open ? "OPEN" : "CLOSED"}`,
+      ] : ["Regime data: unavailable (Radon not connected)"];
+
+      const userPrompt = [
+        `Generate a daily market briefing for ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`,
+        "",
+        `- Verdict: ${verdict.signal} (confidence: ${verdict.confidence}%)`,
+        `- VIX Regime: ${verdict.vixRegime.label}`,
+        ...regimeLines,
         "",
         `Verdict reasons: ${verdict.reasons.join("; ")}`,
       ].join("\n");

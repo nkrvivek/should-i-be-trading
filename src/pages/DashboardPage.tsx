@@ -13,6 +13,7 @@ import { CrashTrigger } from "../components/regime/CrashTrigger";
 import { RegimeHistory } from "../components/regime/RegimeHistory";
 import { SignalTimeline } from "../components/regime/SignalTimeline";
 import { DailyBriefing } from "../components/regime/DailyBriefing";
+import { InsiderActivityPanel } from "../components/insider/InsiderActivityPanel";
 import { Panel } from "../components/layout/Panel";
 import type { IndexContract } from "../api/types";
 
@@ -132,6 +133,11 @@ export function DashboardPage() {
             <RegimeStrip cri={cri} prices={prices} connected={connected} />
             {cri.cri?.components && <ComponentBars components={cri.cri.components} />}
             <RegimeHistory history={cri.history ?? []} />
+          </div>
+
+          {/* Full-width: Insider Activity */}
+          <div style={{ gridColumn: "1 / -1" }}>
+            <InsiderActivityPanel />
           </div>
 
           {/* Full-width: Daily Briefing */}

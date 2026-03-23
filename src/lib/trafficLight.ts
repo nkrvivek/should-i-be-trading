@@ -1,4 +1,4 @@
-import type { CriData } from "../api/types";
+import type { CriData, InsiderActivitySummary } from "../api/types";
 import type { MarketStatus } from "./marketHours";
 
 export type TrafficSignal = "TRADE" | "CAUTION" | "NO_TRADE";
@@ -17,6 +17,7 @@ export type TrafficLightVerdict = {
   overrides: string[];
   confidence: number;
   vixRegime: VixRegime;
+  insiderContext?: string;
 };
 
 export type TrafficLightInputs = {
@@ -26,6 +27,8 @@ export type TrafficLightInputs = {
   liveVix?: number | null;
   /** Live VVIX from WS, falls back to cri.vvix */
   liveVvix?: number | null;
+  /** Insider trading activity for watchlist tickers */
+  insiderActivity?: InsiderActivitySummary[] | null;
 };
 
 /**
@@ -65,8 +68,53 @@ export function computeVixRegime(vix: number): VixRegime {
   };
 }
 
+/**
+ * Compute insider trading confidence adjustment.
+ * Heavy selling across multiple tickers = bearish signal, reduces confidence.
+ * Heavy buying = bullish signal, increases confidence.
+ */
+function computeInsiderAdjustment(activity: InsiderActivitySummary[] | null | undefined): {
+  adjustment: number;
+  context: string | null;
+  reasons: string[];
+} {
+  if (!activity || activity.length === 0) return { adjustment: 0, context: null, reasons: [] };
+
+  const heavySellers = activity.filter((a) => a.signal === "HEAVY_SELLING");
+  const netSellers = activity.filter((a) => a.signal === "HEAVY_SELLING" || a.signal === "NET_SELLING");
+  const heavyBuyers = activity.filter((a) => a.signal === "HEAVY_BUYING");
+  const netBuyers = activity.filter((a) => a.signal === "HEAVY_BUYING" || a.signal === "NET_BUYING");
+
+  const totalSellValue = netSellers.reduce((s, a) => s + a.sellValue, 0);
+  const totalBuyValue = netBuyers.reduce((s, a) => s + a.buyValue, 0);
+
+  const reasons: string[] = [];
+  let adjustment = 0;
+
+  // Heavy selling across multiple tickers is a strong bearish signal
+  if (heavySellers.length >= 3) {
+    adjustment -= 15;
+    reasons.push(`Heavy insider selling in ${heavySellers.length} tickers ($${(totalSellValue / 1e6).toFixed(0)}M)`);
+  } else if (heavySellers.length >= 1) {
+    adjustment -= 8;
+    reasons.push(`Insider selling detected in ${netSellers.length} ticker(s)`);
+  }
+
+  // Broad insider buying is a bullish signal
+  if (heavyBuyers.length >= 3) {
+    adjustment += 10;
+    reasons.push(`Heavy insider buying in ${heavyBuyers.length} tickers ($${(totalBuyValue / 1e6).toFixed(0)}M)`);
+  } else if (heavyBuyers.length >= 1) {
+    adjustment += 5;
+    reasons.push(`Insider buying detected in ${netBuyers.length} ticker(s)`);
+  }
+
+  const context = reasons.length > 0 ? reasons.join("; ") : null;
+  return { adjustment, context, reasons };
+}
+
 export function computeVerdict(inputs: TrafficLightInputs): TrafficLightVerdict {
-  const { cri, marketStatus, liveVix, liveVvix } = inputs;
+  const { cri, marketStatus, liveVix, liveVvix, insiderActivity } = inputs;
   const reasons: string[] = [];
   const overrides: string[] = [];
 
@@ -157,6 +205,12 @@ export function computeVerdict(inputs: TrafficLightInputs): TrafficLightVerdict 
     cautionReasons.push(`VIX regime: SELL — complacency at ${vix.toFixed(1)}`);
   }
 
+  // Insider activity adjustments
+  const insider = computeInsiderAdjustment(insiderActivity);
+  if (insider.reasons.length > 0) {
+    cautionReasons.push(...insider.reasons);
+  }
+
   if (cautionReasons.length > 0) {
     overrides.push("Reduce position sizes, prefer defined-risk structures");
     if (criScore >= 50) overrides.push("Consider hedging existing positions");
@@ -166,8 +220,9 @@ export function computeVerdict(inputs: TrafficLightInputs): TrafficLightVerdict 
       signal: "CAUTION",
       reasons: cautionReasons,
       overrides,
-      confidence: 70 - cautionReasons.length * 5,
+      confidence: Math.max(10, 70 - cautionReasons.length * 5 + insider.adjustment),
       vixRegime,
+      insiderContext: insider.context ?? undefined,
     };
   }
 
@@ -182,11 +237,17 @@ export function computeVerdict(inputs: TrafficLightInputs): TrafficLightVerdict 
     reasons.push(`VIX regime: complacency zone (${vix.toFixed(1)}) — consider taking profits`);
   }
 
+  // Insider context for TRADE verdict
+  if (insider.reasons.length > 0) {
+    reasons.push(...insider.reasons);
+  }
+
   return {
     signal: "TRADE",
     reasons,
     overrides: ["Monitor for intraday regime shifts"],
-    confidence: Math.min(90, 60 + (50 - criScore)),
+    confidence: Math.min(95, Math.max(10, 60 + (50 - criScore) + insider.adjustment)),
     vixRegime,
+    insiderContext: insider.context ?? undefined,
   };
 }

@@ -391,3 +391,33 @@ export type PerformanceData = {
   warnings: string[];
   series: PerformanceSeriesPoint[];
 };
+
+/* ─── Insider Trading Types (Finnhub) ──────────────── */
+
+export type InsiderTransaction = {
+  name: string;
+  share: number;
+  change: number;
+  filingDate: string;
+  transactionDate: string;
+  transactionCode: string;
+  transactionPrice: number;
+  symbol: string;
+};
+
+export type InsiderSignal = "HEAVY_SELLING" | "NET_SELLING" | "NEUTRAL" | "NET_BUYING" | "HEAVY_BUYING";
+
+export type InsiderActivitySummary = {
+  symbol: string;
+  transactions: InsiderTransaction[];
+  totalBuys: number;
+  totalSells: number;
+  netShares: number;
+  netValue: number;
+  buyValue: number;
+  sellValue: number;
+  signal: InsiderSignal;
+  signalScore: number; // -100 to +100
+  period: string;
+  lastUpdated: string;
+};

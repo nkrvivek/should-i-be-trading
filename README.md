@@ -42,6 +42,25 @@ Market Regime  ──>  Traffic Light Verdict  ──>  TRADE / CAUTION / NO TRA
 - Score bar (-100 to +100) with transaction-level detail
 - Insider signals feed directly into verdict confidence scoring
 
+### Congressional Trading
+- **STOCK Act disclosures** from US House members (free, no API key needed)
+- Buy/sell filter with summary counts
+- Top-traded tickers across Congress
+- 90-day rolling window with representative name, state, ticker, amount range
+- Source: House Stock Watcher public dataset
+
+### Sector Heat Map
+- All 11 S&P 500 sector ETFs (XLK, XLF, XLV, XLE, etc.)
+- Color-coded performance grid with intensity based on magnitude
+- Horizontal bar chart for quick sector rotation comparison
+- Real-time quotes via Finnhub
+
+### TradingView Charts
+- Full TradingView advanced chart embed with candlesticks and MACD
+- Symbol search to chart any ticker
+- Auto-adapts to light/dark theme
+- No API key needed
+
 ### Watchlist Management
 - Create, name, and manage multiple watchlists
 - Add/remove tickers with one click
@@ -69,7 +88,7 @@ Market Regime  ──>  Traffic Light Verdict  ──>  TRADE / CAUTION / NO TRA
 
 | Page | Description |
 |------|-------------|
-| **Dashboard** | Traffic light, CRI gauge, regime strip, insider activity, watchlists, daily briefing, signal history |
+| **Dashboard** | Traffic light, CRI gauge, regime strip, sector heat map, TradingView charts, insider activity, congressional trading, watchlists, daily briefing, signal history |
 | **Terminal** | Multi-panel Bloomberg layout: real-time watchlist, dark pool flow, options flow, portfolio, orders |
 | **Macro** | Yield curve (FRED), economic calendar (Finnhub), macro indicators |
 | **Analysis** | Claude AI chat with regime context, Exa research feed |
@@ -183,7 +202,9 @@ npm run build   # Production build
 | Source | Data | Cost |
 |--------|------|------|
 | FRED | Yield curves, GDP, CPI, unemployment, fed funds rate | Free |
-| Finnhub | Economic calendar, insider trades, ESG, earnings | Free (60 calls/min) |
+| Finnhub | Economic calendar, insider trades, sector quotes | Free (60 calls/min) |
+| House Stock Watcher | Congressional stock trades (STOCK Act) | Free, no key |
+| TradingView | Advanced charts embed | Free, no key |
 | SEC EDGAR | 13F filings, Form 4 insider trades | Free |
 
 ### Bring Your Own Key (user provides in Settings)
@@ -203,6 +224,9 @@ npm run build   # Production build
 | Regime Dashboard | Yes | Yes | Yes |
 | Macro Dashboard | Yes | Yes | Yes |
 | Insider Activity | Yes | Yes | Yes |
+| Congressional Trading | Yes | Yes | Yes |
+| Sector Heat Map | Yes | Yes | Yes |
+| TradingView Charts | Yes | Yes | Yes |
 | Watchlists | 1 / 10 tickers | Unlimited | Unlimited |
 | Terminal | — | Yes | Yes |
 | AI Analysis | — | Yes | Yes |
@@ -246,8 +270,10 @@ src/
 │   ├── alerts/    # Alert rules and history
 │   ├── auth/      # Login, signup, auth provider
 │   ├── flow/      # Dark pool feed, options flow
+│   ├── congress/  # Congressional trading panel
 │   ├── insider/   # Insider activity panel, market overview
 │   ├── layout/    # Terminal shell, panel grid, status bar
+│   ├── market/    # Sector heat map, TradingView chart
 │   ├── macro/     # Yield curve, economic calendar, indicators
 │   ├── portfolio/ # Positions, orders
 │   ├── regime/    # Traffic light, CRI gauge, component bars

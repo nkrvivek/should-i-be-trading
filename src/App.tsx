@@ -70,9 +70,9 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function GatedPage({ feature, children }: { feature: Feature; children: React.ReactNode }) {
-  const { profile } = useAuthStore();
+  const { effectiveTier } = useAuthStore();
   if (!isSupabaseConfigured()) return <>{children}</>;
-  if (!hasFeature(profile?.tier, feature)) {
+  if (!hasFeature(effectiveTier(), feature)) {
     return <UpgradePrompt feature={feature} />;
   }
   return <>{children}</>;
@@ -80,7 +80,7 @@ function GatedPage({ feature, children }: { feature: Feature; children: React.Re
 
 /** Exported for use in TerminalShell header */
 export function AppNav() {
-  const { user, profile } = useAuthStore();
+  const { user, profile, effectiveTier, isTrialActive, trialDaysLeft } = useAuthStore();
   const navigate = useNavigate();
   const { toggleTheme, theme } = useAppStore();
 
@@ -114,11 +114,28 @@ export function AppNav() {
           })}
         >
           {label}
-          {pro && !hasFeature(profile?.tier, "terminal") && (
+          {pro && !hasFeature(effectiveTier(), "terminal") && (
             <span style={{ fontSize: 7, color: "var(--warning)", marginLeft: 3, verticalAlign: "super" }}>PRO</span>
           )}
         </NavLink>
       ))}
+
+      {/* Trial badge */}
+      {isTrialActive() && (
+        <span style={{
+          padding: "2px 8px",
+          fontFamily: "var(--font-mono)",
+          fontSize: 9,
+          fontWeight: 600,
+          color: "var(--signal-core)",
+          background: "rgba(5, 173, 152, 0.1)",
+          border: "1px solid var(--signal-core)",
+          borderRadius: 999,
+          letterSpacing: "0.03em",
+        }}>
+          TRIAL: {trialDaysLeft()}d left
+        </span>
+      )}
 
       {/* Theme toggle */}
       <button

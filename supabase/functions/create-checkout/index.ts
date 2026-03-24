@@ -60,7 +60,8 @@ Deno.serve(async (req) => {
       mode: "subscription",
       line_items: [{ price: priceId, quantity: 1 }],
       subscription_data: {
-        trial_period_days: 14,
+        // No trial_period_days — trial is handled locally (no card required)
+        // Users get 14-day Pro access on signup, then subscribe here when ready
         metadata: { supabase_user_id: ctx.userId, tier },
       },
       success_url: `${req.headers.get("origin") ?? "https://sibt.ai"}/settings?checkout=success`,

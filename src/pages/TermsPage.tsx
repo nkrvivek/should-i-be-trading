@@ -69,9 +69,10 @@ export function TermsPage() {
         </Section>
 
         <Section title="11. Free Trial">
-          New paid subscriptions include a 14-day free trial. You will not be charged during the trial period.
-          If you do not cancel before the trial ends, your payment method will be charged automatically.
-          You may cancel at any time during the trial with no obligation.
+          New accounts receive a 14-day Pro trial with no credit card required. You have full access to
+          Pro features during the trial period. When the trial expires, your account reverts to the Free
+          tier. To continue using Pro features, you must subscribe through the pricing page. No automatic
+          charges will occur.
         </Section>
 
         <Section title="12. Price Changes">

@@ -6,12 +6,15 @@ import { useOrders } from "../hooks/useOrders";
 import { useScanner } from "../hooks/useScanner";
 import { useDiscover } from "../hooks/useDiscover";
 import { useMarketHours } from "../hooks/useMarketHours";
+import { useMarketScore } from "../hooks/useMarketScore";
 import { computeVerdict } from "../lib/trafficLight";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { Panel } from "../components/layout/Panel";
 import { TrafficLight } from "../components/regime/TrafficLight";
 import { RegimeStrip } from "../components/regime/RegimeStrip";
 import { ComponentBars } from "../components/regime/ComponentBars";
+import { DailyBriefing } from "../components/regime/DailyBriefing";
+import { ChatPanel } from "../components/ai/ChatPanel";
 import { WatchlistPanel } from "../components/watchlist/WatchlistPanel";
 import { DarkPoolFeed } from "../components/flow/DarkPoolFeed";
 import { OptionsFlowFeed } from "../components/flow/OptionsFlowFeed";
@@ -32,6 +35,7 @@ export function TerminalPage() {
   const { data: scanner, loading: scannerLoading, refresh: refreshScanner } = useScanner();
   const { data: discover, loading: discoverLoading, refresh: refreshDiscover } = useDiscover();
   const { status } = useMarketHours();
+  const { score: marketScore } = useMarketScore();
 
   // Gather all symbols for WS subscription
   const portfolioSymbols = useMemo(
@@ -55,8 +59,9 @@ export function TerminalPage() {
       marketStatus: status,
       liveVix: prices["VIX"]?.last,
       liveVvix: prices["VVIX"]?.last,
+      marketScore,
     }),
-    [cri, status, prices],
+    [cri, status, prices, marketScore],
   );
 
   return (
@@ -110,6 +115,12 @@ export function TerminalPage() {
           </Panel>
         </div>
       )}
+
+      {/* AI Features */}
+      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+        <DailyBriefing cri={cri} verdict={verdict} marketScore={marketScore} />
+        <ChatPanel />
+      </div>
     </TerminalShell>
   );
 }

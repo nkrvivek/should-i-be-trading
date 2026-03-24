@@ -14,6 +14,7 @@ import { PricingPage } from "./pages/PricingPage";
 import { LandingPage } from "./pages/LandingPage";
 import { RiskDisclosurePage } from "./pages/RiskDisclosurePage";
 import { FeaturesPage } from "./pages/FeaturesPage";
+import { InsiderPage } from "./pages/InsiderPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="/" element={<SmartHome />} />
           <Route path="/terminal" element={<GatedPage feature="terminal"><TerminalPage /></GatedPage>} />
           <Route path="/analysis" element={<GatedPage feature="ai_analysis"><AnalysisPage /></GatedPage>} />
+          <Route path="/insider" element={<InsiderPage />} />
           <Route path="/macro" element={<MacroPage />} />
           <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
@@ -88,8 +90,9 @@ export function AppNav() {
 
   const links = [
     { to: "/", label: "DASHBOARD" },
-    { to: "/terminal", label: "TERMINAL", pro: true },
+    { to: "/insider", label: "INSIDER" },
     { to: "/macro", label: "MACRO" },
+    { to: "/terminal", label: "TERMINAL", pro: true },
     { to: "/analysis", label: "ANALYSIS", pro: true },
     { to: "/features", label: "FEATURES" },
     { to: "/glossary", label: "LEARN" },

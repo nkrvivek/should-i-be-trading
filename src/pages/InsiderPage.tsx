@@ -1,0 +1,47 @@
+import { TerminalShell } from "../components/layout/TerminalShell";
+import { InsiderActivityPanel } from "../components/insider/InsiderActivityPanel";
+import { InsiderMarketOverview } from "../components/insider/InsiderMarketOverview";
+import { CongressTradingPanel } from "../components/congress/CongressTradingPanel";
+
+export function InsiderPage() {
+  return (
+    <TerminalShell>
+      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* Header */}
+        <div style={{
+          padding: "12px 16px",
+          background: "var(--bg-panel)",
+          border: "1px solid var(--border-dim)",
+          borderRadius: 4,
+        }}>
+          <h2 style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 14,
+            fontWeight: 700,
+            color: "var(--text-primary)",
+            margin: 0,
+          }}>
+            Insider & Congressional Trading
+          </h2>
+          <p style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: 11,
+            color: "var(--text-muted)",
+            margin: "4px 0 0",
+          }}>
+            SEC Form 4 filings and STOCK Act disclosures. Track what corporate insiders and Congress are buying and selling.
+          </p>
+        </div>
+
+        {/* Individual ticker search + Congress trades side by side */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <InsiderActivityPanel />
+          <CongressTradingPanel />
+        </div>
+
+        {/* Full-width market overview scan */}
+        <InsiderMarketOverview />
+      </div>
+    </TerminalShell>
+  );
+}

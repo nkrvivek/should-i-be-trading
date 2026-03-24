@@ -40,12 +40,29 @@ export function TierManager() {
     if (!user) return;
     setLoading(true);
     try {
-      // If user hasn't had a trial yet, activate no-card trial first
       const currentProfile = useAuthStore.getState().profile;
-      const hasHadTrial = currentProfile?.trial_ends_at != null;
+      const trialActive = isTrialActive();
+      const hasSubscription = subscription && subscription.status === "active" && subscription.plan_tier !== "free";
 
-      if (!hasHadTrial) {
-        // Activate 14-day no-card trial directly
+      // If user is on an active trial, just upgrade the trial tier
+      if (trialActive && !hasSubscription) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ trial_tier: tier })
+          .eq("id", user.id);
+
+        if (error) throw new Error(error.message);
+
+        const store = useAuthStore.getState();
+        if (store.profile) {
+          store.setProfile({ ...store.profile, trial_tier: tier });
+        }
+        setLoading(false);
+        return;
+      }
+
+      // If no trial at all, activate 14-day trial
+      if (!currentProfile?.trial_ends_at) {
         const trialEnd = new Date();
         trialEnd.setDate(trialEnd.getDate() + 14);
         const { error } = await supabase
@@ -58,7 +75,6 @@ export function TierManager() {
 
         if (error) throw new Error(error.message);
 
-        // Update local store to reflect new trial immediately
         const store = useAuthStore.getState();
         if (store.profile) {
           store.setProfile({
@@ -71,7 +87,7 @@ export function TierManager() {
         return;
       }
 
-      // Trial already used — go to Stripe checkout for paid subscription
+      // Trial expired + no subscription — go to Stripe checkout
       await redirectToCheckout(tier, "year");
     } catch (err) {
       console.error("Upgrade error:", err);

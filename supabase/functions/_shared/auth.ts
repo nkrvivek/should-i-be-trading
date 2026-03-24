@@ -9,43 +9,35 @@ export interface AuthContext {
  * Verify the Supabase JWT from the Authorization header and return user context.
  */
 export async function authenticateRequest(req: Request): Promise<AuthContext> {
+  // User token can come from x-user-token header (preferred, avoids gateway ES256 rejection)
+  // or from Authorization header (legacy)
+  const userToken = req.headers.get("x-user-token");
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    throw new Error("Missing or invalid Authorization header");
+
+  const token = userToken || (authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null);
+
+  if (!token) {
+    throw new Error("Missing authentication. Send user token via x-user-token header.");
   }
 
-  const token = authHeader.replace("Bearer ", "");
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-  // Try multiple strategies to verify the user token
-  const keysToTry = [
-    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
-    Deno.env.get("SUPABASE_ANON_KEY"),
-  ].filter(Boolean) as string[];
+  // Use service role to verify the user's JWT
+  const adminClient = createClient(supabaseUrl, serviceRoleKey);
+  const { data: { user }, error } = await adminClient.auth.getUser(token);
 
-  let lastError: string = "No keys available";
-
-  for (const key of keysToTry) {
-    try {
-      const client = createClient(supabaseUrl, key, {
-        global: { headers: { Authorization: `Bearer ${token}` } },
-      });
-
-      const { data: { user }, error } = await client.auth.getUser(token);
-      if (user && !error) {
-        // Create a user-scoped client for RLS queries
-        const userClient = createClient(supabaseUrl, key, {
-          global: { headers: { Authorization: `Bearer ${token}` } },
-        });
-        return { userId: user.id, supabase: userClient };
-      }
-      lastError = error?.message ?? "User not found";
-    } catch (e) {
-      lastError = e instanceof Error ? e.message : "Auth error";
-    }
+  if (error || !user) {
+    throw new Error(`Auth failed: ${error?.message ?? "Invalid token"}`);
   }
 
-  throw new Error(`Auth failed: ${lastError}`);
+  // Create a user-scoped client for RLS queries
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
+  const userClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+
+  return { userId: user.id, supabase: userClient };
 }
 
 /**
@@ -77,7 +69,7 @@ export async function getUserCredential(
 /** Standard CORS headers for edge functions */
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
 };
 
 /** Create a JSON response with CORS headers */

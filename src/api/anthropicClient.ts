@@ -65,13 +65,15 @@ export async function chatWithClaude(
       throw new Error("Sign in to use AI features, or add your own Anthropic API key in Settings.");
     }
 
-    // Manual fetch with both apikey and Authorization headers explicitly set
+    // Send anon key in Authorization (gateway requires HS256 JWT),
+    // user token in x-user-token (edge function reads it for auth)
     const response = await fetch(`${supabaseUrl}/functions/v1/proxy-anthropic`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "apikey": supabaseAnonKey,
-        "Authorization": `Bearer ${userToken}`,
+        "Authorization": `Bearer ${supabaseAnonKey}`,
+        "x-user-token": userToken,
       },
       body: JSON.stringify(body),
     });

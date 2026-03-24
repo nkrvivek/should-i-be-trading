@@ -75,7 +75,7 @@ export function useMarketScore() {
     setError(null);
 
     try {
-      const apiKey = getCredential("finnhub");
+      const apiKey = getCredential("finnhub") ?? undefined;
 
       // Parallel fetch: VIX quote, SPY quote, SPY candles (for MAs + RSI), sector quotes
       const now = Math.floor(Date.now() / 1000);

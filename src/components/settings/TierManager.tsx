@@ -23,7 +23,7 @@ const TIER_INFO: Record<UserTier, { label: string; color: string; features: stri
 };
 
 export function TierManager() {
-  const { user, profile, subscription, isTrialActive, trialDaysLeft, effectiveTier } = useAuthStore();
+  const { user, subscription, isTrialActive, trialDaysLeft, effectiveTier } = useAuthStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 

@@ -98,7 +98,7 @@ export function CongressTradingPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "buy" | "sell">("all");
-  const [source, setSource] = useState<"uw" | "rapidapi" | "">(">>");
+  const [source, setSource] = useState<"uw" | "rapidapi" | "">("")
   const [page, setPage] = useState(0);
 
   const rapidApiKey = import.meta.env.VITE_RAPIDAPI_KEY;

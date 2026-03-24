@@ -112,7 +112,6 @@ export function SectorHeatMap() {
             gap: 6,
           }}>
             {sectors.map((s) => {
-              const sectorDef = SECTORS.find((d) => d.symbol === s.symbol);
               const isPositive = s.change >= 0;
               const intensity = Math.min(1, Math.abs(s.change) / 3); // normalize to 3% max
               const bgColor = isPositive

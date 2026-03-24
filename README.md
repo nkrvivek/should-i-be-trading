@@ -204,28 +204,44 @@ npm test        # Tests
 | Anthropic Claude | AI market analysis, daily briefing |
 | Exa | Web research |
 
+### Signal Backtester (Starter+)
+- Simulates 90 trading days of market quality scores
+- Compares signal-following strategy vs buy-and-hold SPY
+- Shows trade count, win rate, cumulative returns, max drawdown, Sharpe ratio
+- Clear verdict: does the system actually add value?
+
+### Push Notifications (Starter+)
+- Browser push alerts via Service Worker (PWA)
+- Verdict change notifications (TRADE to NO TRADE)
+- VIX spike alerts (configurable thresholds)
+- Insider buying surge detection
+- Works on desktop and mobile
+
 ## Pricing
 
-| | Free | Pro | Enterprise |
-|--|------|-----|-----------|
-| Market Quality Score | Yes | Yes | Yes |
-| Regime Monitor (basic) | Yes | Yes | Yes |
-| Financial Stress Indicator | Yes | Yes | Yes |
-| Fear & Greed Gauge | Yes | Yes | Yes |
-| Insider Trading | Yes | Yes | Yes |
-| Congressional Trading | Yes | Yes | Yes |
-| Earnings Calendar | Yes | Yes | Yes |
-| Sector Heat Map | Yes | Yes | Yes |
-| TradingView Charts | Yes | Yes | Yes |
-| Macro Dashboard | Yes | Yes | Yes |
-| Glossary | Yes | Yes | Yes |
-| Regime Signal Interpretations | — | Yes | Yes |
-| AI Briefing | 5/day | 25/day | 100/day |
-| Terminal (Dark Pool) | — | Yes | Yes |
-| AI Analysis | — | Yes | Yes |
-| Alerts | — | Yes | Yes |
+| Feature | Free | Starter ($12/mo) | Pro ($29/mo) | Enterprise ($79/mo) |
+|---------|------|----------|-----|-----------|
+| Market Quality Score | Yes | Yes | Yes | Yes |
+| Regime Monitor | Yes | Yes | Yes | Yes |
+| Financial Stress Indicator | Yes | Yes | Yes | Yes |
+| Fear & Greed Gauge | Yes | Yes | Yes | Yes |
+| Insider Trading | Yes | Yes | Yes | Yes |
+| Congressional Trading | Yes | Yes | Yes | Yes |
+| Earnings Calendar | Yes | Yes | Yes | Yes |
+| Sector Heat Map | Yes | Yes | Yes | Yes |
+| TradingView Charts | Yes | Yes | Yes | Yes |
+| Macro Dashboard | Yes | Yes | Yes | Yes |
+| Glossary | Yes | Yes | Yes | Yes |
+| Signal Backtester | — | Yes | Yes | Yes |
+| Push Notifications | — | Yes | Yes | Yes |
+| Regime Signal Interpretations | — | Yes | Yes | Yes |
+| AI Briefing | 5/day | 15/day | 25/day | 100/day |
+| Terminal (Dark Pool) | — | — | Yes | Yes |
+| AI Analysis | — | — | Yes | Yes |
+| Automated Trading | — | — | — | Yes |
+| Cloud Radon Instance | — | — | — | Yes |
 
-14-day Pro trial, no credit card required.
+14-day Pro trial, no credit card required. Annual pricing: Starter $99/yr, Pro $249/yr, Enterprise $699/yr.
 
 ## Credits
 

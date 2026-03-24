@@ -137,6 +137,9 @@ export function LandingPage() {
         {["FRED", "Finnhub", "Anthropic Claude", "Radon", "Interactive Brokers", "Exa"].map((name) => (
           <span key={name} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#94a3b8" }}>{name}</span>
         ))}
+        <a href="https://github.com/nkrvivek/should-i-be-trading" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#05AD98", textDecoration: "none" }}>
+          GitHub
+        </a>
       </section>
 
       {/* Features */}
@@ -171,19 +174,29 @@ export function LandingPage() {
             tag="FREE"
           />
           <FeatureCard
-            title="Dark Pool + Options Flow"
-            description="Surface institutional positioning from dark pool prints and unusual options activity via Radon integration. Connect your Interactive Brokers account for real-time portfolio and order management."
-            tag="PRO"
-          />
-          <FeatureCard
             title="Market Regime Monitor"
             description="Three-pillar institutional analysis: Regime (credit spreads, yield curve, SPX/200DMA), Fragility (breadth, RSP/SPY ratio), and Trigger (VIX, term structure). Eight signals scored 0-100 with composite market state classification."
             tag="FREE"
           />
           <FeatureCard
             title="Financial Stress Indicator"
-            description="Four market signals compressed into one number: (HYG/TLT) / (Vol x HY Spread). When risk appetite is healthy, bond vol is low, and credit spreads are tight, the FSI rises. When all three deteriorate, it collapses — a leading indicator for equity drawdowns."
+            description="Four market signals compressed into one number: (HYG/TLT) / (Vol x HY Spread). When risk appetite is healthy, bond vol is low, and credit spreads are tight, the FSI rises. When all three deteriorate, it collapses."
             tag="FREE"
+          />
+          <FeatureCard
+            title="Signal Backtester"
+            description="Test what would have happened if you only traded on TRADE days and sat out NO TRADE days. Simulates 3-month history using real market quality scores. Compare your strategy vs buy-and-hold SPY."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="Push Notifications"
+            description="Get notified when the market regime flips. Verdict changes, VIX spikes, insider buying surges, or earnings surprises — delivered to your browser. Never miss a signal shift."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="Dark Pool + Options Flow"
+            description="Surface institutional positioning from dark pool prints and unusual options activity via Radon integration. Connect your Interactive Brokers account for real-time portfolio and order management."
+            tag="PRO"
           />
         </div>
       </section>
@@ -277,7 +290,7 @@ function Light({ color, label, active }: { color: string; label: string; active?
 }
 
 function FeatureCard({ title, description, tag }: { title: string; description: string; tag: string }) {
-  const tagColor = tag === "FREE" ? "#05AD98" : tag === "PRO" ? "#F5A623" : "#8B5CF6";
+  const tagColor = tag === "FREE" ? "#05AD98" : tag === "STARTER" ? "#60a5fa" : tag === "PRO" ? "#F5A623" : "#8B5CF6";
   return (
     <div style={{
       padding: 24,

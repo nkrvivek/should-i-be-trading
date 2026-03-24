@@ -3,7 +3,7 @@ import { TerminalShell } from "../components/layout/TerminalShell";
 
 type FeatureSection = {
   title: string;
-  tier: "FREE" | "PRO" | "ENTERPRISE";
+  tier: "FREE" | "STARTER" | "PRO" | "ENTERPRISE";
   description: string;
   details: string[];
   mockup: string; // ASCII art mockup
@@ -101,6 +101,58 @@ const FEATURES: FeatureSection[] = [
 │  ░░ XLB -0.2%  ░░ XLU -0.5%                │
 │                                              │
 │  Tech and Healthcare leading. Energy weak.   │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Signal Backtester",
+    tier: "STARTER",
+    description: "Test what would have happened if you only traded on TRADE days and sat out NO TRADE days. Uses simulated historical market quality scores over 3 months.",
+    details: [
+      "Simulates 90 trading days of market regime signals",
+      "Compares signal-following strategy vs buy-and-hold SPY",
+      "Shows trade count, win rate, and cumulative returns",
+      "Risk metrics: max drawdown, Sharpe ratio",
+      "Clear verdict: does the system actually add value?",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  SIGNAL BACKTESTER                 [RUN]    │
+│                                              │
+│  Period: 90 trading days                     │
+│  TRADE signals: 42  |  NO_TRADE: 31         │
+│  CAUTION: 17                                 │
+│                                              │
+│  Strategy    Return  MaxDD   Sharpe          │
+│  Signal      +8.2%   -3.1%  1.84            │
+│  Buy & Hold  +5.1%   -7.8%  0.92            │
+│                                              │
+│  VERDICT: Signal strategy outperformed       │
+│  by +3.1% with 60% less drawdown.           │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Push Notifications",
+    tier: "STARTER",
+    description: "Get browser push alerts when market conditions change. Never miss a regime flip, VIX spike, or insider surge.",
+    details: [
+      "Verdict change alerts (TRADE to NO TRADE)",
+      "VIX spike notifications (>25, >30, >35)",
+      "Insider buying surge detection",
+      "Earnings surprise alerts (beat/miss)",
+      "Customizable alert preferences",
+      "Works on desktop and mobile (PWA)",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  NOTIFICATIONS                              │
+│                                              │
+│  [ON] Verdict changes                        │
+│  [ON] VIX spikes (threshold: 25)            │
+│  [ON] Insider buying surges                  │
+│  [OFF] Earnings surprises                    │
+│                                              │
+│  Recent:                                     │
+│  12:34 PM  VERDICT → NO TRADE (CRI 68)     │
+│  11:15 AM  VIX spike to 28.4 (+12%)        │
+│   9:31 AM  INSIDER: LMT +$42M net buying   │
 └──────────────────────────────────────────────┘`,
   },
   {
@@ -266,6 +318,7 @@ const FEATURES: FeatureSection[] = [
 
 const TIER_COLORS: Record<string, string> = {
   FREE: "#05AD98",
+  STARTER: "#60a5fa",
   PRO: "#F5A623",
   ENTERPRISE: "#8B5CF6",
 };

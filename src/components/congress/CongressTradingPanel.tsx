@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Panel } from "../layout/Panel";
-import { hasUWToken, fetchUWCongressTrades } from "../../api/uwClient";
+import { hasUWToken, fetchUWCongressTrades, type UWCongressTrade } from "../../api/uwClient";
 import { isSupabaseConfigured } from "../../lib/supabase";
 
 type NormalizedTrade = {

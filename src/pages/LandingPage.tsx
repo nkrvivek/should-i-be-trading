@@ -134,7 +134,7 @@ export function LandingPage() {
         borderBottom: "1px solid #1e293b",
       }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#64748b", letterSpacing: "0.05em" }}>POWERED BY</span>
-        {["Interactive Brokers", "Unusual Whales", "Anthropic Claude", "FRED", "SEC EDGAR", "Exa"].map((name) => (
+        {["FRED", "Finnhub", "Anthropic Claude", "Radon", "Interactive Brokers", "Exa"].map((name) => (
           <span key={name} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#94a3b8" }}>{name}</span>
         ))}
       </section>
@@ -146,34 +146,34 @@ export function LandingPage() {
         </h2>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
           <FeatureCard
-            title="Market Regime Analysis"
-            description="Crash Risk Index combines VIX term structure, equity put/call ratios, credit spreads, and realized volatility into a single score. Know instantly if conditions are dangerous."
+            title="Market Quality Score"
+            description="Five-category scoring engine: Volatility (VIX), Momentum, Trend (SP500 vs 20/50/200d MAs), Sector Breadth, and Macro (10Y yield). Computes a 0-100 score with clear YES / CAUTION / NO verdict."
             tag="FREE"
           />
           <FeatureCard
             title="Insider + Congressional Trading"
-            description="Track SEC Form 4 filings and STOCK Act disclosures in real time. See when insiders are dumping shares across 50+ major stocks and what Congress is buying."
+            description="SEC Form 4 filings for any ticker plus STOCK Act disclosures from Congress. 25-stock market scan shows aggregate insider buying and selling. See what insiders and politicians are doing with their money."
+            tag="FREE"
+          />
+          <FeatureCard
+            title="Earnings Calendar"
+            description="80+ major stocks across 10 sectors. Weekly groupings with pre/after market timing. EPS and revenue estimates with beat/miss tracking. Filter by sector, timing, and week."
             tag="FREE"
           />
           <FeatureCard
             title="AI Market Confidant"
-            description="Claude analyzes your regime data, insider signals, and market context to generate a daily briefing. Ask questions about any ticker. No generic advice, only data-driven analysis."
-            tag="PRO"
-          />
-          <FeatureCard
-            title="Dark Pool + Options Flow"
-            description="Surface institutional positioning from dark pool prints and unusual options activity. See what smart money is doing before it shows up in price."
+            description="Claude generates a daily market briefing grounded in your regime data, VIX, sector performance, and insider signals. Chat with AI about any market question. Rate-limited free tier included."
             tag="PRO"
           />
           <FeatureCard
             title="Sector Heat Map + Charts"
-            description="Visualize money flow across all 11 S&P sectors. TradingView chart integration for any ticker. See rotation patterns at a glance."
+            description="All 11 S&P sector ETFs with color-coded performance and bar chart comparison. TradingView advanced charts for any ticker with candlesticks and MACD. No API key needed."
             tag="FREE"
           />
           <FeatureCard
-            title="Automated Strategies"
-            description="Define signal-to-order rules. Set daily loss limits and position caps. Kill switch always available. Full audit log. Paper trading validation before going live."
-            tag="ENTERPRISE"
+            title="Dark Pool + Options Flow"
+            description="Surface institutional positioning from dark pool prints and unusual options activity via Radon integration. Connect your Interactive Brokers account for real-time portfolio and order management."
+            tag="PRO"
           />
         </div>
       </section>
@@ -184,9 +184,9 @@ export function LandingPage() {
           How It Works
         </h2>
         <div style={{ display: "flex", justifyContent: "center", gap: 48, maxWidth: 800, margin: "0 auto" }}>
-          <Step n={1} title="Connect" desc="Add your brokerage and API keys. BYOK model means your data stays yours." />
-          <Step n={2} title="Analyze" desc="SIBT pulls regime data, insider activity, and flow signals. AI synthesizes it all." />
-          <Step n={3} title="Decide" desc="Get a clear verdict: TRADE, CAUTION, or NO TRADE. Plus the reasoning behind it." />
+          <Step n={1} title="Sign Up" desc="14-day Pro trial, no credit card required. Free tier available permanently." />
+          <Step n={2} title="Analyze" desc="Market Quality Score, insider signals, earnings calendar, and AI briefings computed automatically." />
+          <Step n={3} title="Decide" desc="Get a clear verdict: TRADE, CAUTION, or NO TRADE. Bring your own keys for advanced features." />
         </div>
       </section>
 

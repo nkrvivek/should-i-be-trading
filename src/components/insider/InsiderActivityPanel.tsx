@@ -340,11 +340,12 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
   const [companyInfo, setCompanyInfo] = useState<{ name: string; sector: string } | null>(null);
   const { data, loading, error, refresh } = useInsiderTrading(activeSymbol || null);
 
-  // Fetch company info when active symbol changes
+  // Fetch company info only when insider data loads (avoids showing name before data)
   useEffect(() => {
     if (!activeSymbol) { setCompanyInfo(null); return; }
+    if (!data && !error) return; // Wait for insider data first
     fetchCompanyInfo(activeSymbol).then(setCompanyInfo);
-  }, [activeSymbol]);
+  }, [activeSymbol, data, error]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

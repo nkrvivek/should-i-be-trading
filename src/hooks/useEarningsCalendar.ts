@@ -1,6 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
 
+export type AnalystConsensus = {
+  strongBuy: number;
+  buy: number;
+  hold: number;
+  sell: number;
+  strongSell: number;
+  total: number;
+  signal: "STRONG BUY" | "BUY" | "HOLD" | "SELL" | "STRONG SELL";
+  buyPct: number; // 0-100
+};
+
+export type EpsSurprise = {
+  quarter: number;
+  year: number;
+  actual: number;
+  estimate: number;
+  surprisePercent: number;
+};
+
 export type EarningsEntry = {
   date: string;
   symbol: string;
@@ -12,6 +31,8 @@ export type EarningsEntry = {
   quarter: number;
   year: number;
   sector?: string;
+  analyst?: AnalystConsensus;
+  epsSurprises?: EpsSurprise[];
 };
 
 // Sector classification for major stocks
@@ -83,6 +104,10 @@ export function useEarningsCalendar(weeksAhead = 4) {
         .sort((a, b) => a.date.localeCompare(b.date));
 
       setEarnings(filtered);
+
+      // Phase 2: Fetch analyst data for each unique ticker (batched, delayed)
+      const uniqueSymbols = [...new Set(filtered.map((e) => e.symbol))];
+      enrichWithAnalystData(uniqueSymbols, supabaseUrl, supabaseKey, filtered, setEarnings);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch earnings");
     } finally {
@@ -92,4 +117,82 @@ export function useEarningsCalendar(weeksAhead = 4) {
 
   useEffect(() => { fetchEarnings(); }, [fetchEarnings]);
   return { earnings, loading, error, refresh: fetchEarnings };
+}
+
+function classifyConsensus(recs: { strongBuy: number; buy: number; hold: number; sell: number; strongSell: number }): AnalystConsensus {
+  const total = recs.strongBuy + recs.buy + recs.hold + recs.sell + recs.strongSell;
+  if (total === 0) return { ...recs, total: 0, signal: "HOLD", buyPct: 50 };
+
+  const buyPct = ((recs.strongBuy + recs.buy) / total) * 100;
+
+  let signal: AnalystConsensus["signal"];
+  if (buyPct >= 80) signal = "STRONG BUY";
+  else if (buyPct >= 60) signal = "BUY";
+  else if (buyPct >= 40) signal = "HOLD";
+  else if (buyPct >= 20) signal = "SELL";
+  else signal = "STRONG SELL";
+
+  return { ...recs, total, signal, buyPct };
+}
+
+async function enrichWithAnalystData(
+  symbols: string[],
+  supabaseUrl: string,
+  supabaseKey: string,
+  entries: EarningsEntry[],
+  setEarnings: (e: EarningsEntry[]) => void,
+) {
+  const headers = { Authorization: `Bearer ${supabaseKey}`, apikey: supabaseKey };
+  const analystMap = new Map<string, AnalystConsensus>();
+  const surpriseMap = new Map<string, EpsSurprise[]>();
+
+  // Batch 3 at a time with delays
+  for (let i = 0; i < symbols.length; i += 3) {
+    const batch = symbols.slice(i, i + 3);
+    await Promise.all(batch.map(async (sym) => {
+      try {
+        // Analyst recommendations
+        const recRes = await fetch(
+          `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/recommendation&symbol=${sym}`,
+          { headers },
+        );
+        if (recRes.ok) {
+          const recs = await recRes.json();
+          if (Array.isArray(recs) && recs.length > 0) {
+            analystMap.set(sym, classifyConsensus(recs[0]));
+          }
+        }
+      } catch { /* ignore */ }
+
+      try {
+        // EPS surprises (last 4 quarters)
+        const epsRes = await fetch(
+          `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/earnings&symbol=${sym}&limit=4`,
+          { headers },
+        );
+        if (epsRes.ok) {
+          const eps = await epsRes.json();
+          if (Array.isArray(eps) && eps.length > 0) {
+            surpriseMap.set(sym, eps.map((e: { quarter: number; year: number; actual: number; estimate: number; surprisePercent: number }) => ({
+              quarter: e.quarter,
+              year: e.year,
+              actual: e.actual,
+              estimate: e.estimate,
+              surprisePercent: e.surprisePercent,
+            })));
+          }
+        }
+      } catch { /* ignore */ }
+    }));
+
+    if (i + 3 < symbols.length) await new Promise((r) => setTimeout(r, 2000));
+  }
+
+  // Merge analyst data into entries
+  const enriched = entries.map((e) => ({
+    ...e,
+    analyst: analystMap.get(e.symbol),
+    epsSurprises: surpriseMap.get(e.symbol),
+  }));
+  setEarnings(enriched);
 }

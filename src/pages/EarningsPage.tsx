@@ -179,6 +179,8 @@ export function EarningsPage() {
                     <Th align="right">Rev Est</Th>
                     <Th align="right">EPS Act</Th>
                     <Th>Result</Th>
+                    <Th>Analyst</Th>
+                    <Th>Track</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -228,6 +230,38 @@ export function EarningsPage() {
                           }}>
                             {expectation.label}
                           </span>
+                        </td>
+                        {/* Analyst consensus */}
+                        <td style={{ padding: "0 8px" }}>
+                          {e.analyst ? (
+                            <span style={{
+                              display: "inline-block", padding: "1px 6px", borderRadius: 999,
+                              fontSize: 9, fontWeight: 600,
+                              color: e.analyst.buyPct >= 70 ? "var(--positive)" : e.analyst.buyPct >= 40 ? "var(--warning)" : "var(--negative)",
+                              border: `1px solid ${e.analyst.buyPct >= 70 ? "var(--positive)" : e.analyst.buyPct >= 40 ? "var(--warning)" : "var(--negative)"}`,
+                            }}>
+                              {e.analyst.signal} ({e.analyst.buyPct.toFixed(0)}%)
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: 9, color: "var(--text-muted)" }}>---</span>
+                          )}
+                        </td>
+                        {/* EPS track record */}
+                        <td style={{ padding: "0 8px" }}>
+                          {e.epsSurprises && e.epsSurprises.length > 0 ? (
+                            <div style={{ display: "flex", gap: 2 }}>
+                              {e.epsSurprises.slice(0, 4).map((s, si) => (
+                                <span key={si} style={{
+                                  display: "inline-block", width: 8, height: 8, borderRadius: 2,
+                                  background: s.surprisePercent > 0 ? "var(--positive)" : s.surprisePercent < 0 ? "var(--negative)" : "var(--text-muted)",
+                                  opacity: 0.8,
+                                  title: `Q${s.quarter} ${s.year}: ${s.surprisePercent > 0 ? "+" : ""}${s.surprisePercent.toFixed(1)}%`,
+                                }} />
+                              ))}
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: 9, color: "var(--text-muted)" }}>---</span>
+                          )}
                         </td>
                       </tr>
                     );

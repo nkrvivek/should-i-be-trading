@@ -186,7 +186,9 @@ export function CongressTradingPanel() {
     }
 
     if (!hasUWToken() && !rapidApiKey && !isSupabaseConfigured()) {
-      setError("No data source available. Sign up for automatic access or add UW_TOKEN in Settings.");
+      setError("Congressional trading data requires an Unusual Whales token. Add your UW_TOKEN in Settings > API Keys, or sign up for a Pro trial.");
+    } else if (trades.length === 0) {
+      setError("Congressional trading data temporarily unavailable. The Finnhub congressional endpoint requires a premium plan. Add a UW_TOKEN in Settings for reliable access.");
     }
 
     setLoading(false);

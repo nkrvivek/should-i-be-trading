@@ -47,7 +47,19 @@ export function useRegime(enabled = true, pollIntervalMs = 60_000) {
       saveCache(result);
       setError(null);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Regime scan failed");
+      const msg = e instanceof Error ? e.message : "Regime scan failed";
+      // Don't show error if Radon is simply not available (hosted mode)
+      const isRadonDown = msg.includes("Failed to fetch") || msg.includes("502") || msg.includes("405") || msg.includes("404") || msg.includes("NetworkError") || msg.includes("ECONNREFUSED");
+      if (isRadonDown) {
+        setError("Radon API not connected. Regime data requires a local Radon instance. Configure in Settings > Connections.");
+        // Stop polling — Radon isn't available
+        scanningRef.current = false;
+        setScanning(false);
+        setLoading(false);
+        return;
+      } else {
+        setError(msg);
+      }
     } finally {
       scanningRef.current = false;
       setScanning(false);

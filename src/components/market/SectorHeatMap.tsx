@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from "react";
 import { Panel } from "../layout/Panel";
 import { getCredential } from "../../lib/credentials";
+import { isSupabaseConfigured } from "../../lib/supabase";
 
 type SectorData = {
   symbol: string;
@@ -33,8 +34,10 @@ export function SectorHeatMap() {
 
   const fetchSectors = useCallback(async () => {
     const apiKey = getCredential("finnhub");
-    if (!apiKey) {
-      setError("Finnhub API key required.");
+    const useEdge = !apiKey && isSupabaseConfigured();
+
+    if (!apiKey && !useEdge) {
+      setError("Finnhub API key required. Add in Settings or sign up for automatic access.");
       return;
     }
 
@@ -48,14 +51,25 @@ export function SectorHeatMap() {
         const batch = SECTORS.slice(i, i + 4);
         const promises = batch.map(async (s) => {
           try {
-            const res = await fetch(`/finnhub-api/api/v1/quote?symbol=${s.symbol}&token=${apiKey}`);
+            let res: Response;
+            if (useEdge) {
+              const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finnhub?endpoint=quote&symbol=${s.symbol}`;
+              res = await fetch(edgeUrl, {
+                headers: {
+                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+                  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+                },
+              });
+            } else {
+              res = await fetch(`/finnhub-api/api/v1/quote?symbol=${s.symbol}&token=${apiKey}`);
+            }
             if (!res.ok) return null;
             const q = await res.json();
             return {
               symbol: s.symbol,
               name: s.name,
-              change: q.dp ?? 0, // dp = percent change
-              price: q.c ?? 0, // c = current price
+              change: q.dp ?? 0,
+              price: q.c ?? 0,
             };
           } catch { return null; }
         });

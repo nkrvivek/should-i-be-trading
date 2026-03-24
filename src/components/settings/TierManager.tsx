@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabase";
 import { useAuthStore, type UserTier } from "../../stores/authStore";
+import { redirectToCheckout, redirectToPortal } from "../../lib/stripe";
 import { Badge } from "../shared/Badge";
 
 const TIER_INFO: Record<UserTier, { label: string; color: string; features: string[] }> = {
@@ -18,35 +18,42 @@ const TIER_INFO: Record<UserTier, { label: string; color: string; features: stri
   enterprise: {
     label: "ENTERPRISE",
     color: "var(--info)",
-    features: ["Strategy Backtester", "Automated Trading", "Kill Switch + Audit Log", "Early Access"],
+    features: ["Strategy Backtester", "Automated Trading", "Kill Switch + Audit Log", "Cloud Radon", "Early Access"],
   },
 };
 
 export function TierManager() {
-  const { user, profile, setProfile } = useAuthStore();
+  const { user, profile, subscription } = useAuthStore();
   const navigate = useNavigate();
-  const [upgrading, setUpgrading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const currentTier = profile?.tier ?? "free";
   const tierInfo = TIER_INFO[currentTier];
 
-  const handleUpgrade = async (tier: UserTier) => {
+  const handleUpgrade = async (tier: "pro" | "enterprise") => {
     if (!user) return;
-    setUpgrading(true);
-
-    // In production, this would verify a Stripe/LemonSqueezy payment first.
-    // For now, we directly update the tier (useful for testing).
-    const { data, error } = await supabase
-      .from("profiles")
-      .update({ tier })
-      .eq("id", user.id)
-      .select()
-      .single();
-
-    if (!error && data) {
-      setProfile(data);
+    setLoading(true);
+    try {
+      await redirectToCheckout(tier, "year");
+    } catch (err) {
+      console.error("Checkout error:", err);
+      setLoading(false);
     }
-    setUpgrading(false);
+  };
+
+  const handleManage = async () => {
+    setLoading(true);
+    try {
+      await redirectToPortal();
+    } catch (err) {
+      console.error("Portal error:", err);
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (iso: string | null | undefined) => {
+    if (!iso) return "N/A";
+    return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
   return (
@@ -63,9 +70,18 @@ export function TierManager() {
             Current Plan
           </span>
           <Badge label={tierInfo.label} variant={currentTier === "pro" ? "positive" : currentTier === "enterprise" ? "info" : "default"} />
+          {subscription?.status === "trialing" && (
+            <Badge label="TRIAL" variant="warning" />
+          )}
+          {subscription?.status === "past_due" && (
+            <Badge label="PAST DUE" variant="negative" />
+          )}
+          {subscription?.cancel_at_period_end && (
+            <Badge label="CANCELING" variant="warning" />
+          )}
         </div>
 
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 12 }}>
           {tierInfo.features.map((f) => (
             <span key={f} style={{
               padding: "3px 8px",
@@ -80,6 +96,54 @@ export function TierManager() {
             </span>
           ))}
         </div>
+
+        {/* Subscription details */}
+        {subscription && subscription.plan_tier !== "free" && (
+          <div style={{
+            padding: 12,
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-dim)",
+            borderRadius: 4,
+            display: "flex",
+            flexDirection: "column",
+            gap: 4,
+          }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+                Billing
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-secondary)" }}>
+                {subscription.billing_interval === "year" ? "Annual" : "Monthly"}
+              </span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+                {subscription.cancel_at_period_end ? "Access until" : "Renews on"}
+              </span>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-secondary)" }}>
+                {formatDate(subscription.current_period_end)}
+              </span>
+            </div>
+            <button
+              onClick={handleManage}
+              disabled={loading}
+              style={{
+                marginTop: 8,
+                padding: "8px 16px",
+                background: "var(--bg-panel-raised)",
+                border: "1px solid var(--border-dim)",
+                borderRadius: 4,
+                fontFamily: "var(--font-mono)",
+                fontSize: 10,
+                color: "var(--text-primary)",
+                cursor: loading ? "default" : "pointer",
+                opacity: loading ? 0.6 : 1,
+              }}
+            >
+              {loading ? "..." : "MANAGE SUBSCRIPTION"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Upgrade options */}
@@ -97,21 +161,21 @@ export function TierManager() {
           <div style={{ display: "flex", gap: 12 }}>
             {currentTier === "free" && (
               <UpgradeCard
-                tier="pro"
-                price="$149"
                 label="Upgrade to Pro"
+                price="$29/mo or $249/yr"
                 description="Full terminal + AI + scanners"
+                trial="14-day free trial"
                 onUpgrade={() => handleUpgrade("pro")}
-                loading={upgrading}
+                loading={loading}
               />
             )}
             <UpgradeCard
-              tier="enterprise"
-              price="$499"
-              label={currentTier === "free" ? "Upgrade to Enterprise" : "Upgrade to Enterprise"}
-              description="Automation + backtester"
+              label="Upgrade to Enterprise"
+              price="$79/mo or $699/yr"
+              description="Automation + backtester + cloud Radon"
+              trial="14-day free trial"
               onUpgrade={() => handleUpgrade("enterprise")}
-              loading={upgrading}
+              loading={loading}
             />
           </div>
 
@@ -142,8 +206,8 @@ export function TierManager() {
   );
 }
 
-function UpgradeCard({ tier, price, label, description, onUpgrade, loading }: {
-  tier: string; price: string; label: string; description: string; onUpgrade: () => void; loading: boolean;
+function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
+  label: string; price: string; description: string; trial: string; onUpgrade: () => void; loading: boolean;
 }) {
   return (
     <div style={{
@@ -157,9 +221,9 @@ function UpgradeCard({ tier, price, label, description, onUpgrade, loading }: {
       gap: 8,
     }}>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 500 }}>{label}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: "var(--signal-core)" }}>{price}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600, color: "var(--signal-core)" }}>{price}</div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>{description}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>One-time payment</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--signal-core)" }}>{trial}</div>
       <button
         onClick={onUpgrade}
         disabled={loading}
@@ -177,7 +241,7 @@ function UpgradeCard({ tier, price, label, description, onUpgrade, loading }: {
           marginTop: 4,
         }}
       >
-        {loading ? "..." : `BUY ${tier.toUpperCase()}`}
+        {loading ? "..." : "START FREE TRIAL"}
       </button>
     </div>
   );

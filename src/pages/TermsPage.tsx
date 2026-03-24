@@ -61,7 +61,32 @@ export function TermsPage() {
           is available at all times; (d) SIBT is not responsible for any orders placed by automated strategies.
         </Section>
 
-        <Section title="10. Changes to Terms">
+        <Section title="10. Subscription Billing">
+          Paid plans (Pro, Enterprise) are billed on a recurring basis (monthly or annually) through Stripe.
+          Your subscription will automatically renew at the end of each billing period unless you cancel before
+          the renewal date. You can cancel anytime from the Settings page or through the Stripe Customer Portal.
+          Cancellation takes effect at the end of the current billing period. No partial refunds for unused time.
+        </Section>
+
+        <Section title="11. Free Trial">
+          New paid subscriptions include a 14-day free trial. You will not be charged during the trial period.
+          If you do not cancel before the trial ends, your payment method will be charged automatically.
+          You may cancel at any time during the trial with no obligation.
+        </Section>
+
+        <Section title="12. Price Changes">
+          We reserve the right to change subscription prices. Existing subscribers will be notified at least
+          30 days before any price increase takes effect. Price changes apply to the next billing cycle after
+          the notification period.
+        </Section>
+
+        <Section title="13. Refund Policy">
+          Due to the digital nature of the service and immediate access to premium features, we do not offer
+          refunds for subscription payments. The 14-day free trial serves as your evaluation period.
+          If you experience technical issues preventing access, contact support.
+        </Section>
+
+        <Section title="14. Changes to Terms">
           We reserve the right to modify these terms at any time. Continued use of the platform constitutes
           acceptance of modified terms.
         </Section>

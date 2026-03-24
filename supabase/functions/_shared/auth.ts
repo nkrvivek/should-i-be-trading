@@ -11,12 +11,15 @@ export interface AuthContext {
  * Works with both legacy HS256 and new ES256 tokens.
  */
 export async function authenticateRequest(req: Request): Promise<AuthContext> {
+  // User token comes via x-user-token header (avoids gateway ES256 rejection)
+  // Falls back to Authorization header for backward compatibility
+  const userToken = req.headers.get("x-user-token");
   const authHeader = req.headers.get("Authorization");
-  if (!authHeader?.startsWith("Bearer ")) {
-    throw new Error("Missing or invalid Authorization header");
-  }
+  const token = userToken || (authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null);
 
-  const token = authHeader.replace("Bearer ", "");
+  if (!token) {
+    throw new Error("Missing authentication token");
+  }
 
   // Verify JWT using JWKS endpoint (handles ES256)
   const { payload } = await verifySupabaseJWT(token);
@@ -66,7 +69,7 @@ export async function getUserCredential(
 /** Standard CORS headers for edge functions */
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
 };
 
 /** Create a JSON response with CORS headers */

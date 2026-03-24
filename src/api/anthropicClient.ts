@@ -70,7 +70,8 @@ export async function chatWithClaude(
       headers: {
         "Content-Type": "application/json",
         "apikey": supabaseAnonKey,
-        "Authorization": `Bearer ${userToken}`,
+        "Authorization": `Bearer ${supabaseAnonKey}`,
+        "x-user-token": userToken,
       },
       body: JSON.stringify(body),
     });

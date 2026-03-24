@@ -97,7 +97,7 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
       <div
         ref={containerRef}
         className="tradingview-widget-container"
-        style={{ height: 650, width: "100%", borderRadius: 4, overflow: "hidden" }}
+        style={{ height: 800, width: "100%", borderRadius: 4, overflow: "hidden" }}
       />
     </Panel>
   );

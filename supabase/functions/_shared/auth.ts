@@ -15,36 +15,37 @@ export async function authenticateRequest(req: Request): Promise<AuthContext> {
   }
 
   const token = authHeader.replace("Bearer ", "");
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
-  // Use service role key to verify user tokens — the auto-set SUPABASE_ANON_KEY
-  // may be in publishable format (sb_publishable_...) which can't verify JWTs.
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
-  const clientKey = serviceRoleKey || anonKey;
+  // Try multiple strategies to verify the user token
+  const keysToTry = [
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY"),
+    Deno.env.get("SUPABASE_ANON_KEY"),
+  ].filter(Boolean) as string[];
 
-  if (!clientKey) {
-    throw new Error("Server misconfigured: no Supabase key available");
+  let lastError: string = "No keys available";
+
+  for (const key of keysToTry) {
+    try {
+      const client = createClient(supabaseUrl, key, {
+        global: { headers: { Authorization: `Bearer ${token}` } },
+      });
+
+      const { data: { user }, error } = await client.auth.getUser(token);
+      if (user && !error) {
+        // Create a user-scoped client for RLS queries
+        const userClient = createClient(supabaseUrl, key, {
+          global: { headers: { Authorization: `Bearer ${token}` } },
+        });
+        return { userId: user.id, supabase: userClient };
+      }
+      lastError = error?.message ?? "User not found";
+    } catch (e) {
+      lastError = e instanceof Error ? e.message : "Auth error";
+    }
   }
 
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    clientKey,
-    { global: { headers: { Authorization: `Bearer ${token}` } } },
-  );
-
-  const { data: { user }, error } = await supabase.auth.getUser(token);
-  if (error || !user) {
-    throw new Error(`Invalid or expired token: ${error?.message ?? "unknown"}`);
-  }
-
-  // Create a user-scoped client for RLS queries (using anon key + user token)
-  const userClient = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    anonKey || clientKey,
-    { global: { headers: { Authorization: `Bearer ${token}` } } },
-  );
-
-  return { userId: user.id, supabase: userClient };
+  throw new Error(`Auth failed: ${lastError}`);
 }
 
 /**

@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { verifySupabaseJWT } from "./jwt/default.ts";
 
 export interface AuthContext {
   userId: string;
@@ -6,43 +7,39 @@ export interface AuthContext {
 }
 
 /**
- * Verify the Supabase JWT from the Authorization header and return user context.
+ * Verify the user's JWT using Supabase JWKS (ES256/P-256).
+ * Works with both legacy HS256 and new ES256 tokens.
  */
 export async function authenticateRequest(req: Request): Promise<AuthContext> {
-  // User token can come from x-user-token header (preferred, avoids gateway ES256 rejection)
-  // or from Authorization header (legacy)
-  const userToken = req.headers.get("x-user-token");
   const authHeader = req.headers.get("Authorization");
-
-  const token = userToken || (authHeader?.startsWith("Bearer ") ? authHeader.replace("Bearer ", "") : null);
-
-  if (!token) {
-    throw new Error("Missing authentication. Send user token via x-user-token header.");
+  if (!authHeader?.startsWith("Bearer ")) {
+    throw new Error("Missing or invalid Authorization header");
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const token = authHeader.replace("Bearer ", "");
 
-  // Use service role to verify the user's JWT
-  const adminClient = createClient(supabaseUrl, serviceRoleKey);
-  const { data: { user }, error } = await adminClient.auth.getUser(token);
+  // Verify JWT using JWKS endpoint (handles ES256)
+  const { payload } = await verifySupabaseJWT(token);
 
-  if (error || !user) {
-    throw new Error(`Auth failed: ${error?.message ?? "Invalid token"}`);
+  const userId = payload.sub;
+  if (!userId) {
+    throw new Error("Token missing sub claim");
   }
 
   // Create a user-scoped client for RLS queries
-  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") || serviceRoleKey;
-  const userClient = createClient(supabaseUrl, anonKey, {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const publishableKey = Deno.env.get("SB_PUBLISHABLE_KEY") ??
+    Deno.env.get("SUPABASE_ANON_KEY")!;
+
+  const supabase = createClient(supabaseUrl, publishableKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
 
-  return { userId: user.id, supabase: userClient };
+  return { userId, supabase };
 }
 
 /**
  * Get the user's stored credential for a provider.
- * Returns the raw credential_data string.
  */
 export async function getUserCredential(
   ctx: AuthContext,
@@ -69,7 +66,7 @@ export async function getUserCredential(
 /** Standard CORS headers for edge functions */
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 /** Create a JSON response with CORS headers */

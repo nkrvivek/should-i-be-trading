@@ -11,7 +11,9 @@ export type Feature =
   | "watchlists_unlimited"
   | "backtester"
   | "automation"
-  | "charts_advanced";
+  | "charts_advanced"
+  | "regime_detail"
+  | "regime_ai";
 
 const FEATURE_MAP: Record<Feature, UserTier[]> = {
   regime_dashboard: ["free", "pro", "enterprise"],
@@ -25,6 +27,8 @@ const FEATURE_MAP: Record<Feature, UserTier[]> = {
   backtester: ["pro", "enterprise"],
   automation: ["enterprise"],
   charts_advanced: ["pro", "enterprise"],
+  regime_detail: ["pro", "enterprise"],
+  regime_ai: ["pro", "enterprise"],
 };
 
 export function hasFeature(tier: UserTier | undefined, feature: Feature): boolean {

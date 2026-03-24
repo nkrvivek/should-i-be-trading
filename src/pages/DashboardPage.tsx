@@ -12,6 +12,7 @@ import { SectorHeatMap } from "../components/market/SectorHeatMap";
 import { TickerChart } from "../components/market/TickerChart";
 import { WatchlistManager } from "../components/watchlist/WatchlistManager";
 import { Panel } from "../components/layout/Panel";
+import { FearGreedGauge } from "../components/dashboard/FearGreedGauge";
 
 export function DashboardPage() {
   const { status } = useMarketHours();
@@ -68,9 +69,12 @@ export function DashboardPage() {
           margin: "0 auto",
         }}
       >
-        {/* Row 1: Traffic Light + Market Quality Score */}
+        {/* Row 1: Traffic Light + Fear/Greed Gauge + Market Quality Score */}
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }}>
-          <TrafficLight verdict={verdict} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <TrafficLight verdict={verdict} />
+            {marketScore && <FearGreedGauge score={marketScore.total} />}
+          </div>
           <ScoreBreakdown
             score={marketScore}
             loading={scoreLoading}

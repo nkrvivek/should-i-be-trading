@@ -5,10 +5,10 @@ import type { CriData } from "../../api/types";
 
 type Props = {
   children: ReactNode;
-  cri: CriData | null;
+  cri?: CriData | null;
 };
 
-export function TerminalShell({ children, cri }: Props) {
+export function TerminalShell({ children, cri = null }: Props) {
   return (
     <div
       style={{

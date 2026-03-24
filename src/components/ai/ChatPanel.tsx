@@ -5,12 +5,12 @@ import type { CriData, PortfolioData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
 
 type Props = {
-  cri: CriData | null;
-  portfolio: PortfolioData | null;
-  verdict: TrafficLightVerdict;
+  cri?: CriData | null;
+  portfolio?: PortfolioData | null;
+  verdict?: TrafficLightVerdict;
 };
 
-function buildSystemPrompt(cri: CriData | null, portfolio: PortfolioData | null, verdict: TrafficLightVerdict): string {
+function buildSystemPrompt(cri: CriData | null, portfolio: PortfolioData | null, verdict?: TrafficLightVerdict): string {
   const parts = [
     "You are a market analysis assistant for the SIBT (Should I Be Trading?) terminal.",
     "You have access to the current market regime data. Be concise, data-driven, and precise.",
@@ -18,9 +18,9 @@ function buildSystemPrompt(cri: CriData | null, portfolio: PortfolioData | null,
     "- P/C Ratio: >2.0 BEARISH, 0.8-1.2 NEUTRAL, <0.5 BULLISH",
     "- Signal semantics: Baseline -> Emerging -> Clear -> Strong -> Dislocated -> Extreme",
     "",
-    `Current verdict: ${verdict.signal} (confidence: ${verdict.confidence}%)`,
-    `VIX regime: ${verdict.vixRegime.label} — ${verdict.vixRegime.detail}`,
-    `Reasons: ${verdict.reasons.join("; ")}`,
+    `Current verdict: ${verdict?.signal ?? "UNKNOWN"} (confidence: ${verdict?.confidence ?? 0}%)`,
+    `VIX regime: ${verdict?.vixRegime?.label ?? "N/A"} — ${verdict?.vixRegime?.detail ?? "No data"}`,
+    `Reasons: ${verdict?.reasons?.join("; ") ?? "No data available"}`,
   ];
 
   if (cri) {
@@ -50,7 +50,7 @@ function buildSystemPrompt(cri: CriData | null, portfolio: PortfolioData | null,
   return parts.join("\n");
 }
 
-export function ChatPanel({ cri, portfolio, verdict }: Props) {
+export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);

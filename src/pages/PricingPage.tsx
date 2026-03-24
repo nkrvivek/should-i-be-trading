@@ -92,7 +92,7 @@ export function PricingPage() {
 /** Extracted so LandingPage can embed it without TerminalShell */
 export function PricingContent() {
   const navigate = useNavigate();
-  const { user, profile, subscription, isTrialActive, effectiveTier } = useAuthStore();
+  const { user, isTrialActive, effectiveTier } = useAuthStore();
   const [interval, setInterval] = useState<BillingInterval>("year");
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -203,7 +203,7 @@ export function PricingContent() {
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         {TIERS.map((tier) => {
-          const isCurrent = profile?.tier === tier.tier;
+          const isCurrent = effectiveTier() === tier.tier;
 
           return (
             <div

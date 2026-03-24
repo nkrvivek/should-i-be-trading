@@ -175,7 +175,7 @@ export function DashboardPage() {
 
         {/* Full-width: Daily Briefing */}
         <div style={{ gridColumn: "1 / -1" }}>
-          <DailyBriefing cri={cri} verdict={verdict} />
+          <DailyBriefing cri={cri} verdict={verdict} marketScore={marketScore} />
         </div>
 
         {/* Full-width: Signal Timeline */}

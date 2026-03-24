@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Panel } from "../layout/Panel";
 import { useInsiderTrading } from "../../hooks/useInsiderTrading";
 import { getCredential } from "../../lib/credentials";
+import { isSupabaseConfigured } from "../../lib/supabase";
 import type { InsiderActivitySummary, InsiderSignal, InsiderTransaction } from "../../api/types";
 
 // Simple company name lookup cache
@@ -11,11 +12,24 @@ async function fetchCompanyInfo(symbol: string): Promise<{ name: string; sector:
   const cached = companyCache.get(symbol);
   if (cached) return cached;
 
-  const apiKey = getCredential("finnhub");
-  if (!apiKey) return null;
-
   try {
-    const res = await fetch(`/finnhub-api/api/v1/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`);
+    let res: Response;
+    const apiKey = getCredential("finnhub");
+
+    if (apiKey) {
+      res = await fetch(`/finnhub-api/api/v1/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`);
+    } else if (isSupabaseConfigured()) {
+      const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finnhub?endpoint=stock/profile2&symbol=${encodeURIComponent(symbol)}`;
+      res = await fetch(edgeUrl, {
+        headers: {
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        },
+      });
+    } else {
+      return null;
+    }
+
     if (!res.ok) return null;
     const data = await res.json();
     if (data.name) {

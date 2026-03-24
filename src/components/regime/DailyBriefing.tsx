@@ -3,13 +3,15 @@ import { chatWithClaude } from "../../api/anthropicClient";
 import { renderMarkdown } from "../../lib/renderMarkdown";
 import type { CriData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
+import type { MarketScore } from "../../lib/marketScoring";
 
 type Props = {
   cri: CriData | null;
   verdict: TrafficLightVerdict;
+  marketScore?: MarketScore | null;
 };
 
-export function DailyBriefing({ cri, verdict }: Props) {
+export function DailyBriefing({ cri, verdict, marketScore }: Props) {
   const [briefing, setBriefing] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,7 +51,12 @@ export function DailyBriefing({ cri, verdict }: Props) {
         `- SPY: ${cri.spy?.toFixed(2)} | SPX distance from 100d MA: ${cri.spx_distance_pct?.toFixed(1)}%`,
         `- Crash trigger: ${cri.crash_trigger?.triggered ? "ACTIVE" : "inactive"}`,
         `- Market: ${cri.market_open ? "OPEN" : "CLOSED"}`,
-      ] : ["Regime data: unavailable (Radon not connected)"];
+      ] : marketScore ? [
+        "Market Quality Score data:",
+        `- Composite Score: ${marketScore.total}/100`,
+        `- Execution Window: ${marketScore.executionWindow}%`,
+        ...marketScore.categories.map((c) => `- ${c.name} (${(c.weight * 100).toFixed(0)}%): ${c.score}/100 — ${c.detail}`),
+      ] : ["Regime data: unavailable"];
 
       const userPrompt = [
         `Generate a daily market briefing for ${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}.`,

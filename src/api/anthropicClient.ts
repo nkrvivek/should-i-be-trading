@@ -21,25 +21,44 @@ export async function chatWithClaude(
   model = "claude-sonnet-4-6",
 ): Promise<ChatResponse> {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    throw new Error("Anthropic API key not configured. Add VITE_ANTHROPIC_API_KEY to your .env file or configure it in Settings.");
-  }
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  const response = await fetch("/anthropic/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": apiKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true",
-    },
-    body: JSON.stringify({
-      model,
-      max_tokens: 4096,
-      system: systemPrompt,
-      messages,
-    }),
+  const body = JSON.stringify({
+    model,
+    max_tokens: 4096,
+    system: systemPrompt,
+    messages,
   });
+
+  let response: Response;
+
+  if (apiKey) {
+    // Direct API call (local dev with Vite proxy, or direct browser access)
+    response = await fetch("/anthropic/v1/messages", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": apiKey,
+        "anthropic-version": "2023-06-01",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body,
+    });
+  } else if (supabaseUrl && supabaseKey) {
+    // Production: use Supabase Edge Function proxy (user's stored key)
+    response = await fetch(`${supabaseUrl}/functions/v1/proxy-anthropic`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${supabaseKey}`,
+        apikey: supabaseKey,
+      },
+      body,
+    });
+  } else {
+    throw new Error("Add your Anthropic API key in Settings to use AI features.");
+  }
 
   if (!response.ok) {
     const text = await response.text();

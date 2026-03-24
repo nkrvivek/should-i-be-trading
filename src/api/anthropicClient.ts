@@ -24,20 +24,20 @@ export async function chatWithClaude(
 ): Promise<ChatResponse> {
   const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  const body = JSON.stringify({
+  const body = {
     model,
     max_tokens: 4096,
     system: systemPrompt,
     messages,
-  });
+  };
 
-  let response: Response;
+  let responseData: Record<string, unknown>;
 
   if (apiKey) {
     // Direct API call (local dev with Vite proxy)
-    response = await fetch("/anthropic/v1/messages", {
+    const response = await fetch("/anthropic/v1/messages", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -45,66 +45,63 @@ export async function chatWithClaude(
         "anthropic-version": "2023-06-01",
         "anthropic-dangerous-direct-browser-access": "true",
       },
-      body,
+      body: JSON.stringify(body),
     });
-  } else if (isSupabaseConfigured() && supabaseUrl && supabaseKey) {
+
+    if (!response.ok) {
+      const text = await response.text();
+      let msg = `Claude API ${response.status}`;
+      try { msg = JSON.parse(text).error?.message || msg; } catch { msg = text.slice(0, 200) || msg; }
+      throw new Error(msg);
+    }
+    responseData = await response.json();
+
+  } else if (isSupabaseConfigured() && supabaseUrl && supabaseAnonKey) {
     // Production: Supabase Edge Function proxy
-    const { data } = await supabase.auth.getSession();
-    const userToken = data.session?.access_token;
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userToken = sessionData.session?.access_token;
 
     if (!userToken) {
       throw new Error("Sign in to use AI features, or add your own Anthropic API key in Settings.");
     }
 
-    // Use Supabase invoke() which handles auth headers correctly
-    const { data: fnData, error: fnError } = await supabase.functions.invoke("proxy-anthropic", {
-      body: JSON.parse(body),
+    // Manual fetch with both apikey and Authorization headers explicitly set
+    const response = await fetch(`${supabaseUrl}/functions/v1/proxy-anthropic`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "apikey": supabaseAnonKey,
+        "Authorization": `Bearer ${userToken}`,
+      },
+      body: JSON.stringify(body),
     });
 
-    if (fnError) {
-      throw new Error(fnError.message || "Claude API request failed");
+    if (!response.ok) {
+      const text = await response.text();
+      let msg = `Claude API ${response.status}`;
+      try {
+        const parsed = JSON.parse(text);
+        msg = parsed.error?.message || parsed.error || parsed.message || msg;
+      } catch { msg = text.slice(0, 200) || msg; }
+      throw new Error(msg);
     }
+    responseData = await response.json();
 
-    // supabase.functions.invoke returns parsed JSON directly
-    const text = fnData?.content?.[0]?.text;
-    if (!text) {
-      // Check if it's an error response
-      if (fnData?.error) {
-        throw new Error(fnData.error);
-      }
-      console.error("Unexpected Claude API response:", JSON.stringify(fnData).slice(0, 500));
-      throw new Error("Claude returned an empty response.");
-    }
-    return {
-      content: text,
-      model: fnData.model,
-      usage: fnData.usage,
-    };
   } else {
     throw new Error("Add your Anthropic API key in Settings to use AI features.");
   }
 
-  if (!response!.ok) {
-    const text = await response!.text();
-    let msg = `Claude API ${response!.status}`;
-    try {
-      const parsed = JSON.parse(text);
-      msg = parsed.error?.message || parsed.error || msg;
-    } catch {
-      msg = text.slice(0, 200) || msg;
-    }
-    throw new Error(msg);
-  }
-
-  const respData = await response!.json();
-  const text = respData.content?.[0]?.text;
+  const text = (responseData as { content?: { text: string }[] }).content?.[0]?.text;
   if (!text) {
-    console.error("Unexpected Claude API response:", JSON.stringify(respData).slice(0, 500));
+    if ((responseData as { error?: string }).error) {
+      throw new Error((responseData as { error: string }).error);
+    }
+    console.error("Unexpected Claude API response:", JSON.stringify(responseData).slice(0, 500));
     throw new Error("Claude returned an empty response.");
   }
   return {
     content: text,
-    model: respData.model,
-    usage: respData.usage,
+    model: (responseData as { model: string }).model,
+    usage: (responseData as { usage: { input_tokens: number; output_tokens: number } }).usage,
   };
 }

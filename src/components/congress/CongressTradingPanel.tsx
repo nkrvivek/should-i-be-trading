@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Panel } from "../layout/Panel";
-import { hasUWToken, fetchUWCongressTrades, type UWCongressTrade } from "../../api/uwClient";
-import { fetchCongressionalTrades as fetchCongressViaEdge, type CongressTrade } from "../../api/freeDataClient";
+import { hasUWToken, fetchUWCongressTrades } from "../../api/uwClient";
 import { isSupabaseConfigured } from "../../lib/supabase";
 
 type NormalizedTrade = {
@@ -103,13 +102,11 @@ export function CongressTradingPanel() {
   const [source, setSource] = useState<"uw" | "rapidapi" | "">("")
   const [page, setPage] = useState(0);
 
-  const rapidApiKey = import.meta.env.VITE_RAPIDAPI_KEY;
-
   const fetchTrades = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    // Try UW first (premium)
+    // Strategy 1: UW (Pro users with UW_TOKEN)
     if (hasUWToken()) {
       try {
         const raw = await fetchUWCongressTrades();
@@ -122,47 +119,38 @@ export function CongressTradingPanel() {
           return;
         }
       } catch (e) {
-        // Fall through to RapidAPI
         console.warn("UW congress fetch failed, falling back:", e);
       }
     }
 
-    // Fallback 2: Supabase Edge Function (Finnhub server-side key, works for everyone)
+    // Strategy 2: Server-side RapidAPI via Supabase Edge Function (free tier, no client key needed)
     if (isSupabaseConfigured()) {
       try {
-        const raw = await fetchCongressViaEdge();
-        const normalized = raw
-          .filter((t: CongressTrade) => t.symbol)
-          .map((t: CongressTrade): NormalizedTrade => {
-            const txn = t.transactionType?.toLowerCase() ?? "";
-            const tradeType: "buy" | "sell" | "other" = txn.includes("buy") || txn.includes("purchase")
-              ? "buy" : txn.includes("sell") || txn.includes("sale") ? "sell" : "other";
-            return {
-              name: t.name ?? "Unknown",
-              party: "",
-              chamber: t.ownerType ?? "",
-              state: "",
-              ticker: t.symbol,
-              tradeDate: t.transactionDate ?? "",
-              tradeType,
-              amount: t.amount ? `$${Math.abs(t.amount).toLocaleString()}` : "N/A",
-              price: "",
-              filedDate: "",
-            };
-          });
-        if (normalized.length > 0) {
-          setTrades(normalized);
-          setSource("uw"); // reuse source label
-          cacheResults(normalized, "finnhub");
-          setLoading(false);
-          return;
+        const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-congress`;
+        const res = await fetch(edgeUrl, {
+          headers: {
+            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+        });
+        if (res.ok) {
+          const data: RapidAPITrade[] = await res.json();
+          const normalized = data.map(normalizeRapidAPITrade).filter(Boolean) as NormalizedTrade[];
+          if (normalized.length > 0) {
+            setTrades(normalized);
+            setSource("rapidapi");
+            cacheResults(normalized, "rapidapi");
+            setLoading(false);
+            return;
+          }
         }
       } catch (e) {
-        console.warn("Edge function congress fetch failed, falling back:", e);
+        console.warn("Edge proxy-congress failed, falling back:", e);
       }
     }
 
-    // Fallback 3: RapidAPI
+    // Strategy 3: Direct RapidAPI (if user has their own key in env)
+    const rapidApiKey = import.meta.env.VITE_RAPIDAPI_KEY;
     if (rapidApiKey) {
       try {
         const res = await fetch(RAPIDAPI_URL, {
@@ -185,14 +173,9 @@ export function CongressTradingPanel() {
       }
     }
 
-    if (!hasUWToken() && !rapidApiKey && !isSupabaseConfigured()) {
-      setError("Congressional trading data requires an Unusual Whales token. Add your UW_TOKEN in Settings > API Keys, or sign up for a Pro trial.");
-    } else if (trades.length === 0) {
-      setError("Congressional trading data temporarily unavailable. The Finnhub congressional endpoint requires a premium plan. Add a UW_TOKEN in Settings for reliable access.");
-    }
-
+    setError("Congressional trading data unavailable. Sign up for automatic access or add a UW_TOKEN in Settings for premium data.");
     setLoading(false);
-  }, [rapidApiKey]);
+  }, []);
 
   function cacheResults(data: NormalizedTrade[], src: string) {
     try {

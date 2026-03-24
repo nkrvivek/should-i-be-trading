@@ -13,6 +13,7 @@ import { GlossaryPage } from "./pages/GlossaryPage";
 import { PricingPage } from "./pages/PricingPage";
 import { LandingPage } from "./pages/LandingPage";
 import { RiskDisclosurePage } from "./pages/RiskDisclosurePage";
+import { FeaturesPage } from "./pages/FeaturesPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/risk" element={<RiskDisclosurePage />} />
+          <Route path="/features" element={<FeaturesPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
@@ -89,6 +91,7 @@ export function AppNav() {
     { to: "/terminal", label: "TERMINAL", pro: true },
     { to: "/macro", label: "MACRO" },
     { to: "/analysis", label: "ANALYSIS", pro: true },
+    { to: "/features", label: "FEATURES" },
     { to: "/glossary", label: "LEARN" },
   ];
 

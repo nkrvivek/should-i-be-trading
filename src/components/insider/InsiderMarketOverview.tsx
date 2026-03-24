@@ -3,6 +3,8 @@ import { Panel } from "../layout/Panel";
 import type { InsiderSignal } from "../../api/types";
 import { getCredential } from "../../lib/credentials";
 import { hasUWToken, fetchUWInsiderTransactions, type UWInsiderTransaction } from "../../api/uwClient";
+import { fetchInsiderTransactions as fetchInsiderViaEdge } from "../../api/freeDataClient";
+import { isSupabaseConfigured } from "../../lib/supabase";
 
 const SCAN_TICKERS = [
   "AAPL", "MSFT", "NVDA", "GOOG", "AMZN", "META", "TSLA", "AMD", "CRM", "NFLX",
@@ -142,10 +144,65 @@ export function InsiderMarketOverview() {
       }
     }
 
-    // Fallback: Finnhub (requires scanning each ticker individually)
+    // Fallback 2: Supabase Edge Function (server-side Finnhub key, works for everyone)
+    if (isSupabaseConfigured()) {
+      try {
+        setProgress({ done: 0, total: SCAN_TICKERS.length });
+        const results: TickerSummary[] = [];
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 90);
+        const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+        // Batch 5 at a time with delays to respect Finnhub rate limits on server
+        for (let i = 0; i < SCAN_TICKERS.length; i += 5) {
+          const batch = SCAN_TICKERS.slice(i, i + 5);
+          const promises = batch.map(async (sym) => {
+            try {
+              const txs = await fetchInsiderViaEdge(sym);
+              const recent = txs.filter((t) => t.transactionDate >= cutoffStr);
+
+              let buyValue = 0, sellValue = 0, buys = 0, sells = 0;
+              for (const t of recent) {
+                const val = Math.abs(t.change) * (t.transactionPrice || 0);
+                if (t.change > 0) { buys++; buyValue += val; }
+                else if (t.change < 0) { sells++; sellValue += val; }
+              }
+
+              if (buys + sells === 0) return null;
+              return {
+                symbol: sym,
+                signal: classifySignal(buyValue, sellValue),
+                netValue: buyValue - sellValue,
+                sellValue, buyValue,
+                totalTx: buys + sells,
+              };
+            } catch { return null; }
+          });
+
+          const batchResults = await Promise.all(promises);
+          for (const r of batchResults) { if (r) results.push(r); }
+          setProgress({ done: Math.min(i + 5, SCAN_TICKERS.length), total: SCAN_TICKERS.length });
+
+          if (i + 5 < SCAN_TICKERS.length) await new Promise((r) => setTimeout(r, 1200));
+        }
+
+        if (results.length > 0) {
+          results.sort((a, b) => Math.abs(b.netValue) - Math.abs(a.netValue));
+          setTickers(results);
+          setSource("finnhub");
+          setLastScan(new Date().toLocaleTimeString());
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.warn("Edge function insider scan failed, trying direct Finnhub:", e);
+      }
+    }
+
+    // Fallback 3: Direct Finnhub with user's API key
     const apiKey = getCredential("finnhub");
     if (!apiKey) {
-      setError("No insider data source configured. Add UW_TOKEN (recommended) or Finnhub API key in Settings.");
+      setError("No insider data source available. Sign up for automatic access or add a Finnhub API key in Settings.");
       setLoading(false);
       return;
     }

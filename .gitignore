@@ -25,3 +25,9 @@ supabase/.temp/
 *.njsproj
 *.sln
 *.sw?
+
+# Claude Code
+.claude/hooks/
+.claude/worktrees/
+__pycache__/
+*.pyc

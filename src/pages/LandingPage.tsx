@@ -1,8 +1,22 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { PricingContent } from "./PricingPage";
 
 export function LandingPage() {
   const navigate = useNavigate();
+
+  // Landing page needs body scroll (global CSS sets overflow: hidden for dashboard)
+  useEffect(() => {
+    document.documentElement.style.overflow = "auto";
+    document.body.style.overflow = "auto";
+    const root = document.getElementById("root");
+    if (root) root.style.overflow = "auto";
+    return () => {
+      document.documentElement.style.overflow = "";
+      document.body.style.overflow = "";
+      if (root) root.style.overflow = "";
+    };
+  }, []);
 
   return (
     <div style={{ background: "#0a0f14", color: "#e2e8f0", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>

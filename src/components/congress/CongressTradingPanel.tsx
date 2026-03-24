@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect } from "react";
 import { Panel } from "../layout/Panel";
 import { hasUWToken, fetchUWCongressTrades, type UWCongressTrade } from "../../api/uwClient";
+import { fetchCongressionalTrades as fetchCongressViaEdge, type CongressTrade } from "../../api/freeDataClient";
+import { isSupabaseConfigured } from "../../lib/supabase";
 
 type NormalizedTrade = {
   name: string;
@@ -125,7 +127,42 @@ export function CongressTradingPanel() {
       }
     }
 
-    // Fallback: RapidAPI
+    // Fallback 2: Supabase Edge Function (Finnhub server-side key, works for everyone)
+    if (isSupabaseConfigured()) {
+      try {
+        const raw = await fetchCongressViaEdge();
+        const normalized = raw
+          .filter((t: CongressTrade) => t.symbol)
+          .map((t: CongressTrade): NormalizedTrade => {
+            const txn = t.transactionType?.toLowerCase() ?? "";
+            const tradeType: "buy" | "sell" | "other" = txn.includes("buy") || txn.includes("purchase")
+              ? "buy" : txn.includes("sell") || txn.includes("sale") ? "sell" : "other";
+            return {
+              name: t.name ?? "Unknown",
+              party: "",
+              chamber: t.ownerType ?? "",
+              state: "",
+              ticker: t.symbol,
+              tradeDate: t.transactionDate ?? "",
+              tradeType,
+              amount: t.amount ? `$${Math.abs(t.amount).toLocaleString()}` : "N/A",
+              price: "",
+              filedDate: "",
+            };
+          });
+        if (normalized.length > 0) {
+          setTrades(normalized);
+          setSource("uw"); // reuse source label
+          cacheResults(normalized, "finnhub");
+          setLoading(false);
+          return;
+        }
+      } catch (e) {
+        console.warn("Edge function congress fetch failed, falling back:", e);
+      }
+    }
+
+    // Fallback 3: RapidAPI
     if (rapidApiKey) {
       try {
         const res = await fetch(RAPIDAPI_URL, {
@@ -148,8 +185,8 @@ export function CongressTradingPanel() {
       }
     }
 
-    if (!hasUWToken() && !rapidApiKey) {
-      setError("No API key configured. Add UW_TOKEN or RAPIDAPI_KEY in Settings or .env");
+    if (!hasUWToken() && !rapidApiKey && !isSupabaseConfigured()) {
+      setError("No data source available. Sign up for automatic access or add UW_TOKEN in Settings.");
     }
 
     setLoading(false);

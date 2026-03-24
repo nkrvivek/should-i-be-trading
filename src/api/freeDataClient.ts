@@ -113,3 +113,27 @@ export async function fetchInsiderTransactions(symbol: string): Promise<InsiderT
   });
   return data.data ?? [];
 }
+
+/* ─── Congressional Trading (Finnhub) ────────────── */
+
+export type CongressTrade = {
+  symbol: string;
+  name: string;
+  amount: number;
+  transactionDate: string;
+  transactionType: string;
+  ownerType: string;
+  assetType: string;
+};
+
+export async function fetchCongressionalTrades(): Promise<CongressTrade[]> {
+  const today = new Date().toISOString().split("T")[0];
+  const threeMonthsAgo = new Date(Date.now() - 90 * 86400000).toISOString().split("T")[0];
+
+  const data = await callEdgeFunction<{ data: CongressTrade[] }>("finnhub", {
+    endpoint: "stock/congressional-trading",
+    from: threeMonthsAgo,
+    to: today,
+  });
+  return data.data ?? [];
+}

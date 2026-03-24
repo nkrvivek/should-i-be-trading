@@ -211,7 +211,10 @@ export function LandingPage() {
             &copy; {new Date().getFullYear()} Should I Be Trading?
           </span>
         </div>
-        <div style={{ display: "flex", gap: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <a href="mailto:hello@sibt.ai" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#05AD98", textDecoration: "none" }}>
+            hello@sibt.ai
+          </a>
           {[
             { to: "/terms", label: "Terms" },
             { to: "/privacy", label: "Privacy" },

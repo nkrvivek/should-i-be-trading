@@ -313,6 +313,7 @@ export function PricingContent() {
           <a href="/terms" style={{ color: "var(--signal-core)" }}>Terms</a>,{" "}
           <a href="/privacy" style={{ color: "var(--signal-core)" }}>Privacy</a>, and{" "}
           <a href="/risk" style={{ color: "var(--signal-core)" }}>Risk Disclosure</a>.
+          <br />Questions? <a href="mailto:hello@sibt.ai" style={{ color: "var(--signal-core)" }}>hello@sibt.ai</a>
         </div>
       </div>
 

@@ -55,7 +55,7 @@ export function PrivacyPage() {
         </Section>
 
         <Section title="9. Contact">
-          For privacy inquiries, contact us at privacy@sibt.ai.
+          For privacy inquiries, contact us at hello@sibt.ai.
         </Section>
       </div>
     </TerminalShell>

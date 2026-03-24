@@ -84,7 +84,7 @@ export function TermsPage() {
         <Section title="13. Refund Policy">
           Due to the digital nature of the service and immediate access to premium features, we do not offer
           refunds for subscription payments. The 14-day free trial serves as your evaluation period.
-          If you experience technical issues preventing access, contact support.
+          If you experience technical issues preventing access, contact us at hello@sibt.ai.
         </Section>
 
         <Section title="14. Changes to Terms">

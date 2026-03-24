@@ -251,12 +251,15 @@ export function EarningsPage() {
                           {e.epsSurprises && e.epsSurprises.length > 0 ? (
                             <div style={{ display: "flex", gap: 2 }}>
                               {e.epsSurprises.slice(0, 4).map((s, si) => (
-                                <span key={si} style={{
-                                  display: "inline-block", width: 8, height: 8, borderRadius: 2,
-                                  background: s.surprisePercent > 0 ? "var(--positive)" : s.surprisePercent < 0 ? "var(--negative)" : "var(--text-muted)",
-                                  opacity: 0.8,
-                                  title: `Q${s.quarter} ${s.year}: ${s.surprisePercent > 0 ? "+" : ""}${s.surprisePercent.toFixed(1)}%`,
-                                }} />
+                                <span
+                                  key={si}
+                                  title={`Q${s.quarter} ${s.year}: ${s.surprisePercent > 0 ? "+" : ""}${s.surprisePercent.toFixed(1)}%`}
+                                  style={{
+                                    display: "inline-block", width: 8, height: 8, borderRadius: 2,
+                                    background: s.surprisePercent > 0 ? "var(--positive)" : s.surprisePercent < 0 ? "var(--negative)" : "var(--text-muted)",
+                                    opacity: 0.8,
+                                  }}
+                                />
                               ))}
                             </div>
                           ) : (

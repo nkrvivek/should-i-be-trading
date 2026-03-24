@@ -17,6 +17,24 @@ export type ChatResponse = {
   usage: { input_tokens: number; output_tokens: number };
 };
 
+/**
+ * Get a valid user session token, refreshing if needed.
+ */
+async function getSessionToken(): Promise<string | null> {
+  try {
+    // Try refreshing first to ensure token is valid
+    const { data: refreshData } = await supabase.auth.refreshSession();
+    if (refreshData.session?.access_token) return refreshData.session.access_token;
+  } catch { /* ignore refresh failure */ }
+
+  try {
+    const { data: sessionData } = await supabase.auth.getSession();
+    return sessionData.session?.access_token ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function chatWithClaude(
   messages: ChatMessage[],
   systemPrompt: string,
@@ -36,7 +54,7 @@ export async function chatWithClaude(
   let response: Response;
 
   if (apiKey) {
-    // Direct API call (local dev with Vite proxy, or direct browser access)
+    // Direct API call (local dev with Vite proxy)
     response = await fetch("/anthropic/v1/messages", {
       method: "POST",
       headers: {
@@ -48,10 +66,8 @@ export async function chatWithClaude(
       body,
     });
   } else if (isSupabaseConfigured() && supabaseUrl && supabaseKey) {
-    // Production: use Supabase Edge Function proxy
-    // Get the user's session token (required for authenticateRequest in the edge function)
-    const session = await supabase.auth.getSession();
-    const userToken = session.data.session?.access_token;
+    // Production: Supabase Edge Function proxy (requires authenticated user)
+    const userToken = await getSessionToken();
 
     if (!userToken) {
       throw new Error("Sign in to use AI features, or add your own Anthropic API key in Settings.");
@@ -74,8 +90,8 @@ export async function chatWithClaude(
     const text = await response.text();
     let msg = `Claude API ${response.status}`;
     try {
-      const body = JSON.parse(text);
-      msg = body.error?.message || msg;
+      const parsed = JSON.parse(text);
+      msg = parsed.error?.message || parsed.error || msg;
     } catch {
       msg = text.slice(0, 200) || msg;
     }

@@ -191,7 +191,7 @@ export function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" style={{ padding: "80px 24px", borderTop: "1px solid #1e293b" }}>
+      <section id="pricing" data-theme="dark" style={{ padding: "80px 24px", borderTop: "1px solid #1e293b" }}>
         <PricingContent />
       </section>
 

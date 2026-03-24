@@ -59,7 +59,7 @@ export function useEconomicCalendar() {
         const today = new Date().toISOString().split("T")[0];
         const nextMonth = new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0];
         const res = await fetch(
-          `${supabaseUrl}/functions/v1/fred?endpoint=releases/dates&limit=50&sort_order=asc&include_release_dates_with_no_data=true&release_date_start=${today}&release_date_end=${nextMonth}`,
+          `${supabaseUrl}/functions/v1/fred?endpoint=releases/dates&limit=100&sort_order=asc&include_release_dates_with_no_data=true&realtime_start=${today}&realtime_end=${nextMonth}`,
           { headers },
         );
         if (res.ok) {

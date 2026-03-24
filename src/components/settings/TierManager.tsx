@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore, type UserTier } from "../../stores/authStore";
 import { redirectToCheckout, redirectToPortal } from "../../lib/stripe";
+import { supabase } from "../../lib/supabase";
 import { Badge } from "../shared/Badge";
 
 const TIER_INFO: Record<UserTier, { label: string; color: string; features: string[] }> = {
@@ -34,9 +35,41 @@ export function TierManager() {
     if (!user) return;
     setLoading(true);
     try {
+      // If user hasn't had a trial yet, activate no-card trial first
+      const currentProfile = useAuthStore.getState().profile;
+      const hasHadTrial = currentProfile?.trial_ends_at != null;
+
+      if (!hasHadTrial) {
+        // Activate 14-day no-card trial directly
+        const trialEnd = new Date();
+        trialEnd.setDate(trialEnd.getDate() + 14);
+        const { error } = await supabase
+          .from("profiles")
+          .update({
+            trial_tier: tier,
+            trial_ends_at: trialEnd.toISOString(),
+          })
+          .eq("id", user.id);
+
+        if (error) throw new Error(error.message);
+
+        // Update local store to reflect new trial immediately
+        const store = useAuthStore.getState();
+        if (store.profile) {
+          store.setProfile({
+            ...store.profile,
+            trial_tier: tier,
+            trial_ends_at: trialEnd.toISOString(),
+          });
+        }
+        setLoading(false);
+        return;
+      }
+
+      // Trial already used — go to Stripe checkout for paid subscription
       await redirectToCheckout(tier, "year");
     } catch (err) {
-      console.error("Checkout error:", err);
+      console.error("Upgrade error:", err);
       setLoading(false);
     }
   };

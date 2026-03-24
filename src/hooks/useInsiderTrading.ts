@@ -47,7 +47,7 @@ function processTransactions(symbol: string, raw: InsiderTransaction[]): Insider
 
   return {
     symbol,
-    transactions: recent.slice(0, 50),
+    transactions: recent,
     totalBuys,
     totalSells,
     netShares: recent.reduce((sum, t) => sum + t.change, 0),
@@ -99,7 +99,7 @@ function processUWTransactions(symbol: string, raw: { amount: number; price: str
 
   return {
     symbol,
-    transactions: transactions.slice(0, 50),
+    transactions,
     totalBuys,
     totalSells,
     netShares: raw.reduce((sum, t) => sum + t.amount, 0),

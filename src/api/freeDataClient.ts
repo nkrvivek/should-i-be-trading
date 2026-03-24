@@ -1,4 +1,4 @@
-import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { isSupabaseConfigured } from "../lib/supabase";
 
 /**
  * Call a Supabase Edge Function for free data APIs (FRED, Finnhub, SEC EDGAR).

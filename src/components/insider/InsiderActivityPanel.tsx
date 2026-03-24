@@ -1,7 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Panel } from "../layout/Panel";
 import { useInsiderTrading } from "../../hooks/useInsiderTrading";
+import { getCredential } from "../../lib/credentials";
 import type { InsiderActivitySummary, InsiderSignal, InsiderTransaction } from "../../api/types";
+
+// Simple company name lookup cache
+const companyCache = new Map<string, { name: string; sector: string }>();
+
+async function fetchCompanyInfo(symbol: string): Promise<{ name: string; sector: string } | null> {
+  const cached = companyCache.get(symbol);
+  if (cached) return cached;
+
+  const apiKey = getCredential("finnhub");
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch(`/finnhub-api/api/v1/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`);
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (data.name) {
+      const info = { name: data.name, sector: data.finnhubIndustry ?? "" };
+      companyCache.set(symbol, info);
+      return info;
+    }
+  } catch { /* ignore */ }
+  return null;
+}
 
 const SIGNAL_CONFIG: Record<InsiderSignal, { label: string; color: string; icon: string }> = {
   HEAVY_BUYING: { label: "HEAVY BUYING", color: "var(--positive)", icon: "\u25b2\u25b2" },
@@ -139,12 +163,18 @@ function filterByPeriod(transactions: InsiderTransaction[], period: TimePeriod):
   return transactions.filter((t) => t.transactionDate >= cutoffStr);
 }
 
+const PAGE_SIZE = 20;
+
 function SummaryView({ data }: { data: InsiderActivitySummary }) {
-  const [expanded, setExpanded] = useState(false);
+  const [page, setPage] = useState(0);
   const [period, setPeriod] = useState<TimePeriod>("1q");
 
   const filteredTx = filterByPeriod(data.transactions, period);
-  const visibleTx = expanded ? filteredTx : filteredTx.slice(0, 10);
+  const totalPages = Math.ceil(filteredTx.length / PAGE_SIZE);
+  const visibleTx = filteredTx.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset page when period changes
+  const handlePeriodChange = (p: TimePeriod) => { setPeriod(p); setPage(0); };
 
   // Recompute metrics for filtered period
   let periodBuys = 0, periodSells = 0, periodBuyVal = 0, periodSellVal = 0;
@@ -168,7 +198,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
           {(Object.keys(PERIOD_LABELS) as TimePeriod[]).map((p) => (
             <button
               key={p}
-              onClick={() => setPeriod(p)}
+              onClick={() => handlePeriodChange(p)}
               style={{
                 padding: "2px 8px", borderRadius: 999,
                 border: `1px solid ${period === p ? "var(--signal-core)" : "var(--border-dim)"}`,
@@ -235,18 +265,40 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
             </table>
           </div>
 
-          {filteredTx.length > 10 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              style={{
-                marginTop: 6, padding: "4px 0", width: "100%",
-                background: "none", border: "none", cursor: "pointer",
-                fontFamily: "var(--font-mono)", fontSize: 10,
-                color: "var(--signal-core)",
-              }}
-            >
-              {expanded ? "Show less" : `Show all ${filteredTx.length} transactions`}
-            </button>
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 10,
+            }}>
+              <button
+                onClick={() => setPage(Math.max(0, page - 1))}
+                disabled={page === 0}
+                style={{
+                  padding: "3px 10px", borderRadius: 4,
+                  border: "1px solid var(--border-dim)", background: "transparent",
+                  color: page === 0 ? "var(--text-muted)" : "var(--signal-core)",
+                  cursor: page === 0 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                }}
+              >
+                PREV
+              </button>
+              <span style={{ color: "var(--text-muted)" }}>
+                Page {page + 1} of {totalPages} ({filteredTx.length} transactions)
+              </span>
+              <button
+                onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                disabled={page >= totalPages - 1}
+                style={{
+                  padding: "3px 10px", borderRadius: 4,
+                  border: "1px solid var(--border-dim)", background: "transparent",
+                  color: page >= totalPages - 1 ? "var(--text-muted)" : "var(--signal-core)",
+                  cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                }}
+              >
+                NEXT
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -271,7 +323,14 @@ type Props = {
 export function InsiderActivityPanel({ symbol }: Props) {
   const [inputSymbol, setInputSymbol] = useState(symbol ?? "");
   const [activeSymbol, setActiveSymbol] = useState(symbol ?? "");
+  const [companyInfo, setCompanyInfo] = useState<{ name: string; sector: string } | null>(null);
   const { data, loading, error, refresh } = useInsiderTrading(activeSymbol || null);
+
+  // Fetch company info when active symbol changes
+  useEffect(() => {
+    if (!activeSymbol) { setCompanyInfo(null); return; }
+    fetchCompanyInfo(activeSymbol).then(setCompanyInfo);
+  }, [activeSymbol]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -282,7 +341,7 @@ export function InsiderActivityPanel({ symbol }: Props) {
   return (
     <Panel title="Insider Activity" onRefresh={refresh} loading={loading}>
       {/* Search input */}
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, marginBottom: companyInfo ? 4 : 12 }}>
         <input
           type="text"
           value={inputSymbol}
@@ -309,6 +368,18 @@ export function InsiderActivityPanel({ symbol }: Props) {
           SCAN
         </button>
       </form>
+
+      {/* Company name + sector */}
+      {companyInfo && (
+        <div style={{ marginBottom: 10, fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.4 }}>
+          <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{companyInfo.name}</span>
+          {companyInfo.sector && (
+            <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 6 }}>
+              {companyInfo.sector}
+            </span>
+          )}
+        </div>
+      )}
 
       {error && (
         <div style={{

@@ -16,18 +16,35 @@ export async function authenticateRequest(req: Request): Promise<AuthContext> {
 
   const token = authHeader.replace("Bearer ", "");
 
+  // Use service role key to verify user tokens — the auto-set SUPABASE_ANON_KEY
+  // may be in publishable format (sb_publishable_...) which can't verify JWTs.
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const clientKey = serviceRoleKey || anonKey;
+
+  if (!clientKey) {
+    throw new Error("Server misconfigured: no Supabase key available");
+  }
+
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!,
+    clientKey,
     { global: { headers: { Authorization: `Bearer ${token}` } } },
   );
 
   const { data: { user }, error } = await supabase.auth.getUser(token);
   if (error || !user) {
-    throw new Error("Invalid or expired token");
+    throw new Error(`Invalid or expired token: ${error?.message ?? "unknown"}`);
   }
 
-  return { userId: user.id, supabase };
+  // Create a user-scoped client for RLS queries (using anon key + user token)
+  const userClient = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    anonKey || clientKey,
+    { global: { headers: { Authorization: `Bearer ${token}` } } },
+  );
+
+  return { userId: user.id, supabase: userClient };
 }
 
 /**

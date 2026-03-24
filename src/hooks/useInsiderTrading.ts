@@ -136,24 +136,9 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
 
     setLoading(true);
 
-    // Try UW first
-    if (hasUWToken()) {
-      try {
-        const raw = await fetchUWInsiderByTicker(symbol);
-        if (raw.length > 0) {
-          const summary = processUWTransactions(symbol, raw);
-          cache.set(symbol, { data: summary, ts: Date.now() });
-          setData(summary);
-          setError(null);
-          setLoading(false);
-          return;
-        }
-      } catch (e) {
-        console.warn(`UW insider fetch failed for ${symbol}, falling back:`, e);
-      }
-    }
-
-    // Fallback: Finnhub
+    // For per-ticker lookups, prefer Finnhub (returns individual transactions with names/prices).
+    // UW ticker-flow returns aggregated daily data without insider names.
+    // Finnhub:
     const apiKey = getCredential("finnhub");
     if (!apiKey) {
       setError("No insider data source. Add UW token (recommended) or Finnhub key in Settings.");

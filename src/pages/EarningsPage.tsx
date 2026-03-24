@@ -250,17 +250,28 @@ export function EarningsPage() {
                         <td style={{ padding: "0 8px" }}>
                           {e.epsSurprises && e.epsSurprises.length > 0 ? (
                             <div style={{ display: "flex", gap: 2 }}>
-                              {e.epsSurprises.slice(0, 4).map((s, si) => (
-                                <span
-                                  key={si}
-                                  title={`Q${s.quarter} ${s.year}: ${s.surprisePercent > 0 ? "+" : ""}${s.surprisePercent.toFixed(1)}%`}
-                                  style={{
-                                    display: "inline-block", width: 8, height: 8, borderRadius: 2,
-                                    background: s.surprisePercent > 0 ? "var(--positive)" : s.surprisePercent < 0 ? "var(--negative)" : "var(--text-muted)",
-                                    opacity: 0.8,
-                                  }}
-                                />
-                              ))}
+                              {e.epsSurprises.slice(0, 4).map((s, si) => {
+                                const isBeat = s.surprisePercent > 0;
+                                const isMiss = s.surprisePercent < 0;
+                                const label = isBeat ? "BEAT" : isMiss ? "MISS" : "IN-LINE";
+                                return (
+                                  <span
+                                    key={si}
+                                    title={`Q${s.quarter} ${s.year}: ${label} ${isBeat ? "+" : ""}${s.surprisePercent.toFixed(1)}%`}
+                                    style={{
+                                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                                      minWidth: 14, height: 14, borderRadius: 2, padding: "0 2px",
+                                      fontSize: 7, fontWeight: 700, fontFamily: "var(--font-mono)",
+                                      background: isBeat ? "var(--positive)" : isMiss ? "var(--negative)" : "var(--text-muted)",
+                                      color: "#000",
+                                      opacity: 0.9,
+                                      cursor: "default",
+                                    }}
+                                  >
+                                    {isBeat ? "B" : isMiss ? "M" : "="}
+                                  </span>
+                                );
+                              })}
                             </div>
                           ) : (
                             <span style={{ fontSize: 9, color: "var(--text-muted)" }}>---</span>

@@ -99,6 +99,7 @@ export function CongressTradingPanel() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "buy" | "sell">("all");
   const [source, setSource] = useState<"uw" | "rapidapi" | "">(">>");
+  const [page, setPage] = useState(0);
 
   const rapidApiKey = import.meta.env.VITE_RAPIDAPI_KEY;
 
@@ -177,6 +178,12 @@ export function CongressTradingPanel() {
   }, [fetchTrades]);
 
   const filtered = filter === "all" ? trades : trades.filter((t) => t.tradeType === filter);
+  const PAGE_SIZE = 25;
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
+
+  // Reset page when filter changes
+  const handleFilter = (f: "all" | "buy" | "sell") => { setFilter(f === filter ? "all" : f); setPage(0); };
 
   const buyCount = trades.filter((t) => t.tradeType === "buy").length;
   const sellCount = trades.filter((t) => t.tradeType === "sell").length;
@@ -229,10 +236,10 @@ export function CongressTradingPanel() {
           {/* Summary + Filter */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
             <div style={{ display: "flex", gap: 8 }}>
-              <SummaryPill label="Buys" count={buyCount} tone="positive" active={filter === "buy"} onClick={() => setFilter(filter === "buy" ? "all" : "buy")} />
-              <SummaryPill label="Sells" count={sellCount} tone="negative" active={filter === "sell"} onClick={() => setFilter(filter === "sell" ? "all" : "sell")} />
+              <SummaryPill label="Buys" count={buyCount} tone="positive" active={filter === "buy"} onClick={() => handleFilter("buy")} />
+              <SummaryPill label="Sells" count={sellCount} tone="negative" active={filter === "sell"} onClick={() => handleFilter("sell")} />
               {filter !== "all" && (
-                <button onClick={() => setFilter("all")} style={{
+                <button onClick={() => handleFilter("all")} style={{
                   background: "none", border: "none", fontFamily: "var(--font-mono)",
                   fontSize: 9, color: "var(--text-muted)", cursor: "pointer", padding: "2px 6px",
                 }}>
@@ -292,7 +299,7 @@ export function CongressTradingPanel() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.slice(0, 100).map((t, i) => {
+                {paged.map((t, i) => {
                   const isBuy = t.tradeType === "buy";
                   return (
                     <tr key={`${t.ticker}-${t.tradeDate}-${t.name}-${i}`} style={{ borderBottom: "1px solid var(--border-dim)" }}>
@@ -337,6 +344,42 @@ export function CongressTradingPanel() {
               </tbody>
             </table>
           </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              fontFamily: "var(--font-mono)", fontSize: 10,
+            }}>
+              <button
+                onClick={() => setPage(Math.max(0, page - 1))}
+                disabled={page === 0}
+                style={{
+                  padding: "3px 10px", borderRadius: 4,
+                  border: "1px solid var(--border-dim)", background: "transparent",
+                  color: page === 0 ? "var(--text-muted)" : "var(--signal-core)",
+                  cursor: page === 0 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                }}
+              >
+                PREV
+              </button>
+              <span style={{ color: "var(--text-muted)" }}>
+                Page {page + 1} of {totalPages} ({filtered.length} trades)
+              </span>
+              <button
+                onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+                disabled={page >= totalPages - 1}
+                style={{
+                  padding: "3px 10px", borderRadius: 4,
+                  border: "1px solid var(--border-dim)", background: "transparent",
+                  color: page >= totalPages - 1 ? "var(--text-muted)" : "var(--signal-core)",
+                  cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                }}
+              >
+                NEXT
+              </button>
+            </div>
+          )}
 
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>
             Source: {sourceLabel}

@@ -46,7 +46,7 @@ export function AuthProvider({ children }: Props) {
   async function fetchProfile(userId: string) {
     const { data } = await supabase
       .from("profiles")
-      .select("id, display_name, tier")
+      .select("id, display_name, tier, trial_tier, trial_ends_at")
       .eq("id", userId)
       .single();
     if (data) setProfile(data);

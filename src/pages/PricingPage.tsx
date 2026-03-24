@@ -92,7 +92,7 @@ export function PricingPage() {
 /** Extracted so LandingPage can embed it without TerminalShell */
 export function PricingContent() {
   const navigate = useNavigate();
-  const { user, profile, subscription } = useAuthStore();
+  const { user, profile, subscription, isTrialActive, effectiveTier } = useAuthStore();
   const [interval, setInterval] = useState<BillingInterval>("year");
   const [loading, setLoading] = useState<string | null>(null);
 
@@ -102,11 +102,14 @@ export function PricingContent() {
       return;
     }
 
+    // Not logged in: send to signup (they'll get the 14-day free trial on signup)
     if (!user) {
       navigate("/login");
       return;
     }
 
+    // User is on trial: clicking a paid tier means they want to subscribe after trial
+    // Or trial expired: they need to pay now
     if (!isSupabaseConfigured()) {
       navigate("/settings");
       return;
@@ -139,11 +142,17 @@ export function PricingContent() {
   };
 
   const ctaLabel = (tier: Tier) => {
-    const isCurrent = profile?.tier === tier.tier;
+    const currentEffective = effectiveTier();
+    const isCurrent = currentEffective === tier.tier;
+    if (isCurrent && isTrialActive()) return "ON TRIAL";
     if (isCurrent) return "CURRENT PLAN";
     if (tier.tier === "free") return "GET STARTED";
-    if (tier.trial) return "START 14-DAY FREE TRIAL";
-    return `SUBSCRIBE — ${formatPrice(tier)}`;
+    // Not logged in: show trial CTA
+    if (!user) return "START 14-DAY FREE TRIAL";
+    // Logged in + on trial: show subscribe CTA
+    if (isTrialActive()) return `SUBSCRIBE — ${formatPrice(tier)}${interval === "year" ? "/yr" : "/mo"}`;
+    // Trial expired: show subscribe
+    return `SUBSCRIBE — ${formatPrice(tier)}${interval === "year" ? "/yr" : "/mo"}`;
   };
 
   return (

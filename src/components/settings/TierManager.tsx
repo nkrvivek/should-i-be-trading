@@ -23,11 +23,11 @@ const TIER_INFO: Record<UserTier, { label: string; color: string; features: stri
 };
 
 export function TierManager() {
-  const { user, profile, subscription } = useAuthStore();
+  const { user, profile, subscription, isTrialActive, trialDaysLeft, effectiveTier } = useAuthStore();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
-  const currentTier = profile?.tier ?? "free";
+  const currentTier = effectiveTier();
   const tierInfo = TIER_INFO[currentTier];
 
   const handleUpgrade = async (tier: "pro" | "enterprise") => {
@@ -70,6 +70,9 @@ export function TierManager() {
             Current Plan
           </span>
           <Badge label={tierInfo.label} variant={currentTier === "pro" ? "positive" : currentTier === "enterprise" ? "info" : "default"} />
+          {isTrialActive() && (
+            <Badge label={`TRIAL — ${trialDaysLeft()}d left`} variant="warning" />
+          )}
           {subscription?.status === "trialing" && (
             <Badge label="TRIAL" variant="warning" />
           )}

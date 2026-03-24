@@ -21,7 +21,7 @@ export function AuthGate({ onSuccess }: Props) {
     );
   }
 
-  const handleOAuthSignIn = async (provider: "google" | "twitter") => {
+  const handleOAuthSignIn = async (provider: "google" | "twitter" | "x") => {
     setLoading(true);
     setError(null);
     try {
@@ -97,7 +97,7 @@ export function AuthGate({ onSuccess }: Props) {
           Continue with Google
         </button>
         <button
-          onClick={() => handleOAuthSignIn("twitter")}
+          onClick={() => handleOAuthSignIn("x")}
           disabled={loading}
           style={oauthBtnStyle(loading)}
         >

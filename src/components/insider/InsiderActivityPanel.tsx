@@ -334,9 +334,9 @@ type Props = {
   symbol?: string;
 };
 
-export function InsiderActivityPanel({ symbol }: Props) {
-  const [inputSymbol, setInputSymbol] = useState(symbol ?? "");
-  const [activeSymbol, setActiveSymbol] = useState(symbol ?? "");
+export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
+  const [inputSymbol, setInputSymbol] = useState(symbol);
+  const [activeSymbol, setActiveSymbol] = useState(symbol);
   const [companyInfo, setCompanyInfo] = useState<{ name: string; sector: string } | null>(null);
   const { data, loading, error, refresh } = useInsiderTrading(activeSymbol || null);
 

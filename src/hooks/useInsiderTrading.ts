@@ -92,7 +92,8 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
         const edgeData = await fetchInsiderViaEdge(symbol);
         transactions = edgeData.map((t) => ({
           ...t,
-          transactionCode: t.transactionType?.startsWith("P") ? "P" : "S",
+          // Finnhub returns transactionCode directly (P=Purchase, S=Sale, M=Exercise, F=Tax)
+          transactionCode: (t as Record<string, unknown>).transactionCode as string ?? t.transactionType ?? "S",
           filingDate: (t as Record<string, unknown>).filingDate as string ?? "",
           officerTitle: (t as Record<string, unknown>).officerTitle as string ?? "",
         }));

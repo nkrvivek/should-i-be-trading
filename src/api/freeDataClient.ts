@@ -98,7 +98,10 @@ export type InsiderTransaction = {
   change: number;
   transactionDate: string;
   transactionType: string;
+  transactionCode: string;
   transactionPrice: number;
+  filingDate?: string;
+  id?: string;
 };
 
 export async function fetchInsiderTransactions(symbol: string): Promise<InsiderTransaction[]> {

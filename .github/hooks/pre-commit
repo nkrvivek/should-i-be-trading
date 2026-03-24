@@ -1,0 +1,20 @@
+#!/bin/bash
+# Prevent committing files with secrets
+
+# Block .env files (except .env.example)
+STAGED_ENV=$(git diff --cached --name-only | grep -E '^\\.env$|^\\.env\\.' | grep -v '.env.example')
+if [ -n "$STAGED_ENV" ]; then
+  echo "ERROR: Attempting to commit .env file(s): $STAGED_ENV"
+  echo "Remove with: git reset HEAD <file>"
+  exit 1
+fi
+
+# Scan for common secret patterns in staged files
+SECRETS=$(git diff --cached -U0 | grep -E '^\+.*((sk-ant-|sk_test_|sk_live_|whsec_|AKIA[A-Z0-9]{16})[A-Za-z0-9_-]+)' || true)
+if [ -n "$SECRETS" ]; then
+  echo "ERROR: Possible secrets detected in staged changes:"
+  echo "$SECRETS"
+  echo ""
+  echo "If these are intentional (e.g., placeholders), use: git commit --no-verify"
+  exit 1
+fi

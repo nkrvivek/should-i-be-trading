@@ -147,14 +147,19 @@ export function DashboardPage() {
           )}
         </div>
 
-        {/* Full-width: Sector Heat Map + Chart */}
-        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, minHeight: 700 }}>
-          <div style={{ minHeight: 700 }}>
+        {/* Full-width: Sector Heat Map + Chart — both fill viewport height */}
+        <div style={{
+          gridColumn: "1 / -1",
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+          height: "calc(100vh - 200px)",
+          minHeight: 600,
+        }}>
+          <div style={{ height: "100%", overflow: "auto" }}>
             <SectorHeatMap />
           </div>
-          <div style={{ minHeight: 700 }}>
-            <TickerChart />
-          </div>
+          <TickerChart />
         </div>
 
         {/* Full-width: Watchlist Manager */}

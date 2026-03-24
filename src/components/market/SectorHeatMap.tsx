@@ -106,7 +106,7 @@ export function SectorHeatMap() {
   }, [fetchSectors]);
 
   return (
-    <Panel title="Sector Performance" onRefresh={fetchSectors} loading={loading}>
+    <Panel title="Sector Performance" onRefresh={fetchSectors} loading={loading} className="sector-heatmap-panel">
       {error && (
         <div style={{
           padding: "8px 12px", background: "rgba(232, 93, 108, 0.1)",

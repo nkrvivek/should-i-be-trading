@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { Panel } from "../layout/Panel";
 import { useAppStore } from "../../stores/appStore";
 
 type Props = {
@@ -67,9 +66,33 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
   }, [symbol, theme]);
 
   return (
-    <Panel title="Chart">
+    <div style={{
+      display: "flex",
+      flexDirection: "column",
+      background: "var(--bg-panel)",
+      border: "1px solid var(--border-dim)",
+      borderRadius: 4,
+      overflow: "hidden",
+    }}>
+      {/* Header */}
+      <div style={{
+        display: "flex",
+        alignItems: "center",
+        padding: "6px 12px",
+        borderBottom: "1px solid var(--border-dim)",
+        background: "var(--bg-panel-raised)",
+        flexShrink: 0,
+      }}>
+        <span style={{
+          fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 600,
+          color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em",
+        }}>
+          Chart
+        </span>
+      </div>
+
       {/* Symbol search */}
-      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+      <form onSubmit={handleSubmit} style={{ display: "flex", gap: 8, padding: 8, flexShrink: 0 }}>
         <input
           type="text"
           value={inputSymbol}
@@ -93,12 +116,12 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
         </button>
       </form>
 
-      {/* Chart container */}
+      {/* Chart container — fills remaining space */}
       <div
         ref={containerRef}
         className="tradingview-widget-container"
-        style={{ height: 800, width: "100%", borderRadius: 4, overflow: "hidden" }}
+        style={{ height: "calc(100vh - 300px)", minHeight: 500, width: "100%", overflow: "hidden" }}
       />
-    </Panel>
+    </div>
   );
 }

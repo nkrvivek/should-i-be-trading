@@ -9,7 +9,7 @@ const CACHE_TTL = 60_000; // 1 min during market hours
 const CLOSED_CACHE_TTL = 15 * 60_000; // 15 min when closed
 
 type FinnhubQuote = { c: number; dp: number; pc: number; o: number; h: number; l: number };
-type FinnhubCandle = { c: number[]; h: number[]; l: number[]; o: number[]; t: number[]; v: number[]; s: string };
+
 
 async function finnhubFetch<T>(endpoint: string, params: Record<string, string>, apiKey?: string): Promise<T> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -38,26 +38,33 @@ async function finnhubFetch<T>(endpoint: string, params: Record<string, string>,
   return res.json();
 }
 
-async function fredFetch(seriesId: string): Promise<number | undefined> {
+async function fredFetch(seriesId: string, limit = 2): Promise<number | undefined> {
+  const vals = await fredFetchSeries(seriesId, limit);
+  return vals.length > 0 ? vals[0] : undefined;
+}
+
+async function fredFetchSeries(seriesId: string, limit = 250): Promise<number[]> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!isSupabaseConfigured()) return undefined;
+  if (!isSupabaseConfigured()) return [];
 
   try {
-    const url = `${supabaseUrl}/functions/v1/fred?series_id=${seriesId}&limit=2&sort_order=desc`;
+    const url = `${supabaseUrl}/functions/v1/fred?series_id=${seriesId}&limit=${limit}&sort_order=desc`;
     const res = await fetch(url, {
       headers: {
         Authorization: `Bearer ${supabaseKey}`,
         apikey: supabaseKey,
       },
     });
-    if (!res.ok) return undefined;
+    if (!res.ok) return [];
     const data = await res.json();
     const obs = data?.observations;
-    if (obs && obs.length > 0) return parseFloat(obs[0].value);
-    return undefined;
+    if (!obs) return [];
+    return obs
+      .filter((o: { value: string }) => o.value !== ".")
+      .map((o: { value: string }) => parseFloat(o.value));
   } catch {
-    return undefined;
+    return [];
   }
 }
 
@@ -76,30 +83,44 @@ export function useMarketScore() {
 
     try {
       const apiKey = getCredential("finnhub") ?? undefined;
-
-      // Parallel fetch: VIX quote, SPY quote, SPY candles (for MAs + RSI), sector quotes
-      const now = Math.floor(Date.now() / 1000);
-      const sixMonthsAgo = now - 200 * 24 * 60 * 60; // ~200 trading days for 200d SMA
-
       const sectors = ["XLK", "XLF", "XLV", "XLY", "XLP", "XLE", "XLI", "XLB", "XLRE", "XLC", "XLU"];
 
-      // Batch fetches with rate limit awareness
-      const [vixQuote, spyQuote, spyCandles, tenYearYield] = await Promise.all([
-        finnhubFetch<FinnhubQuote>("quote", { symbol: "^VIX" }, apiKey).catch(() =>
-          // VIX might need different symbol format
-          finnhubFetch<FinnhubQuote>("quote", { symbol: "VIX" }, apiKey).catch(() => null)
-        ),
+      // Phase 1: FRED data (free, unlimited, no rate limit issues)
+      // VIX via FRED (VIXCLS) — Finnhub ^VIX requires paid subscription
+      // SP500 via FRED — Finnhub stock/candle requires paid subscription
+      const [vixSeries, sp500Series, tenYearYield, dxy, spyQuote] = await Promise.all([
+        fredFetchSeries("VIXCLS", 5),                   // VIX: last 5 days
+        fredFetchSeries("SP500", 250),                   // SP500: ~1 year of daily closes
+        fredFetch("DGS10"),                              // 10-Year Treasury
+        fredFetch("DTWEXBGS").catch(() => undefined),    // DXY
         finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch(() => null),
-        finnhubFetch<FinnhubCandle>("stock/candle", {
-          symbol: "SPY",
-          resolution: "D",
-          from: sixMonthsAgo.toString(),
-          to: now.toString(),
-        }, apiKey).catch(() => null),
-        fredFetch("DGS10"), // 10-Year Treasury
       ]);
 
-      // Fetch sectors in batches of 4 with delay
+      // VIX from FRED
+      const vix = vixSeries.length > 0 ? vixSeries[0] : undefined;
+      const vixPrev = vixSeries.length > 1 ? vixSeries[1] : undefined;
+
+      // SP500 MAs and RSI from FRED daily closes (most recent first, reverse for SMA/RSI)
+      let spySma20: number | undefined;
+      let spySma50: number | undefined;
+      let spySma200: number | undefined;
+      let spyRsi14: number | undefined;
+      let spyPrice: number | undefined;
+
+      if (sp500Series.length > 0) {
+        spyPrice = sp500Series[0]; // Most recent SP500 close
+        // Reverse to chronological order for SMA/RSI computation
+        const chronological = [...sp500Series].reverse();
+        spySma20 = computeSMA(chronological, 20);
+        spySma50 = computeSMA(chronological, 50);
+        spySma200 = computeSMA(chronological, 200);
+        spyRsi14 = computeRSI(chronological, 14);
+      }
+
+      // Override with live SPY quote if available (more current than FRED EOD)
+      if (spyQuote?.c) spyPrice = spyQuote.c;
+
+      // Phase 2: Sector quotes from Finnhub (only needs quote endpoint, free tier OK)
       const sectorChanges: { symbol: string; change: number }[] = [];
       for (let i = 0; i < sectors.length; i += 4) {
         const batch = sectors.slice(i, i + 4);
@@ -117,29 +138,12 @@ export function useMarketScore() {
         if (i + 4 < sectors.length) await new Promise((r) => setTimeout(r, 500));
       }
 
-      // Compute MAs and RSI from candle data
-      let spySma20: number | undefined;
-      let spySma50: number | undefined;
-      let spySma200: number | undefined;
-      let spyRsi14: number | undefined;
-
-      if (spyCandles && spyCandles.s === "ok" && spyCandles.c.length > 0) {
-        const closes = spyCandles.c;
-        spySma20 = computeSMA(closes, 20);
-        spySma50 = computeSMA(closes, 50);
-        spySma200 = computeSMA(closes, 200);
-        spyRsi14 = computeRSI(closes, 14);
-      }
-
-      // Also fetch DXY via FRED
-      const dxy = await fredFetch("DTWEXBGS").catch(() => undefined);
-
       const marketOpen = status === "OPEN" || status === "PRE_MARKET" || status === "AFTER_HOURS";
 
       const inputs: MarketInputs = {
-        vix: vixQuote?.c ?? undefined,
-        vixPrev: vixQuote?.pc ?? undefined,
-        spyPrice: spyQuote?.c ?? undefined,
+        vix,
+        vixPrev,
+        spyPrice,
         spyChange: spyQuote?.dp ?? undefined,
         spySma20,
         spySma50,

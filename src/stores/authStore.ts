@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import type { User, Session } from "@supabase/supabase-js";
 
-export type UserTier = "free" | "pro" | "enterprise";
+export type UserTier = "free" | "starter" | "pro" | "enterprise";
 
 export type UserProfile = {
   id: string;

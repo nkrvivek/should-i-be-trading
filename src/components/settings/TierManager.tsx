@@ -11,6 +11,11 @@ const TIER_INFO: Record<UserTier, { label: string; color: string; features: stri
     color: "var(--neutral)",
     features: ["Regime Dashboard", "Macro Data (FRED)", "Glossary", "Signal History"],
   },
+  starter: {
+    label: "STARTER",
+    color: "var(--signal-core)",
+    features: ["Signal Interpretations", "AI Chat (10/day)", "Backtester (3M)", "All Notifications", "5 Watchlists"],
+  },
   pro: {
     label: "PRO",
     color: "var(--positive)",
@@ -31,7 +36,7 @@ export function TierManager() {
   const currentTier = effectiveTier();
   const tierInfo = TIER_INFO[currentTier];
 
-  const handleUpgrade = async (tier: "pro" | "enterprise") => {
+  const handleUpgrade = async (tier: "starter" | "pro" | "enterprise") => {
     if (!user) return;
     setLoading(true);
     try {
@@ -194,8 +199,18 @@ export function TierManager() {
             Upgrade
           </div>
 
-          <div style={{ display: "flex", gap: 12 }}>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             {currentTier === "free" && (
+              <UpgradeCard
+                label="Upgrade to Starter"
+                price="$12/mo or $99/yr"
+                description="AI chat + interpretations + backtester"
+                trial="14-day free trial"
+                onUpgrade={() => handleUpgrade("starter")}
+                loading={loading}
+              />
+            )}
+            {(currentTier === "free" || currentTier === "starter") && (
               <UpgradeCard
                 label="Upgrade to Pro"
                 price="$29/mo or $249/yr"

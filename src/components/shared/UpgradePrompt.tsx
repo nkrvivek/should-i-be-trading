@@ -14,7 +14,8 @@ const featureLabels: Partial<Record<Feature, string>> = {
   scanner: "Dark Pool Scanner",
   dark_pool: "Dark Pool Flow",
   alerts: "Alerts",
-  backtester: "Strategy Backtester",
+  backtester_basic: "Strategy Backtester (3M)",
+  backtester_full: "Strategy Backtester (1Y)",
   automation: "Automated Trading",
   charts_advanced: "Advanced Charts",
 };

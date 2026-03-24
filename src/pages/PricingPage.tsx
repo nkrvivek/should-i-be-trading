@@ -14,7 +14,7 @@ type Tier = {
   description: string;
   features: string[];
   highlighted?: boolean;
-  tier: "free" | "pro" | "enterprise";
+  tier: "free" | "starter" | "pro" | "enterprise";
   trial?: boolean;
 };
 
@@ -35,6 +35,24 @@ const TIERS: Tier[] = [
       "Dark / light theme",
     ],
     tier: "free",
+  },
+  {
+    name: "Starter",
+    monthlyPrice: 12,
+    yearlyPrice: 99,
+    description: "Signal interpretations, AI chat, and backtesting",
+    features: [
+      "Everything in Free",
+      "Regime signal interpretations (full detail)",
+      "AI chat (10 messages/day)",
+      "AI briefing (15/day)",
+      "Signal backtester (3-month history)",
+      "All push notifications",
+      "5 watchlists, 50 tickers each",
+      "Congressional trading tracker",
+    ],
+    trial: true,
+    tier: "starter",
   },
   {
     name: "Pro",
@@ -117,7 +135,7 @@ export function PricingContent() {
 
     setLoading(tier.tier);
     try {
-      await redirectToCheckout(tier.tier as "pro" | "enterprise", interval);
+      await redirectToCheckout(tier.tier as "starter" | "pro" | "enterprise", interval);
     } catch (err) {
       console.error("Checkout error:", err);
       setLoading(null);

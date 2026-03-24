@@ -30,7 +30,7 @@ async function callEdgeFunction(name: string, body: Record<string, unknown>) {
 
 /** Redirect user to Stripe Checkout for a subscription */
 export async function redirectToCheckout(
-  tier: "pro" | "enterprise",
+  tier: "starter" | "pro" | "enterprise",
   interval: "month" | "year",
 ) {
   const { url } = await callEdgeFunction("create-checkout", { tier, interval });

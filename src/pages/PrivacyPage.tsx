@@ -41,8 +41,21 @@ export function PrivacyPage() {
           (c) delete your account and data; (d) export your data; (e) revoke API key access at any time.
         </Section>
 
-        <Section title="7. Contact">
-          For privacy inquiries, contact us at privacy@sibt.app.
+        <Section title="7. Payment Data">
+          Payments are processed by Stripe. We do not store your credit card number or payment details.
+          Stripe processes and stores your payment information in accordance with their privacy policy
+          and PCI DSS compliance. We store only subscription metadata (plan type, billing interval,
+          subscription status, renewal dates) to manage feature access.
+        </Section>
+
+        <Section title="8. Cookies and Local Storage">
+          We use browser local storage for: (a) authentication tokens (Supabase); (b) theme preferences;
+          (c) connection configuration (API URLs). We use Stripe.js cookies for payment processing.
+          We do not use tracking cookies or third-party analytics.
+        </Section>
+
+        <Section title="9. Contact">
+          For privacy inquiries, contact us at privacy@sibt.ai.
         </Section>
       </div>
     </TerminalShell>

@@ -11,6 +11,8 @@ import { TermsPage } from "./pages/TermsPage";
 import { PrivacyPage } from "./pages/PrivacyPage";
 import { GlossaryPage } from "./pages/GlossaryPage";
 import { PricingPage } from "./pages/PricingPage";
+import { LandingPage } from "./pages/LandingPage";
+import { RiskDisclosurePage } from "./pages/RiskDisclosurePage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
@@ -30,8 +32,9 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          <Route path="/welcome" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/" element={<SmartHome />} />
           <Route path="/terminal" element={<GatedPage feature="terminal"><TerminalPage /></GatedPage>} />
           <Route path="/analysis" element={<GatedPage feature="ai_analysis"><AnalysisPage /></GatedPage>} />
           <Route path="/macro" element={<MacroPage />} />
@@ -41,11 +44,21 @@ export default function App() {
           <Route path="/glossary" element={<GlossaryPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/risk" element={<RiskDisclosurePage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
   );
+}
+
+/** Show landing page for unauthenticated users, dashboard for authenticated */
+function SmartHome() {
+  const { user, loading } = useAuthStore();
+  if (!isSupabaseConfigured()) return <DashboardPage />;
+  if (loading) return null;
+  if (!user) return <LandingPage />;
+  return <DashboardPage />;
 }
 
 function RequireAuth({ children }: { children: React.ReactNode }) {

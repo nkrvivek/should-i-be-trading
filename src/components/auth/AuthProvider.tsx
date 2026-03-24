@@ -5,7 +5,7 @@ import { useAuthStore } from "../../stores/authStore";
 type Props = { children: ReactNode };
 
 export function AuthProvider({ children }: Props) {
-  const { setUser, setSession, setProfile, setCredentials, setLoading } = useAuthStore();
+  const { setUser, setSession, setProfile, setCredentials, setSubscription, setLoading } = useAuthStore();
 
   useEffect(() => {
     if (!isSupabaseConfigured()) {
@@ -20,6 +20,7 @@ export function AuthProvider({ children }: Props) {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchCredentials(session.user.id);
+        fetchSubscription(session.user.id);
       }
       setLoading(false);
     });
@@ -31,9 +32,11 @@ export function AuthProvider({ children }: Props) {
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchCredentials(session.user.id);
+        fetchSubscription(session.user.id);
       } else {
         setProfile(null);
         setCredentials([]);
+        setSubscription(null);
       }
     });
 
@@ -55,6 +58,15 @@ export function AuthProvider({ children }: Props) {
       .select("provider, is_valid, last_validated_at")
       .eq("user_id", userId);
     if (data) setCredentials(data);
+  }
+
+  async function fetchSubscription(userId: string) {
+    const { data } = await supabase
+      .from("subscriptions")
+      .select("plan_tier, status, billing_interval, cancel_at_period_end, current_period_end")
+      .eq("user_id", userId)
+      .single();
+    if (data) setSubscription(data);
   }
 
   return <>{children}</>;

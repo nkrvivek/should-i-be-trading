@@ -1,0 +1,6 @@
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://js.stripe.com https://s3.tradingview.com; frame-src https://js.stripe.com https://hooks.stripe.com https://s.tradingview.com; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://api.anthropic.com https://api.exa.ai https://api.unusualwhales.com https://finnhub.io https://api.stlouisfed.org ws://localhost:* http://localhost:*; img-src 'self' data: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data:;

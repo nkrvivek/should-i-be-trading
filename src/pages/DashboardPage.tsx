@@ -7,6 +7,7 @@ import { TerminalShell } from "../components/layout/TerminalShell";
 import { TrafficLight } from "../components/regime/TrafficLight";
 import { ScoreBreakdown } from "../components/regime/ScoreBreakdown";
 import { SignalTimeline } from "../components/regime/SignalTimeline";
+import { DailyBriefing } from "../components/regime/DailyBriefing";
 import { SectorHeatMap } from "../components/market/SectorHeatMap";
 import { TickerChart } from "../components/market/TickerChart";
 import { WatchlistManager } from "../components/watchlist/WatchlistManager";
@@ -77,7 +78,7 @@ export function DashboardPage() {
           />
         </div>
 
-        {/* Row 2: Sector Heat Map + Chart — fills viewport */}
+        {/* Row 2: Sector Heat Map + Chart */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
@@ -91,10 +92,13 @@ export function DashboardPage() {
           <TickerChart />
         </div>
 
-        {/* Row 3: Watchlist */}
+        {/* Row 3: Daily Briefing — prominent, full width */}
+        <DailyBriefing cri={null} verdict={verdict} marketScore={marketScore} />
+
+        {/* Row 4: Watchlist */}
         <WatchlistManager />
 
-        {/* Row 4: Signal Timeline */}
+        {/* Row 5: Signal Timeline */}
         <Panel title={`Signal History (${history.length})`}>
           <SignalTimeline history={history} />
         </Panel>

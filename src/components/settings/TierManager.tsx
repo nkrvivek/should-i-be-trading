@@ -263,6 +263,7 @@ function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
   return (
     <div style={{
       flex: 1,
+      minWidth: 200,
       padding: 16,
       background: "var(--bg-panel-raised)",
       border: "1px solid var(--border-dim)",
@@ -279,7 +280,7 @@ function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
         onClick={onUpgrade}
         disabled={loading}
         style={{
-          padding: "8px 16px",
+          padding: "10px 16px",
           background: "var(--signal-core)",
           border: "none",
           borderRadius: 4,
@@ -289,7 +290,8 @@ function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
           color: "var(--bg-base)",
           cursor: loading ? "default" : "pointer",
           opacity: loading ? 0.6 : 1,
-          marginTop: 4,
+          marginTop: "auto",
+          width: "100%",
         }}
       >
         {loading ? "..." : "START FREE TRIAL"}

@@ -11,8 +11,8 @@ Deno.serve(async (req) => {
     const ctx = await authenticateRequest(req);
     const { tier, interval } = await req.json();
 
-    if (!["pro", "enterprise"].includes(tier)) {
-      return errorResponse("Invalid tier. Must be 'pro' or 'enterprise'.");
+    if (!["starter", "pro", "enterprise"].includes(tier)) {
+      return errorResponse("Invalid tier. Must be 'starter', 'pro', or 'enterprise'.");
     }
     if (!["month", "year"].includes(interval)) {
       return errorResponse("Invalid interval. Must be 'month' or 'year'.");

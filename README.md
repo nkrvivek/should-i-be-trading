@@ -11,11 +11,15 @@ Self-service platform. Bring your own brokerage and API keys. No investment advi
 ## How It Works
 
 ```
-FRED (VIX, SP500, 10Y)  ──┐
-Finnhub (sectors, SPY)   ──┼──>  Market Quality Score (0-100)  ──>  TRADE / CAUTION / NO TRADE
-Insider Activity (SEC)   ──┤           |
-Congress Trades (STOCK Act)┘     5 categories weighted:
-                                 Volatility 25% | Momentum 25% | Trend 20% | Breadth 20% | Macro 10%
+FRED (VIX, SP500, 10Y, HY spread, yields)  ──┐
+Finnhub (sectors, SPY, RSP, HYG, TLT)       ──┼──>  Market Quality Score (0-100)
+Insider Activity (SEC Form 4)                ──┤     Regime Monitor (3 pillars, 8 signals)
+Congress Trades (STOCK Act)                   ──┤     Financial Stress Indicator
+AI Analysis (Claude)                          ──┘     ──>  TRADE / CAUTION / NO TRADE
+
+Market Quality Score:  Volatility 25% | Momentum 25% | Trend 20% | Breadth 20% | Macro 10%
+Regime Monitor:        Regime 40% | Fragility 35% | Trigger 25%
+FSI:                   (HYG/TLT) / (Vol x HY Spread)
 ```
 
 **Decision logic:**
@@ -30,6 +34,7 @@ Congress Trades (STOCK Act)┘     5 categories weighted:
 | **Dashboard** | Free | Traffic light verdict, Market Quality Score (5 categories), sector heatmap, TradingView charts, watchlists, signal history |
 | **Insider** | Free | SEC Form 4 insider trading per ticker, congressional STOCK Act trades, 25-stock market overview scan |
 | **Earnings** | Free | Sector-wise earnings calendar, 80+ major stocks, pre/after market timing, EPS/revenue estimates, beat/miss tracking |
+| **Regime** | Free | Market Regime & Fragility Monitor: 3 pillars, 8 signals, FSI, composite score, market state, action stance |
 | **Macro** | Free | FRED yield curves, economic calendar (FRED releases + Finnhub earnings), macro indicators |
 | **Terminal** | Pro | Radon integration: dark pool flow, options flow, real-time portfolio, orders, AI daily briefing, Claude chat |
 | **Analysis** | Pro | Deep ticker analysis with Claude AI, Exa web research |
@@ -48,6 +53,30 @@ Standalone scoring engine — no paid APIs required. Uses FRED (free, unlimited)
 | Trend | 20% | SP500 vs 20/50/200d SMA + RSI-14 (FRED SP500) |
 | Breadth | 20% | % of 11 S&P sectors positive (Finnhub quotes) |
 | Macro | 10% | 10Y Treasury yield (FRED DGS10) + DXY trend |
+
+### Market Regime & Fragility Monitor
+Three-pillar institutional analysis using free FRED + Finnhub data:
+
+| Pillar | Weight | Signals |
+|--------|--------|---------|
+| Regime | 40% | SPX vs 200DMA, HY credit spread (BAMLH0A0HYM2), 2s/10s yield curve, FSI |
+| Fragility | 35% | Sector breadth (% positive), RSP/SPY ratio (equal vs cap-weight) |
+| Trigger | 25% | VIX level, VIX term structure (spot vs 3-month) |
+
+Market states: Strong / Risk-On, Stable / Normal, Fragile / Hedged, Stressed / Defensive, Crisis / Risk-Off
+
+### Financial Stress Indicator (FSI)
+Four signals compressed into one number:
+```
+FSI = (HYG/TLT) / (Vol x HY Credit Spread)
+```
+- **HYG/TLT** — risk appetite (junk bonds vs safe Treasuries)
+- **Vol** — bond/equity market volatility (MOVE or VIX proxy)
+- **HY Spread** — BofA high yield credit spread
+- Rising = healthy. Falling = deterioration. Collapse precedes equity drawdowns.
+
+### Fear & Greed Gauge
+Arc gauge on the dashboard mapping Market Quality Score to sentiment zones: Extreme Fear (0-20), Fear (20-40), Neutral (40-60), Greed (60-80), Extreme Greed (80-100).
 
 ### Insider Trading Intelligence
 - **Per-ticker scanner** — SEC Form 4 filings via Finnhub edge function
@@ -89,11 +118,11 @@ Standalone scoring engine — no paid APIs required. Uses FRED (free, unlimited)
 ┌──────────────────────────────────────────────────────┐
 │  SIBT (Vite + React 19 + TypeScript)                 │
 │                                                      │
-│  Dashboard ─ Insider ─ Earnings ─ Macro ─ Terminal   │
+│  Dashboard ─ Insider ─ Earnings ─ Macro ─ Regime ─ Terminal │
 │       │          │         │        │         │      │
 │  ┌────┴──────────┴─────────┴────────┴─────────┴──┐   │
-│  │  Hooks: useMarketScore, useInsiderTrading,    │   │
-│  │  useEarningsCalendar, usePrices, ...          │   │
+│  │  Hooks: useMarketScore, useRegimeMonitor,     │   │
+│  │  useInsiderTrading, useEarningsCalendar, ...  │   │
 │  └────┬──────────────┬──────────────┬────────────┘   │
 │       │              │              │                 │
 │  Finnhub Edge    FRED Edge     Supabase Auth         │
@@ -161,8 +190,8 @@ npm test        # Tests
 
 | Source | Data |
 |--------|------|
-| FRED | VIX (VIXCLS), SP500 (daily closes for MAs), 10Y yield, DXY, GDP, CPI, fed funds |
-| Finnhub | Sector ETF quotes, insider transactions (SEC Form 4), earnings calendar, company profiles |
+| FRED | VIX (VIXCLS), VIX3M (VXVCLS), SP500 (250d for MAs), 10Y/2Y yield (DGS10/DGS2), HY spread (BAMLH0A0HYM2), DXY, GDP, CPI |
+| Finnhub | Sector ETF quotes, RSP, HYG, TLT, insider transactions (SEC Form 4), earnings calendar, company profiles |
 | RapidAPI | Congressional stock trades (STOCK Act disclosures) |
 | TradingView | Advanced chart widget |
 
@@ -180,6 +209,9 @@ npm test        # Tests
 | | Free | Pro | Enterprise |
 |--|------|-----|-----------|
 | Market Quality Score | Yes | Yes | Yes |
+| Regime Monitor (basic) | Yes | Yes | Yes |
+| Financial Stress Indicator | Yes | Yes | Yes |
+| Fear & Greed Gauge | Yes | Yes | Yes |
 | Insider Trading | Yes | Yes | Yes |
 | Congressional Trading | Yes | Yes | Yes |
 | Earnings Calendar | Yes | Yes | Yes |
@@ -187,6 +219,7 @@ npm test        # Tests
 | TradingView Charts | Yes | Yes | Yes |
 | Macro Dashboard | Yes | Yes | Yes |
 | Glossary | Yes | Yes | Yes |
+| Regime Signal Interpretations | — | Yes | Yes |
 | AI Briefing | 5/day | 25/day | 100/day |
 | Terminal (Dark Pool) | — | Yes | Yes |
 | AI Analysis | — | Yes | Yes |

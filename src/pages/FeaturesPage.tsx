@@ -207,6 +207,61 @@ const FEATURES: FeatureSection[] = [
 │  Sharpe: 1.84  |  Max DD: -2.1%            │
 └──────────────────────────────────────────────┘`,
   },
+  {
+    title: "Market Regime & Fragility Monitor",
+    tier: "FREE",
+    description: "Institutional-grade market health analysis with three pillars: Regime, Fragility, and Trigger. Eight scored signals from free FRED and Finnhub data.",
+    details: [
+      "SPX vs 200DMA — long-term trend position",
+      "HY Credit Spread — BofA high yield OAS",
+      "2s/10s Yield Curve — recession indicator",
+      "Breadth — sector participation analysis",
+      "RSP/SPY Ratio — equal vs cap-weight divergence",
+      "VIX Level + Term Structure — acute vol risk",
+      "Composite score with market state classification",
+      "Action stance: Aggressive / Normal / Hedged / Defensive / Cash",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  MARKET STATE        COMPOSITE  CONFIDENCE   │
+│  Fragile / Hedged        58         90       │
+│                                   [Hedged]   │
+│                                              │
+│  ▲ Credit spreads widening significantly     │
+│  ▲ VIX term structure flattening             │
+│                                              │
+│  REGIME  ████████░░  62  │  40%              │
+│  FRAGILITY ██████░░░  48  │  35%             │
+│  TRIGGER ████░░░░░░  38  │  25%             │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Financial Stress Indicator (FSI)",
+    tier: "FREE",
+    description: "Four separate market signals compressed into one number: (HYG/TLT) / (Vol x HY Spread). A leading indicator for equity drawdowns.",
+    details: [
+      "HYG/TLT ratio — risk appetite (junk vs safe bonds)",
+      "MOVE / VIX — bond and equity market volatility",
+      "BAMLH0A0HYM2 — BofA high yield credit spread",
+      "Rising = healthy risk appetite, low vol, tight spreads",
+      "Falling = deteriorating conditions across all three",
+      "Collapses before major equity selloffs (2022 pattern)",
+      "Component breakdown with individual readings",
+      "Historical context and risk label",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  FINANCIAL STRESS INDICATOR                  │
+│  (HYG/TLT) / (Vol x HY Spread)             │
+│                                      1.42    │
+│  ████████████░░░░░░░░  CAUTIOUS             │
+│                                              │
+│  HYG    $74.20   Junk bonds                 │
+│  TLT    $88.45   Treasuries                 │
+│  VOL    19.2     Bond/equity vol            │
+│  HY     385 bps  Credit spread              │
+│                                              │
+│  Rising = healthy. Falling = deterioration. │
+└──────────────────────────────────────────────┘`,
+  },
 ];
 
 const TIER_COLORS: Record<string, string> = {

@@ -104,9 +104,9 @@ export function LandingPage() {
           lineHeight: 1.7,
           marginBottom: 32,
         }}>
-          One dashboard. One verdict. Crash risk, insider activity, congressional trades,
-          and AI analysis combined into a simple traffic light that tells you whether
-          the market conditions favor trading today.
+          One dashboard. One verdict. Market regime analysis, financial stress indicators,
+          insider activity, congressional trades, and AI analysis combined into a simple
+          traffic light that tells you whether the market conditions favor trading today.
         </p>
 
         <div style={{ position: "relative", display: "flex", gap: 12 }}>
@@ -174,6 +174,16 @@ export function LandingPage() {
             title="Dark Pool + Options Flow"
             description="Surface institutional positioning from dark pool prints and unusual options activity via Radon integration. Connect your Interactive Brokers account for real-time portfolio and order management."
             tag="PRO"
+          />
+          <FeatureCard
+            title="Market Regime Monitor"
+            description="Three-pillar institutional analysis: Regime (credit spreads, yield curve, SPX/200DMA), Fragility (breadth, RSP/SPY ratio), and Trigger (VIX, term structure). Eight signals scored 0-100 with composite market state classification."
+            tag="FREE"
+          />
+          <FeatureCard
+            title="Financial Stress Indicator"
+            description="Four market signals compressed into one number: (HYG/TLT) / (Vol x HY Spread). When risk appetite is healthy, bond vol is low, and credit spreads are tight, the FSI rises. When all three deteriorate, it collapses — a leading indicator for equity drawdowns."
+            tag="FREE"
           />
         </div>
       </section>

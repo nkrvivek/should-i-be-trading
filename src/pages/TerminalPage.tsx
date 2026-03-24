@@ -13,7 +13,6 @@ import { Panel } from "../components/layout/Panel";
 import { TrafficLight } from "../components/regime/TrafficLight";
 import { RegimeStrip } from "../components/regime/RegimeStrip";
 import { ComponentBars } from "../components/regime/ComponentBars";
-import { DailyBriefing } from "../components/regime/DailyBriefing";
 import { ChatPanel } from "../components/ai/ChatPanel";
 import { WatchlistPanel } from "../components/watchlist/WatchlistPanel";
 import { DarkPoolFeed } from "../components/flow/DarkPoolFeed";
@@ -116,9 +115,8 @@ export function TerminalPage() {
         </div>
       )}
 
-      {/* AI Features */}
-      <div style={{ marginTop: 16, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-        <DailyBriefing cri={cri} verdict={verdict} marketScore={marketScore} />
+      {/* AI Chat */}
+      <div style={{ marginTop: 16 }}>
         <ChatPanel />
       </div>
     </TerminalShell>

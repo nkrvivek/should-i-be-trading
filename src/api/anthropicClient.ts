@@ -4,6 +4,8 @@
  * In prod, goes through Supabase Edge Function.
  */
 
+import { supabase, isSupabaseConfigured } from "../lib/supabase";
+
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
@@ -45,13 +47,21 @@ export async function chatWithClaude(
       },
       body,
     });
-  } else if (supabaseUrl && supabaseKey) {
-    // Production: use Supabase Edge Function proxy (user's stored key)
+  } else if (isSupabaseConfigured() && supabaseUrl && supabaseKey) {
+    // Production: use Supabase Edge Function proxy
+    // Get the user's session token (required for authenticateRequest in the edge function)
+    const session = await supabase.auth.getSession();
+    const userToken = session.data.session?.access_token;
+
+    if (!userToken) {
+      throw new Error("Sign in to use AI features, or add your own Anthropic API key in Settings.");
+    }
+
     response = await fetch(`${supabaseUrl}/functions/v1/proxy-anthropic`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${supabaseKey}`,
+        Authorization: `Bearer ${userToken}`,
         apikey: supabaseKey,
       },
       body,

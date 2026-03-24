@@ -17,24 +17,6 @@ export type ChatResponse = {
   usage: { input_tokens: number; output_tokens: number };
 };
 
-/**
- * Get a valid user session token, refreshing if needed.
- */
-async function getSessionToken(): Promise<string | null> {
-  try {
-    // Try refreshing first to ensure token is valid
-    const { data: refreshData } = await supabase.auth.refreshSession();
-    if (refreshData.session?.access_token) return refreshData.session.access_token;
-  } catch { /* ignore refresh failure */ }
-
-  try {
-    const { data: sessionData } = await supabase.auth.getSession();
-    return sessionData.session?.access_token ?? null;
-  } catch {
-    return null;
-  }
-}
-
 export async function chatWithClaude(
   messages: ChatMessage[],
   systemPrompt: string,
@@ -66,29 +48,45 @@ export async function chatWithClaude(
       body,
     });
   } else if (isSupabaseConfigured() && supabaseUrl && supabaseKey) {
-    // Production: Supabase Edge Function proxy (requires authenticated user)
-    const userToken = await getSessionToken();
+    // Production: Supabase Edge Function proxy
+    const { data } = await supabase.auth.getSession();
+    const userToken = data.session?.access_token;
 
     if (!userToken) {
       throw new Error("Sign in to use AI features, or add your own Anthropic API key in Settings.");
     }
 
-    response = await fetch(`${supabaseUrl}/functions/v1/proxy-anthropic`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${userToken}`,
-        apikey: supabaseKey,
-      },
-      body,
+    // Use Supabase invoke() which handles auth headers correctly
+    const { data: fnData, error: fnError } = await supabase.functions.invoke("proxy-anthropic", {
+      body: JSON.parse(body),
     });
+
+    if (fnError) {
+      throw new Error(fnError.message || "Claude API request failed");
+    }
+
+    // supabase.functions.invoke returns parsed JSON directly
+    const text = fnData?.content?.[0]?.text;
+    if (!text) {
+      // Check if it's an error response
+      if (fnData?.error) {
+        throw new Error(fnData.error);
+      }
+      console.error("Unexpected Claude API response:", JSON.stringify(fnData).slice(0, 500));
+      throw new Error("Claude returned an empty response.");
+    }
+    return {
+      content: text,
+      model: fnData.model,
+      usage: fnData.usage,
+    };
   } else {
     throw new Error("Add your Anthropic API key in Settings to use AI features.");
   }
 
-  if (!response.ok) {
-    const text = await response.text();
-    let msg = `Claude API ${response.status}`;
+  if (!response!.ok) {
+    const text = await response!.text();
+    let msg = `Claude API ${response!.status}`;
     try {
       const parsed = JSON.parse(text);
       msg = parsed.error?.message || parsed.error || msg;
@@ -98,15 +96,15 @@ export async function chatWithClaude(
     throw new Error(msg);
   }
 
-  const data = await response.json();
-  const text = data.content?.[0]?.text;
+  const respData = await response!.json();
+  const text = respData.content?.[0]?.text;
   if (!text) {
-    console.error("Unexpected Claude API response:", JSON.stringify(data).slice(0, 500));
-    throw new Error("Claude returned an empty response. Check the console for details.");
+    console.error("Unexpected Claude API response:", JSON.stringify(respData).slice(0, 500));
+    throw new Error("Claude returned an empty response.");
   }
   return {
     content: text,
-    model: data.model,
-    usage: data.usage,
+    model: respData.model,
+    usage: respData.usage,
   };
 }

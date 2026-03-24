@@ -4,15 +4,17 @@ import { ProfileForm } from "../components/settings/ProfileForm";
 import { ApiKeyForm } from "../components/settings/ApiKeyForm";
 import { BrokerageConfig } from "../components/settings/BrokerageConfig";
 import { TierManager } from "../components/settings/TierManager";
+import { NotificationSettings } from "../components/settings/NotificationSettings";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../stores/authStore";
 
-type Tab = "profile" | "api_keys" | "brokerage" | "plan";
+type Tab = "profile" | "api_keys" | "brokerage" | "plan" | "notifications";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "plan", label: "Plan" },
   { id: "api_keys", label: "API Keys" },
   { id: "brokerage", label: "Brokerage" },
+  { id: "notifications", label: "Notifications" },
   { id: "profile", label: "Profile" },
 ];
 
@@ -75,6 +77,7 @@ export function SettingsPage() {
         {activeTab === "profile" && <ProfileForm />}
         {activeTab === "api_keys" && <ApiKeyForm />}
         {activeTab === "brokerage" && <BrokerageConfig />}
+        {activeTab === "notifications" && <NotificationSettings />}
       </div>
     </TerminalShell>
   );

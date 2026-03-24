@@ -6,13 +6,12 @@ import { hasUWToken, fetchUWInsiderTransactions, type UWInsiderTransaction } fro
 import { fetchInsiderTransactions as fetchInsiderViaEdge } from "../../api/freeDataClient";
 import { isSupabaseConfigured } from "../../lib/supabase";
 
+// Top 25 by market cap — keeps Finnhub API calls under rate limit (60/min)
 const SCAN_TICKERS = [
-  "AAPL", "MSFT", "NVDA", "GOOG", "AMZN", "META", "TSLA", "AMD", "CRM", "NFLX",
-  "AVGO", "ORCL", "ADBE", "INTC", "CSCO", "QCOM", "TXN", "MU", "SNOW", "PLTR",
-  "JPM", "BAC", "GS", "MS", "WFC", "C", "BX", "KKR", "SCHW", "AXP",
-  "UNH", "JNJ", "LLY", "PFE", "ABBV", "MRK", "TMO", "ABT", "BMY", "AMGN",
-  "XOM", "CVX", "COP", "SLB", "EOG",
-  "DIS", "HD", "MCD", "NKE", "SBUX",
+  "AAPL", "MSFT", "NVDA", "GOOG", "AMZN", "META", "TSLA", "AMD", "NFLX",
+  "AVGO", "JPM", "UNH", "LLY", "XOM", "GS",
+  "CRM", "ORCL", "ADBE", "INTC", "PLTR",
+  "BAC", "CVX", "HD", "DIS", "PFE",
 ];
 
 function classifySignal(buyValue: number, sellValue: number): InsiderSignal {
@@ -153,9 +152,9 @@ export function InsiderMarketOverview() {
         cutoff.setDate(cutoff.getDate() - 90);
         const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-        // Batch 5 at a time with delays to respect Finnhub rate limits on server
-        for (let i = 0; i < SCAN_TICKERS.length; i += 5) {
-          const batch = SCAN_TICKERS.slice(i, i + 5);
+        // Batch 3 at a time with longer delays to respect Finnhub 60/min rate limit
+        for (let i = 0; i < SCAN_TICKERS.length; i += 3) {
+          const batch = SCAN_TICKERS.slice(i, i + 3);
           const promises = batch.map(async (sym) => {
             try {
               const txs = await fetchInsiderViaEdge(sym);
@@ -181,9 +180,9 @@ export function InsiderMarketOverview() {
 
           const batchResults = await Promise.all(promises);
           for (const r of batchResults) { if (r) results.push(r); }
-          setProgress({ done: Math.min(i + 5, SCAN_TICKERS.length), total: SCAN_TICKERS.length });
+          setProgress({ done: Math.min(i + 3, SCAN_TICKERS.length), total: SCAN_TICKERS.length });
 
-          if (i + 5 < SCAN_TICKERS.length) await new Promise((r) => setTimeout(r, 1200));
+          if (i + 3 < SCAN_TICKERS.length) await new Promise((r) => setTimeout(r, 2000));
         }
 
         if (results.length > 0) {
@@ -202,7 +201,7 @@ export function InsiderMarketOverview() {
     // Fallback 3: Direct Finnhub with user's API key
     const apiKey = getCredential("finnhub");
     if (!apiKey) {
-      setError("No insider data source available. Sign up for automatic access or add a Finnhub API key in Settings.");
+      setError("Insider scan requires Finnhub data. Retrying automatically — if this persists, add a Finnhub API key in Settings.");
       setLoading(false);
       return;
     }

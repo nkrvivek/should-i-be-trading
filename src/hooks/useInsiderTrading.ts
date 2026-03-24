@@ -97,11 +97,16 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
           filingDate: (t as Record<string, unknown>).filingDate as string ?? "",
           officerTitle: (t as Record<string, unknown>).officerTitle as string ?? "",
         }));
-      } catch {
+      } catch (edgeErr) {
         // Strategy 2: Fall back to direct Finnhub with user's API key
-        const apiKey = getCredential("finnhub");
+        const apiKey = getCredential("finnhub") ?? undefined;
         if (!apiKey) {
-          throw new Error("Insider data unavailable. Configure Finnhub edge function or add API key in Settings.");
+          // If edge function failed, show the edge error (likely rate limit)
+          const edgeMsg = edgeErr instanceof Error ? edgeErr.message : "";
+          if (edgeMsg.includes("429") || edgeMsg.includes("rate")) {
+            throw new Error("Finnhub rate limit reached. Data will refresh automatically — try again in 60 seconds.");
+          }
+          throw new Error("Loading insider data... If this persists, add a Finnhub API key in Settings.");
         }
 
         const res = await fetch(

@@ -13,19 +13,11 @@ async function callEdgeFunction<T>(functionName: string, params: Record<string, 
   const searchParams = new URLSearchParams(params);
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}?${searchParams}`;
 
-  // Try to get user session token (better for authenticated functions)
-  // Fall back to anon key for public edge functions like finnhub/fred
-  let token = anonKey;
-  try {
-    const session = await supabase.auth.getSession();
-    if (session.data.session?.access_token) {
-      token = session.data.session.access_token;
-    }
-  } catch { /* use anon key */ }
-
+  // Always use anon key (HS256) for non-auth edge functions like finnhub/fred.
+  // User ES256 tokens get rejected by the Supabase gateway on these functions.
   const response = await fetch(url, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: `Bearer ${anonKey}`,
       apikey: anonKey,
     },
   });

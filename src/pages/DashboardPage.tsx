@@ -3,6 +3,7 @@ import { useRegime } from "../hooks/useRegime";
 import { usePrices } from "../hooks/usePrices";
 import { useMarketHours } from "../hooks/useMarketHours";
 import { useSignalHistory } from "../hooks/useSignalHistory";
+import { useMarketScore } from "../hooks/useMarketScore";
 import { computeVerdict } from "../lib/trafficLight";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { TrafficLight } from "../components/regime/TrafficLight";
@@ -11,6 +12,7 @@ import { RegimeStrip } from "../components/regime/RegimeStrip";
 import { ComponentBars } from "../components/regime/ComponentBars";
 import { CrashTrigger } from "../components/regime/CrashTrigger";
 import { RegimeHistory } from "../components/regime/RegimeHistory";
+import { ScoreBreakdown } from "../components/regime/ScoreBreakdown";
 import { SignalTimeline } from "../components/regime/SignalTimeline";
 import { DailyBriefing } from "../components/regime/DailyBriefing";
 import { InsiderActivityPanel } from "../components/insider/InsiderActivityPanel";
@@ -28,9 +30,10 @@ const REGIME_INDEXES: IndexContract[] = [
 ];
 
 export function DashboardPage() {
-  const { data: cri, loading, scanning, error } = useRegime(true);
+  const { data: cri, scanning } = useRegime(true);
   const { status } = useMarketHours();
   const { history, recordVerdict } = useSignalHistory();
+  const { score: marketScore, loading: scoreLoading, refresh: refreshScore } = useMarketScore();
 
   const { prices, connected } = usePrices({
     symbols: ["SPY"],
@@ -45,21 +48,32 @@ export function DashboardPage() {
         marketStatus: status,
         liveVix: prices["VIX"]?.last,
         liveVvix: prices["VVIX"]?.last,
+        marketScore,
       }),
-    [cri, status, prices],
+    [cri, status, prices, marketScore],
   );
 
   // Record verdict changes to signal history
   useEffect(() => {
-    if (cri && verdict) {
-      recordVerdict(verdict, cri.cri?.score ?? null, cri.vix ?? null);
+    if (verdict && (cri || marketScore)) {
+      recordVerdict(verdict, cri?.cri?.score ?? marketScore?.total ?? null, cri?.vix ?? null);
     }
-  }, [verdict.signal, cri?.cri?.score]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [verdict.signal, cri?.cri?.score, marketScore?.total]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Use market score total for gauge when no CRI
+  const gaugeScore = cri?.cri?.score ?? marketScore?.total ?? 0;
+  const gaugeLevel = cri?.cri?.level ?? (
+    marketScore ? (
+      marketScore.total >= 80 ? "LOW" :
+      marketScore.total >= 60 ? "ELEVATED" :
+      marketScore.total >= 40 ? "HIGH" : "CRITICAL"
+    ) : "UNKNOWN"
+  );
 
   return (
     <TerminalShell cri={cri}>
-      {/* Scanning indicator — shown as a banner, doesn't block content */}
-      {scanning && (
+      {/* Loading indicator */}
+      {(scanning || scoreLoading) && !cri && !marketScore && (
         <div
           style={{
             display: "flex",
@@ -76,66 +90,71 @@ export function DashboardPage() {
           }}
         >
           <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: "var(--signal-core)", animation: "pulse 1.5s infinite" }} />
-          {cri ? "Refreshing regime data..." : "Running initial CRI scan — this may take up to 2 minutes..."}
+          Computing market quality score...
         </div>
       )}
 
-      {error && !cri && (
-        <div
-          style={{
-            padding: "8px 16px",
-            background: "rgba(232, 93, 108, 0.1)",
-            border: "1px solid var(--negative)",
-            borderRadius: 4,
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            color: "var(--negative)",
-            marginBottom: 16,
-          }}
-        >
-          {error}
-        </div>
-      )}
-
-      {/* Dashboard content — always renders, CRI panels are optional */}
+      {/* Dashboard content — always renders */}
       <div
         style={{
           display: "grid",
           gridTemplateColumns: "280px 1fr",
           gridTemplateRows: "auto auto auto",
           gap: 16,
-          maxWidth: 1200,
+          maxWidth: 1400,
           margin: "0 auto",
         }}
       >
-        {/* Left column: Traffic Light + Gauge + Crash Trigger */}
+        {/* Left column: Traffic Light + Gauge */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <TrafficLight verdict={verdict} />
-          <RegimeGauge score={cri?.cri?.score ?? 0} level={cri?.cri?.level ?? "UNKNOWN"} />
+          <RegimeGauge
+            score={gaugeScore}
+            level={gaugeLevel}
+          />
           {cri?.crash_trigger && <CrashTrigger trigger={cri.crash_trigger} />}
         </div>
 
-        {/* Right column: Strip + Components + History */}
+        {/* Right column: Score Breakdown + Regime Strip (if Radon connected) */}
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-          {cri ? (
+          {/* Market Quality Score — always visible, primary scoring engine */}
+          <ScoreBreakdown
+            score={marketScore}
+            loading={scoreLoading}
+            onRefresh={refreshScore}
+          />
+
+          {/* Radon CRI strip — shown only when Radon is connected (enhanced data) */}
+          {cri && (
             <>
+              <Panel title="Radon CRI (Enhanced)">
+                <div style={{
+                  padding: "4px 8px",
+                  fontFamily: "var(--font-mono)",
+                  fontSize: 9,
+                  color: "var(--signal-core)",
+                  background: "rgba(5, 173, 152, 0.05)",
+                  borderRadius: 4,
+                  marginBottom: 8,
+                }}>
+                  Dark pool + institutional flow data via Radon
+                </div>
+              </Panel>
               <RegimeStrip cri={cri} prices={prices} connected={connected} />
               {cri.cri?.components && <ComponentBars components={cri.cri.components} />}
               <RegimeHistory history={cri.history ?? []} />
             </>
-          ) : (
-            <Panel title="Market Regime">
-              <div style={{ padding: "16px 0", textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
-                {loading || scanning ? "Loading regime data..." : "Radon not connected. Regime data unavailable."}
-              </div>
-            </Panel>
           )}
         </div>
 
         {/* Full-width: Sector Heat Map + Chart */}
-        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-          <SectorHeatMap />
-          <TickerChart />
+        <div style={{ gridColumn: "1 / -1", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, minHeight: 700 }}>
+          <div style={{ minHeight: 700 }}>
+            <SectorHeatMap />
+          </div>
+          <div style={{ minHeight: 700 }}>
+            <TickerChart />
+          </div>
         </div>
 
         {/* Full-width: Watchlist Manager */}

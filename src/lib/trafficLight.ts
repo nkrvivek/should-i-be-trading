@@ -1,5 +1,6 @@
 import type { CriData, InsiderActivitySummary } from "../api/types";
 import type { MarketStatus } from "./marketHours";
+import type { MarketScore } from "./marketScoring";
 
 export type TrafficSignal = "TRADE" | "CAUTION" | "NO_TRADE";
 
@@ -29,6 +30,8 @@ export type TrafficLightInputs = {
   liveVvix?: number | null;
   /** Insider trading activity for watchlist tickers */
   insiderActivity?: InsiderActivitySummary[] | null;
+  /** Standalone market score (works without Radon) */
+  marketScore?: MarketScore | null;
 };
 
 /**
@@ -114,18 +117,23 @@ function computeInsiderAdjustment(activity: InsiderActivitySummary[] | null | un
 }
 
 export function computeVerdict(inputs: TrafficLightInputs): TrafficLightVerdict {
-  const { cri, marketStatus, liveVix, liveVvix, insiderActivity } = inputs;
+  const { cri, marketStatus, liveVix, liveVvix, insiderActivity, marketScore } = inputs;
   const reasons: string[] = [];
   const overrides: string[] = [];
 
-  // No data yet
+  // No CRI but we have standalone market score — use it
+  if (!cri && marketScore) {
+    return computeVerdictFromMarketScore(marketScore, marketStatus, insiderActivity);
+  }
+
+  // No data at all
   if (!cri) {
     return {
       signal: "NO_TRADE",
-      reasons: ["No regime data available"],
-      overrides: ["Connect to Radon and run a CRI scan"],
+      reasons: ["Loading market data..."],
+      overrides: ["Market score will compute automatically from Finnhub + FRED data"],
       confidence: 0,
-      vixRegime: { action: "HOLD", label: "NO DATA", detail: "Awaiting VIX data" },
+      vixRegime: { action: "HOLD", label: "LOADING", detail: "Fetching market data..." },
     };
   }
 
@@ -247,6 +255,98 @@ export function computeVerdict(inputs: TrafficLightInputs): TrafficLightVerdict 
     reasons,
     overrides: ["Monitor for intraday regime shifts"],
     confidence: Math.min(95, Math.max(10, 60 + (50 - criScore) + insider.adjustment)),
+    vixRegime,
+    insiderContext: insider.context ?? undefined,
+  };
+}
+
+/**
+ * Compute verdict from standalone MarketScore (no Radon needed).
+ */
+function computeVerdictFromMarketScore(
+  ms: MarketScore,
+  marketStatus: MarketStatus,
+  insiderActivity?: InsiderActivitySummary[] | null,
+): TrafficLightVerdict {
+  const reasons: string[] = [];
+  const overrides: string[] = [];
+
+  // Extract VIX from volatility category detail
+  const vixMatch = ms.categories.find((c) => c.name === "Volatility")?.detail.match(/VIX ([\d.]+)/);
+  const vix = vixMatch ? parseFloat(vixMatch[1]) : 20;
+  const vixRegime = computeVixRegime(vix);
+
+  // Market closed
+  if (marketStatus === "CLOSED") {
+    reasons.push("Market is closed");
+    reasons.push(`Last Market Quality Score: ${ms.total}/100`);
+    return { signal: "NO_TRADE", reasons, overrides: ["Wait for market open"], confidence: 95, vixRegime };
+  }
+
+  // Insider adjustments
+  const insider = computeInsiderAdjustment(insiderActivity);
+
+  // Map MarketScore signal to TrafficSignal
+  if (ms.signal === "NO" || ms.total < 60) {
+    // Build reasons from category details
+    for (const cat of ms.categories) {
+      if (cat.score < 40) reasons.push(`${cat.name}: ${cat.detail}`);
+    }
+    if (reasons.length === 0) reasons.push(`Market Quality Score low (${ms.total}/100)`);
+    if (insider.reasons.length > 0) reasons.push(...insider.reasons);
+    overrides.push("Preserve capital, avoid new positions");
+    if (vixRegime.action === "BUY_AGGRESSIVE" || vixRegime.action === "BUY") {
+      overrides.push(`VIX regime says ${vixRegime.label} — consider equity accumulation with tight risk`);
+    }
+    return {
+      signal: "NO_TRADE",
+      reasons,
+      overrides,
+      confidence: Math.max(10, Math.min(90, 90 - ms.total + insider.adjustment)),
+      vixRegime,
+      insiderContext: insider.context ?? undefined,
+    };
+  }
+
+  if (ms.signal === "CAUTION" || ms.total < 80) {
+    for (const cat of ms.categories) {
+      if (cat.score < 60) reasons.push(`${cat.name}: ${cat.detail}`);
+    }
+    if (reasons.length === 0) reasons.push(`Market Quality Score: ${ms.total}/100`);
+    if (insider.reasons.length > 0) reasons.push(...insider.reasons);
+    overrides.push("Half position sizes, A+ setups only");
+    if (vixRegime.action === "SELL") overrides.push("VIX regime: take profits, reduce equity exposure");
+
+    if (marketStatus === "PRE_MARKET" || marketStatus === "AFTER_HOURS") {
+      reasons.push(`Trading in ${marketStatus.replace("_", " ").toLowerCase()}`);
+    }
+
+    return {
+      signal: "CAUTION",
+      reasons,
+      overrides,
+      confidence: Math.max(10, Math.min(80, ms.total - 10 + insider.adjustment)),
+      vixRegime,
+      insiderContext: insider.context ?? undefined,
+    };
+  }
+
+  // YES / TRADE
+  reasons.push(`Market Quality Score: ${ms.total}/100`);
+  reasons.push(`Execution Window: ${ms.executionWindow}%`);
+  for (const cat of ms.categories) {
+    if (cat.score >= 70) reasons.push(`${cat.name} strong (${cat.score}/100)`);
+  }
+  if (insider.reasons.length > 0) reasons.push(...insider.reasons);
+  if (vixRegime.action === "SELL") {
+    reasons.push(`VIX regime: complacency zone (${vix.toFixed(1)}) — consider taking profits`);
+  }
+
+  return {
+    signal: "TRADE",
+    reasons,
+    overrides: ["Full position sizing, press risk"],
+    confidence: Math.min(95, Math.max(10, ms.total - 10 + insider.adjustment)),
     vixRegime,
     insiderContext: insider.context ?? undefined,
   };

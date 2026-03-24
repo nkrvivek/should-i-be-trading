@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InsiderTransaction, InsiderActivitySummary, InsiderSignal } from "../api/types";
+import { fetchInsiderTransactions as fetchInsiderViaEdge } from "../api/freeDataClient";
 import { getCredential } from "../lib/credentials";
+
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
 
 type CacheEntry = { data: InsiderActivitySummary; ts: number };
@@ -82,36 +84,45 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
 
     setLoading(true);
 
-    // For per-ticker lookups, prefer Finnhub (returns individual transactions with names/prices).
-    // UW ticker-flow returns aggregated daily data without insider names.
-    // Finnhub:
-    const apiKey = getCredential("finnhub");
-    if (!apiKey) {
-      setError("No insider data source. Add UW token (recommended) or Finnhub key in Settings.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch(
-        `/finnhub-api/api/v1/stock/insider-transactions?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`,
-        { signal: ctrl.signal },
-      );
+      let transactions: InsiderTransaction[] = [];
 
-      if (!res.ok) {
-        if (res.status === 429) throw new Error("Finnhub rate limit — try again in a minute");
-        if (res.status === 403) throw new Error("Invalid Finnhub API key");
-        throw new Error(`Finnhub error: ${res.status}`);
+      // Strategy 1: Try Supabase Edge Function (server-side key, works for everyone)
+      try {
+        const edgeData = await fetchInsiderViaEdge(symbol);
+        transactions = edgeData.map((t) => ({
+          ...t,
+          transactionCode: t.transactionType?.startsWith("P") ? "P" : "S",
+          filingDate: (t as Record<string, unknown>).filingDate as string ?? "",
+          officerTitle: (t as Record<string, unknown>).officerTitle as string ?? "",
+        }));
+      } catch {
+        // Strategy 2: Fall back to direct Finnhub with user's API key
+        const apiKey = getCredential("finnhub");
+        if (!apiKey) {
+          throw new Error("Insider data unavailable. Configure Finnhub edge function or add API key in Settings.");
+        }
+
+        const res = await fetch(
+          `/finnhub-api/api/v1/stock/insider-transactions?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`,
+          { signal: ctrl.signal },
+        );
+
+        if (!res.ok) {
+          if (res.status === 429) throw new Error("Finnhub rate limit — try again in a minute");
+          if (res.status === 403) throw new Error("Invalid Finnhub API key");
+          throw new Error(`Finnhub error: ${res.status}`);
+        }
+
+        const json = await res.json();
+        transactions = (json.data ?? []).map((t: Record<string, unknown>) => ({
+          ...t,
+          filingDate: (t.filingDate as string) ?? "",
+          officerTitle: (t.officerTitle as string) ?? "",
+        }));
       }
 
-      const json = await res.json();
-      const transactions: InsiderTransaction[] = (json.data ?? []).map((t: Record<string, unknown>) => ({
-        ...t,
-        filingDate: (t.filingDate as string) ?? "",
-        officerTitle: (t.officerTitle as string) ?? "",
-      }));
       const summary = processTransactions(symbol, transactions);
-
       cache.set(symbol, { data: summary, ts: Date.now() });
       setData(summary);
       setError(null);

@@ -35,8 +35,8 @@ export default function RegimePage() {
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             US EQUITY MARKET &middot; SPX
           </div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 22, fontWeight: 700, color: "var(--text-primary)", margin: "4px 0" }}>
-            Market Regime &amp; Fragility Monitor
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 600, color: "var(--text-primary)", margin: "4px 0" }}>
+            Market Regime & Fragility Monitor
           </div>
           <a
             href="/risk"

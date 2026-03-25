@@ -156,18 +156,18 @@ const FEATURES: FeatureSection[] = [
 └──────────────────────────────────────────────┘`,
   },
   {
-    title: "Strategy Simulator & Payoff Visualizer",
+    title: "Strategy Simulator + Options Greeks",
     tier: "STARTER",
-    description: "Browse 19 curated trading strategies and visualize their payoff profiles. Interactive diagram builder for options, stocks, ETFs, and volatility strategies.",
+    description: "Browse 19 curated strategies, visualize payoff profiles, load live options chains, and compute Black-Scholes Greeks per leg and net position.",
     details: [
       "Strategy library with options, stocks, ETF, and volatility strategies",
       "Regime-aware: highlights strategies matching current market signal + VIX",
       "Interactive payoff diagram with SVG charting",
-      "Configurable legs: buy/sell calls, puts, stock with custom strikes and premiums",
-      "Real-time metrics: max profit, max loss, breakevens, risk/reward ratio",
+      "Live options chain from Tradier with BUY/SELL buttons",
+      "Black-Scholes Greeks: Delta, Gamma, Theta, Vega per leg + net",
+      "DTE input for time decay calculations",
+      "Real-time metrics: max profit, max loss, breakevens, risk/reward",
       "Price-at-expiry slider for what-if analysis",
-      "One-click Simulate from any library strategy",
-      "Inspired by 151 Trading Strategies (Kakushadze & Serur)",
     ],
     mockup: `┌──────────────────────────────────────────────┐
 │  STRATEGY SIMULATOR         [LIBRARY] [SIM] │
@@ -187,6 +187,168 @@ const FEATURES: FeatureSection[] = [
 │        ╱▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔╲                  │
 │  ─────╱                  ╲─────  $0         │
 └──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Technical Signal Overlays",
+    tier: "STARTER",
+    description: "Per-stock technical analysis with 10+ indicators computed from historical candle data. Auto-detected support/resistance levels and composite signal scoring.",
+    details: [
+      "RSI (14), MACD with crossover detection, EMA 12/26 crossover",
+      "Bollinger Bands position + bandwidth visualization",
+      "Stochastic oscillator, ATR with stop-loss suggestions",
+      "Golden Cross / Death Cross detection",
+      "Auto-detected support/resistance from price pivots",
+      "Mini sparkline charts for RSI, MACD, Stochastic",
+      "Multi-resolution: Daily, Weekly, 1H, 15M",
+      "Composite bullish/bearish/neutral scoring",
+    ],
+    mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  TECHNICAL SIGNALS        SPY $502.30   \u2502
+\u2502                                          \u2502
+\u2502  OVERALL: BULLISH  Score: +42           \u2502
+\u2502  \u2588\u2588\u2588\u2588 5 BULL  \u2592\u2592 2 NEUT  \u2591 1 BEAR     \u2502
+\u2502                                          \u2502
+\u2502  \u25B2 RSI (14)        58.2    Healthy       \u2502
+\u2502  \u25B2 SMA 50         Above   +2.1%         \u2502
+\u2502  \u25B2 MACD           Cross   Bullish       \u2502
+\u2502  \u25C6 Bollinger      Mid     BW: 4.2%      \u2502
+\u2502  \u25B2 EMA 12/26      Above   +0.8%         \u2502
+\u2502                                          \u2502
+\u2502  SUP  $495.20  -1.4%  \u2588\u2588\u2588\u2591\u2591             \u2502
+\u2502  RES  $510.40  +1.6%  \u2588\u2588\u2588\u2588\u2591             \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
+  {
+    title: "SIBT Score (Per-Stock Rating)",
+    tier: "STARTER",
+    description: "Composite 1-10 stock rating combining Technical, Fundamental, Sentiment, and Options signals. Each signal shows its contribution and plain-English description.",
+    details: [
+      "Technical (30%): momentum, relative volume, beta, analyst target upside",
+      "Fundamental (35%): P/E, net margin, ROE, revenue/EPS growth, D/E",
+      "Sentiment (20%): insider buy/sell counts, net insider shares",
+      "Options (15%): IV percentile, put/call ratio",
+      "Conic gradient gauge with score visualization",
+      "Expandable category details with per-signal breakdowns",
+      "Auto-computes on Fundamentals tab, cached 10 minutes",
+    ],
+    mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  SIBT SCORE                NVDA         \u2502
+\u2502                                          \u2502
+\u2502          \u256D\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256E                    \u2502
+\u2502          \u2502  7.8/10  \u2502   BUY            \u2502
+\u2502          \u2570\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u256F                    \u2502
+\u2502                                          \u2502
+\u2502  Technical     8.2/10  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591       \u2502
+\u2502  Fundamental   7.4/10  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591       \u2502
+\u2502  Sentiment     7.0/10  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591       \u2502
+\u2502  Options       8.5/10  \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591       \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
+  {
+    title: "Stock Fundamentals (FMP)",
+    tier: "STARTER",
+    description: "Deep company research powered by Financial Modeling Prep. Full financial statements, ratios, analyst estimates, and price targets — all in the Research hub.",
+    details: [
+      "Company profile with sector, industry, market cap",
+      "Key financial ratios (P/E, ROE, margins, D/E)",
+      "Income statements and balance sheets (annual + quarterly)",
+      "Analyst estimates with consensus EPS and revenue",
+      "Price target range with visual bar (low/avg/high)",
+      "Revenue per share, EPS, FCF per share, ROIC metrics",
+    ],
+    mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  FUNDAMENTALS               AAPL        \u2502
+\u2502                                          \u2502
+\u2502  P/E    28.4   ROE    147%  D/E   1.87  \u2502
+\u2502  Margin 26.3%  Rev/s  $24   EPS   $6.73 \u2502
+\u2502                                          \u2502
+\u2502  PRICE TARGETS                           \u2502
+\u2502  Low $165 \u2591\u2591\u2591\u2591\u2591\u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591 High $250    \u2502
+\u2502                Avg $210                   \u2502
+\u2502                                          \u2502
+\u2502  INCOME STMT (Annual)                    \u2502
+\u2502  2025  $412B  +8%  | Net $99B  +12%     \u2502
+\u2502  2024  $383B  +2%  | Net $88B   +5%     \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
+  {
+    title: "13F Institutional Tracker",
+    tier: "STARTER",
+    description: "Follow the smart money. Track quarterly 13F-HR filings from 20 curated top hedge funds using free SEC EDGAR data.",
+    details: [
+      "20 top filers: Berkshire, Bridgewater, Pershing Square, Duquesne, etc.",
+      "Filing history with direct SEC EDGAR links",
+      "Search any institutional filer by name or CIK",
+      "Two-column layout: filer list + filing detail",
+      "Educational content on how to read 13F changes",
+      "100% free — SEC EDGAR is public domain data",
+    ],
+    mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  13F TRACKER                             \u2502
+\u2502                                          \u2502
+\u2502  TOP FILERS        \u2502  FILING DETAIL      \u2502
+\u2502  Berkshire Hathaway \u2502                     \u2502
+\u2502  Bridgewater Assoc  \u2502  Berkshire Hathaway \u2502
+\u2502  Pershing Square    \u2502  CIK: 0001067983   \u2502
+\u2502  Duquesne Family    \u2502                     \u2502
+\u2502  Appaloosa Mgmt   > \u2502  13F-HR 2025-Q4    \u2502
+\u2502  Tiger Global       \u2502  13F-HR 2025-Q3    \u2502
+\u2502  Citadel Advisors   \u2502  13F-HR 2025-Q2    \u2502
+\u2502  Renaissance Tech   \u2502  [View on EDGAR]   \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
+  {
+    title: "News Sentiment Feed",
+    tier: "STARTER",
+    description: "Real-time market news with per-stock sentiment analysis from Finnhub. Track bullish/bearish momentum and media buzz around any ticker.",
+    details: [
+      "General market news + company-specific news",
+      "Sentiment card: bullish %, bearish %, buzz ratio",
+      "News score vs sector average comparison",
+      "Category filters: general, forex, crypto, merger",
+      "Quick ticker buttons for popular stocks",
+      "Thumbnails, headlines, source, and time",
+    ],
+    mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  NEWS SENTIMENT            NVDA         \u2502
+\u2502                                          \u2502
+\u2502  Bullish  72%  Bearish  14%  Buzz 2.4x  \u2502
+\u2502  News Score: 0.78  Sector Avg: 0.52     \u2502
+\u2502                                          \u2502
+\u2502  NVDA Hits Record High on AI Demand     \u2502
+\u2502  Reuters \u2022 12:34 PM          [NVDA]     \u2502
+\u2502                                          \u2502
+\u2502  Nvidia Data Center Revenue Doubles      \u2502
+\u2502  Bloomberg \u2022 11:15 AM        [NVDA]     \u2502
+\u2502                                          \u2502
+\u2502  30 articles                              \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
+  {
+    title: "CFTC/COT Dashboard",
+    tier: "FREE",
+    description: "Commitments of Traders data showing speculator and commercial positioning across 10 key futures contracts. See where institutional money is placed.",
+    details: [
+      "10 contracts: E-Mini S&P, Nasdaq, Gold, Crude, 10Y, etc.",
+      "Posture classification (Heavy Long to Heavy Short)",
+      "COT Index percentile rankings (0-100)",
+      "Speculator vs commercial breakdown",
+      "Weekly history with trend sparklines",
+      "Category filters + educational content",
+    ],
+    mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  CFTC / COT DASHBOARD                   \u2502
+\u2502                                          \u2502
+\u2502  CONTRACT     POSTURE      COT INDEX     \u2502
+\u2502  E-Mini S&P   LONG         \u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591  72  \u2502
+\u2502  Nasdaq 100   HEAVY LONG   \u2588\u2588\u2588\u2588\u2588\u2588\u2588\u2591  88  \u2502
+\u2502  Gold         LONG         \u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591  65  \u2502
+\u2502  Crude Oil    SHORT        \u2588\u2588\u2591\u2591\u2591\u2591\u2591\u2591  28  \u2502
+\u2502  10Y T-Note   NEUTRAL      \u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591  48  \u2502
+\u2502  EUR/USD      HEAVY SHORT  \u2588\u2591\u2591\u2591\u2591\u2591\u2591\u2591  12  \u2502
+\u2502                                          \u2502
+\u2502  \u25B6 Click row for spec/commercial detail  \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
   },
   {
     title: "AI Stock Screener",
@@ -246,14 +408,15 @@ const FEATURES: FeatureSection[] = [
 └──────────────────────────────────────────────┘`,
   },
   {
-    title: "AI Market Confidant",
+    title: "Portfolio-Aware AI Chat",
     tier: "PRO",
-    description: "Claude analyzes your regime data, insider signals, and market context. Generate daily briefings or ask questions about any ticker.",
+    description: "Claude analyzes your live positions, P&L, account summary, and market context. Quick-action prompts and natural conversation about any market question.",
     details: [
-      "Daily AI-generated market briefing",
+      "System prompt includes full position details (ticker, structure, P&L, expiry)",
+      "Account context: net liquidation, buying power, margin, daily P&L",
+      "Quick-action buttons: Market Outlook, Portfolio Risk, Position Sizing, etc.",
       "Ask about any ticker, strategy, or market condition",
-      "Contextual analysis using live regime data",
-      "Scoped to market analysis only (not general AI chat)",
+      "Contextual analysis using live regime + insider + sector data",
       "Powered by Claude (Anthropic)",
     ],
     mockup: `┌──────────────────────────────────────────────┐
@@ -424,7 +587,7 @@ export function FeaturesPage() {
             Features
           </div>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 16, color: "var(--text-secondary)", maxWidth: 520, margin: "0 auto" }}>
-            Everything you need to make informed trading decisions. From free market signals to automated execution.
+            Institutional-grade trading intelligence for retail traders. From free market signals to technical overlays, AI analysis, and automated execution.
           </div>
         </div>
 

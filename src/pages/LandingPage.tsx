@@ -105,9 +105,10 @@ export function LandingPage() {
           lineHeight: 1.7,
           marginBottom: 32,
         }}>
-          One dashboard. One verdict. Market regime analysis, financial stress indicators,
-          insider activity, congressional trades, and AI analysis combined into a simple
-          traffic light that tells you whether the market conditions favor trading today.
+          One dashboard. One verdict. Market regime analysis, technical signal overlays,
+          institutional 13F filings, insider &amp; congressional trades, news sentiment,
+          SIBT Score, and portfolio-aware AI — combined into a simple traffic light that
+          tells you whether the market conditions favor trading today.
         </p>
 
         <div style={{ position: "relative", display: "flex", gap: 12 }}>
@@ -135,7 +136,7 @@ export function LandingPage() {
         borderBottom: "1px solid #1e293b",
       }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", letterSpacing: "0.05em" }}>POWERED BY</span>
-        {["FRED", "Finnhub", "Anthropic Claude", "Radon", "Interactive Brokers", "Exa"].map((name) => (
+        {["FRED", "Finnhub", "FMP", "SEC EDGAR", "Anthropic Claude", "Tradier", "Exa", "Interactive Brokers"].map((name) => (
           <span key={name} style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#94a3b8" }}>{name}</span>
         ))}
         <a href="https://github.com/nkrvivek/should-i-be-trading" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#05AD98", textDecoration: "none" }}>
@@ -155,39 +156,54 @@ export function LandingPage() {
             tag="FREE"
           />
           <FeatureCard
+            title="Technical Signal Overlays"
+            description="10+ technical indicators per stock: RSI, MACD, EMA/SMA crossovers, Bollinger Bands, Stochastic, ATR. Auto-detected support/resistance levels, composite signal scoring, and sparkline charts across daily, weekly, and intraday timeframes."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="SIBT Score (1-10)"
+            description="Composite per-stock rating combining Technical (30%), Fundamental (35%), Sentiment (20%), and Options (15%) signals. Each signal shows its contribution, value, and plain-English description. Auto-computes when you view any stock."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="Stock Fundamentals"
+            description="Deep company research powered by FMP: income statements, balance sheets, financial ratios, analyst estimates, price targets with visual consensus bars. All in the Research hub Fundamentals tab."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="13F Institutional Tracker"
+            description="Follow the smart money. Track 13F-HR filings from 20 top hedge funds — Buffett, Dalio, Ackman, Druckenmiller, and more. See filing history with direct SEC EDGAR links. All from free public data."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="News Sentiment Feed"
+            description="Real-time market news with per-stock sentiment scoring. Bullish/bearish percentages, buzz ratios, and news scores vs sector averages. Filter by general, forex, crypto, and merger categories."
+            tag="STARTER"
+          />
+          <FeatureCard
             title="Insider + Congressional Trading"
             description="SEC Form 4 filings for any ticker plus STOCK Act disclosures from Congress. 25-stock market scan shows aggregate insider buying and selling. See what insiders and politicians are doing with their money."
             tag="FREE"
           />
           <FeatureCard
-            title="Earnings Calendar"
-            description="80+ major stocks across 10 sectors. Weekly groupings with pre/after market timing. EPS and revenue estimates with beat/miss tracking. Filter by sector, timing, and week."
+            title="CFTC/COT Dashboard"
+            description="Commitments of Traders data for 10 key contracts (ES, NQ, gold, oil, bonds, etc.). Speculator vs commercial positioning, COT Index percentiles, posture classification, and weekly trend sparklines."
             tag="FREE"
           />
           <FeatureCard
-            title="AI Market Confidant"
-            description="Claude generates a daily market briefing grounded in your regime data, VIX, sector performance, and insider signals. Chat with AI about any market question. Rate-limited free tier included."
+            title="Portfolio-Aware AI Chat"
+            description="Claude analyzes your live positions, P&L, account summary, and market context. Quick-action prompts for Market Outlook, Portfolio Risk, Position Sizing, and more. Your AI trading confidant."
             tag="PRO"
           />
           <FeatureCard
-            title="Sector Heat Map + Charts"
-            description="All 11 S&P sector ETFs with color-coded performance and bar chart comparison. TradingView advanced charts for any ticker with candlesticks and MACD. No API key needed."
-            tag="FREE"
+            title="Strategy Simulator + Greeks"
+            description="19 curated strategies with interactive payoff diagrams. Live options chain from Tradier with one-click BUY/SELL. Black-Scholes Greeks (Delta, Gamma, Theta, Vega) per leg and net position. DTE and IV inputs."
+            tag="STARTER"
           />
           <FeatureCard
             title="Market Regime Monitor"
-            description="Three-pillar institutional analysis: Regime (credit spreads, yield curve, SPX/200DMA), Fragility (breadth, RSP/SPY ratio), and Trigger (VIX, term structure). Eight signals scored 0-100 with composite market state classification."
+            description="Three-pillar institutional analysis: Regime (credit spreads, yield curve, SPX/200DMA), Fragility (breadth, RSP/SPY ratio), and Trigger (VIX, term structure). Eight signals scored 0-100 with composite market state."
             tag="FREE"
-          />
-          <FeatureCard
-            title="Financial Stress Indicator"
-            description="Four market signals compressed into one number: (HYG/TLT) / (Vol x HY Spread). When risk appetite is healthy, bond vol is low, and credit spreads are tight, the FSI rises. When all three deteriorate, it collapses."
-            tag="FREE"
-          />
-          <FeatureCard
-            title="Strategy Simulator"
-            description="Browse 19 curated trading strategies and visualize payoff profiles interactively. Iron condors, covered calls, straddles — see max profit, max loss, breakevens, and explore what-if scenarios with a price slider."
-            tag="STARTER"
           />
           <FeatureCard
             title="AI Stock Screener"
@@ -205,6 +221,11 @@ export function LandingPage() {
             tag="STARTER"
           />
           <FeatureCard
+            title="Earnings Calendar"
+            description="80+ major stocks across 10 sectors. Weekly groupings with pre/after market timing. EPS and revenue estimates with beat/miss tracking. Filter by sector, timing, and week."
+            tag="FREE"
+          />
+          <FeatureCard
             title="Dark Pool + Options Flow"
             description="Surface institutional positioning from dark pool prints and unusual options activity via Radon integration. Connect your Interactive Brokers account for real-time portfolio and order management."
             tag="PRO"
@@ -219,7 +240,7 @@ export function LandingPage() {
         </h2>
         <div style={{ display: "flex", justifyContent: "center", gap: 48, maxWidth: 800, margin: "0 auto" }}>
           <Step n={1} title="Sign Up" desc="14-day Pro trial, no credit card required. Free tier available permanently." />
-          <Step n={2} title="Analyze" desc="Market Quality Score, insider signals, earnings calendar, and AI briefings computed automatically." />
+          <Step n={2} title="Analyze" desc="Market Quality Score, technical signals, SIBT Score, insider activity, 13F filings, news sentiment, COT data, and AI briefings — all computed automatically." />
           <Step n={3} title="Decide" desc="Get a clear verdict: TRADE, CAUTION, or NO TRADE. Bring your own keys for advanced features." />
         </div>
       </section>

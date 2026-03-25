@@ -66,14 +66,14 @@ Deno.serve(async (req) => {
     <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.colors.muted}; margin: 0 0 16px;">Here's what you can do right now:</p>
 
     <ul style="list-style: none; padding: 0; margin: 0 0 24px;">
-      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; <span style="color: ${BRAND.colors.accent}; margin-right: 4px;"></span>Real-time market regime signals (TRADE / CAUTION / NO TRADE)</li>
-      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; AI-powered market analysis with Claude</li>
-      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Earnings calendar with AI summarization</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Real-time market regime signals (TRADE / CAUTION / NO TRADE)</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Technical signal overlays (RSI, MACD, Bollinger, 10+ indicators)</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; SIBT Score &mdash; per-stock 1-10 composite rating</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Stock fundamentals, 13F institutional tracker, news sentiment</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Portfolio-aware AI chat with Claude</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Strategy simulator with Greeks + live options chain</li>
       <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Insider &amp; congressional trading tracker</li>
-      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; TradingView charts with fullscreen mode</li>
-      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; AI stock screener (natural language)</li>
-      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Strategy simulator with payoff visualizer</li>
-      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Macro dashboard with FRED data</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; CFTC/COT dashboard, macro data, earnings calendar</li>
     </ul>
 
     ${emailButton(`${BRAND.domain}`, "OPEN SIBT TERMINAL")}
@@ -94,13 +94,13 @@ Your account is ready. You have a 14-day Pro trial — no credit card required.
 
 Here's what you can do:
 - Real-time market regime signals (TRADE / CAUTION / NO TRADE)
-- AI-powered market analysis with Claude
-- Earnings calendar with AI summarization
+- Technical signal overlays (RSI, MACD, Bollinger, 10+ indicators)
+- SIBT Score — per-stock 1-10 composite rating
+- Stock fundamentals, 13F institutional tracker, news sentiment
+- Portfolio-aware AI chat with Claude
+- Strategy simulator with Greeks + live options chain
 - Insider & congressional trading tracker
-- TradingView charts with fullscreen mode
-- AI stock screener (natural language)
-- Strategy simulator with payoff visualizer
-- Macro dashboard with FRED data
+- CFTC/COT dashboard, macro data, earnings calendar
 
 Open SIBT: ${BRAND.domain}
 

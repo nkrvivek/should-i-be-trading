@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/auth.ts";
+import { BRAND, emailLayout, emailButton } from "../_shared/email.ts";
 
 /**
  * Send a branded welcome email when a new user signs up.
@@ -53,78 +54,39 @@ Deno.serve(async (req) => {
       });
     }
 
-    const fromEmail = Deno.env.get("WELCOME_FROM_EMAIL") || "SIBT <welcome@sibt.ai>";
+    const fromEmail = Deno.env.get("WELCOME_FROM_EMAIL") || `${BRAND.name} <welcome@sibt.ai>`;
 
-    const htmlBody = `
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0f14; color: #e2e8f0; margin: 0; padding: 0; }
-    .container { max-width: 520px; margin: 0 auto; padding: 32px 24px; }
-    .header { text-align: center; margin-bottom: 32px; }
-    .logo-text { font-family: monospace; font-size: 28px; font-weight: 700; color: #05AD98; letter-spacing: 2px; }
-    .subtitle { font-size: 14px; color: #94a3b8; margin-top: 4px; }
-    h1 { font-size: 22px; font-weight: 600; color: #e2e8f0; margin: 0 0 16px; }
-    p { font-size: 15px; line-height: 1.6; color: #94a3b8; margin: 0 0 16px; }
-    .highlight { color: #05AD98; font-weight: 600; }
-    .feature-list { list-style: none; padding: 0; margin: 0 0 24px; }
-    .feature-list li { padding: 6px 0; font-size: 14px; color: #94a3b8; }
-    .feature-list li::before { content: "\\2713 "; color: #05AD98; margin-right: 8px; }
-    .cta { display: inline-block; padding: 12px 28px; background: #05AD98; color: #0a0f14; font-family: monospace; font-size: 14px; font-weight: 600; text-decoration: none; border-radius: 4px; letter-spacing: 0.5px; }
-    .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e293b; font-size: 12px; color: #475569; text-align: center; }
-    .footer a { color: #05AD98; text-decoration: none; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="header">
-      <img src="https://sibt.ai/logo-192.png" alt="SIBT" width="48" height="48" style="display: block; margin: 0 auto 8px; border-radius: 8px;" />
-      <div class="logo-text">SIBT</div>
-      <div class="subtitle">Should I Be Trading?</div>
-    </div>
+    const htmlBody = emailLayout(`
+    <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">Welcome${userName ? `, ${userName}` : ""}!</h1>
 
-    <h1>Welcome${userName ? `, ${userName}` : ""}!</h1>
+    <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.colors.muted}; margin: 0 0 16px;">
+      Your account is ready. You have a <span style="color: ${BRAND.colors.accent}; font-weight: 600;">14-day Pro trial</span> — no credit card required.
+    </p>
 
-    <p>Your account is ready. You have a <span class="highlight">14-day Pro trial</span> — no credit card required.</p>
+    <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.colors.muted}; margin: 0 0 16px;">Here's what you can do right now:</p>
 
-    <p>Here's what you can do right now:</p>
-
-    <ul class="feature-list">
-      <li>Real-time market regime signals (TRADE / CAUTION / NO TRADE)</li>
-      <li>AI-powered market analysis with Claude</li>
-      <li>Earnings calendar with AI summarization</li>
-      <li>Insider &amp; congressional trading tracker</li>
-      <li>TradingView charts with fullscreen mode</li>
-      <li>AI stock screener (natural language)</li>
-      <li>Strategy simulator with payoff visualizer</li>
-      <li>Macro dashboard with FRED data</li>
+    <ul style="list-style: none; padding: 0; margin: 0 0 24px;">
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; <span style="color: ${BRAND.colors.accent}; margin-right: 4px;"></span>Real-time market regime signals (TRADE / CAUTION / NO TRADE)</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; AI-powered market analysis with Claude</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Earnings calendar with AI summarization</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Insider &amp; congressional trading tracker</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; TradingView charts with fullscreen mode</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; AI stock screener (natural language)</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Strategy simulator with payoff visualizer</li>
+      <li style="padding: 6px 0; font-size: 14px; color: ${BRAND.colors.muted};">&#10003; Macro dashboard with FRED data</li>
     </ul>
 
-    <p style="text-align: center; margin-bottom: 32px;">
-      <a href="https://sibt.ai" class="cta">OPEN SIBT TERMINAL</a>
-    </p>
+    ${emailButton(`${BRAND.domain}`, "OPEN SIBT TERMINAL")}
 
-    <p>To unlock all features, add your API keys in <a href="https://sibt.ai/settings" style="color: #05AD98; text-decoration: none;">Settings</a>:</p>
-    <p style="font-size: 13px;">
-      <strong style="color: #e2e8f0;">Anthropic</strong> — AI analysis &amp; chat<br>
-      <strong style="color: #e2e8f0;">Finnhub</strong> — Earnings data &amp; metrics<br>
-      <strong style="color: #e2e8f0;">Exa</strong> — Research &amp; transcript search
+    <p style="font-size: 14px; line-height: 1.6; color: ${BRAND.colors.muted}; margin: 0 0 8px;">
+      To unlock all features, add your API keys in <a href="${BRAND.domain}/settings" style="color: ${BRAND.colors.accent}; text-decoration: none;">Settings</a>:
     </p>
-
-    <div class="footer">
-      <p>&copy; ${new Date().getFullYear()} Should I Be Trading? &middot; <a href="https://sibt.ai">sibt.ai</a></p>
-      <p>
-        <a href="https://sibt.ai/terms">Terms</a> &middot;
-        <a href="https://sibt.ai/privacy">Privacy</a> &middot;
-        <a href="https://sibt.ai/risk">Risk Disclosure</a>
-      </p>
-      <p style="margin-top: 8px;">SIBT is an analytical tool. Not investment advice.</p>
-    </div>
-  </div>
-</body>
-</html>`;
+    <p style="font-size: 13px; color: ${BRAND.colors.muted}; margin: 0;">
+      <strong style="color: ${BRAND.colors.text};">Anthropic</strong> — AI analysis &amp; chat<br>
+      <strong style="color: ${BRAND.colors.text};">Finnhub</strong> — Earnings data &amp; metrics<br>
+      <strong style="color: ${BRAND.colors.text};">Exa</strong> — Research &amp; transcript search
+    </p>
+    `);
 
     const textBody = `Welcome to SIBT${userName ? `, ${userName}` : ""}!
 
@@ -140,7 +102,7 @@ Here's what you can do:
 - Strategy simulator with payoff visualizer
 - Macro dashboard with FRED data
 
-Open SIBT: https://sibt.ai
+Open SIBT: ${BRAND.domain}
 
 Add your API keys in Settings to unlock all features:
 - Anthropic — AI analysis & chat
@@ -148,8 +110,8 @@ Add your API keys in Settings to unlock all features:
 - Exa — Research & transcript search
 
 ---
-© ${new Date().getFullYear()} Should I Be Trading? | sibt.ai
-SIBT is an analytical tool. Not investment advice.`;
+© ${new Date().getFullYear()} ${BRAND.tagline} | sibt.ai
+${BRAND.name} is an analytical tool. Not investment advice.`;
 
     // Send via Resend
     const res = await fetch("https://api.resend.com/emails", {
@@ -161,7 +123,7 @@ SIBT is an analytical tool. Not investment advice.`;
       body: JSON.stringify({
         from: fromEmail,
         to: userEmail,
-        subject: "Welcome to SIBT — Your 14-day Pro trial is active",
+        subject: `Welcome to ${BRAND.name} — Your 14-day Pro trial is active`,
         html: htmlBody,
         text: textBody,
       }),

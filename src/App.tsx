@@ -1,9 +1,6 @@
 import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
 import { DashboardPage } from "./pages/DashboardPage";
-import { TerminalPage } from "./pages/TerminalPage";
-import { AnalysisPage } from "./pages/AnalysisPage";
-import { MacroPage } from "./pages/MacroPage";
 import { LoginPage } from "./pages/LoginPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { AlertsPage } from "./pages/AlertsPage";
@@ -14,12 +11,6 @@ import { PricingPage } from "./pages/PricingPage";
 import { LandingPage } from "./pages/LandingPage";
 import { RiskDisclosurePage } from "./pages/RiskDisclosurePage";
 import { FeaturesPage } from "./pages/FeaturesPage";
-import { InsiderPage } from "./pages/InsiderPage";
-import { EarningsPage } from "./pages/EarningsPage";
-import RegimePage from "./pages/RegimePage";
-import BacktestPage from "./pages/BacktestPage";
-import TradingPage from "./pages/TradingPage";
-import StrategiesPage from "./pages/StrategiesPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
@@ -27,6 +18,11 @@ import { useAuthStore } from "./stores/authStore";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { hasFeature } from "./lib/featureGates";
 import type { Feature } from "./lib/featureGates";
+
+// Lazy imports for hub pages
+import ResearchPage from "./pages/ResearchPage";
+import SignalsPage from "./pages/SignalsPage";
+import TradingPage from "./pages/TradingPage";
 
 export default function App() {
   const { theme } = useAppStore();
@@ -39,26 +35,37 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <Routes>
+          {/* Public / marketing */}
           <Route path="/welcome" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<SmartHome />} />
-          <Route path="/terminal" element={<GatedPage feature="terminal"><TerminalPage /></GatedPage>} />
-          <Route path="/analysis" element={<GatedPage feature="ai_analysis"><AnalysisPage /></GatedPage>} />
-          <Route path="/insider" element={<InsiderPage />} />
-          <Route path="/earnings" element={<EarningsPage />} />
-          <Route path="/macro" element={<MacroPage />} />
-          <Route path="/regime" element={<RegimePage />} />
-          <Route path="/backtest" element={<BacktestPage />} />
-          <Route path="/strategies" element={<GatedPage feature="strategy_simulator"><StrategiesPage /></GatedPage>} />
-          <Route path="/trading" element={<GatedPage feature="terminal"><TradingPage /></GatedPage>} />
-          <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
-          <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
           <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/glossary" element={<GlossaryPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/risk" element={<RiskDisclosurePage />} />
           <Route path="/features" element={<FeaturesPage />} />
+          <Route path="/glossary" element={<GlossaryPage />} />
+
+          {/* Core 5 hub pages */}
+          <Route path="/" element={<SmartHome />} />
+          <Route path="/research" element={<ResearchPage />} />
+          <Route path="/signals" element={<SignalsPage />} />
+          <Route path="/trading" element={<GatedPage feature="terminal"><TradingPage /></GatedPage>} />
+
+          {/* Gated utility */}
+          <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
+          <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+
+          {/* ── Redirects from old routes ─────────────────────── */}
+          <Route path="/terminal" element={<Navigate to="/trading" replace />} />
+          <Route path="/analysis" element={<Navigate to="/research" replace />} />
+          <Route path="/insider" element={<Navigate to="/research?tab=insider" replace />} />
+          <Route path="/earnings" element={<Navigate to="/research?tab=earnings" replace />} />
+          <Route path="/macro" element={<Navigate to="/signals?tab=macro" replace />} />
+          <Route path="/regime" element={<Navigate to="/signals?tab=regime" replace />} />
+          <Route path="/backtest" element={<Navigate to="/signals?tab=backtest" replace />} />
+          <Route path="/strategies" element={<Navigate to="/signals?tab=simulator" replace />} />
+
+          {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AuthProvider>
@@ -92,39 +99,32 @@ function GatedPage({ feature, children }: { feature: Feature; children: React.Re
   return <>{children}</>;
 }
 
-/** Exported for use in TerminalShell header */
+/** Exported for use in TerminalShell header — now 5 items instead of 12 */
 export function AppNav() {
   const { user, profile, effectiveTier, isTrialActive, trialDaysLeft } = useAuthStore();
   const navigate = useNavigate();
   const { toggleTheme, theme } = useAppStore();
 
-  const links = [
+  const links: { to: string; label: string; pro?: boolean }[] = [
     { to: "/", label: "DASHBOARD" },
-    { to: "/insider", label: "INSIDER" },
-    { to: "/earnings", label: "EARNINGS" },
-    { to: "/macro", label: "MACRO" },
-    { to: "/regime", label: "REGIME" },
-    { to: "/backtest", label: "BACKTEST" },
-    { to: "/strategies", label: "STRATEGIES" },
+    { to: "/research", label: "RESEARCH" },
+    { to: "/signals", label: "SIGNALS" },
     { to: "/trading", label: "TRADING", pro: true },
-    { to: "/terminal", label: "TERMINAL", pro: true },
-    { to: "/analysis", label: "ANALYSIS", pro: true },
-    { to: "/features", label: "FEATURES" },
-    { to: "/glossary", label: "LEARN" },
   ];
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "nowrap", overflow: "auto", maxWidth: "100%" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "nowrap", overflow: "auto", maxWidth: "100%" }}>
       {links.map(({ to, label, pro }) => (
         <NavLink
           key={to}
           to={to}
+          end={to === "/"}
           style={({ isActive }) => ({
-            padding: "4px 8px",
+            padding: "5px 12px",
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            fontWeight: 500,
-            letterSpacing: "0.03em",
+            fontSize: 12,
+            fontWeight: 600,
+            letterSpacing: "0.04em",
             color: isActive ? "var(--accent-bg)" : "var(--text-muted)",
             background: isActive ? "rgba(5, 173, 152, 0.1)" : "transparent",
             border: `1px solid ${isActive ? "var(--accent-bg)" : "var(--border-dim)"}`,
@@ -138,7 +138,7 @@ export function AppNav() {
         >
           {label}
           {pro && !hasFeature(effectiveTier(), "terminal") && (
-            <span style={{ fontSize: 8, color: "var(--warning)", marginLeft: 2, verticalAlign: "super" }}>PRO</span>
+            <span style={{ fontSize: 8, color: "var(--warning)", marginLeft: 3, verticalAlign: "super" }}>PRO</span>
           )}
         </NavLink>
       ))}
@@ -146,9 +146,9 @@ export function AppNav() {
       {/* Trial badge */}
       {isTrialActive() && (
         <span style={{
-          padding: "2px 6px",
+          padding: "3px 8px",
           fontFamily: "var(--font-mono)",
-          fontSize: 9,
+          fontSize: 10,
           fontWeight: 600,
           color: "var(--signal-core)",
           background: "rgba(5, 173, 152, 0.1)",
@@ -169,7 +169,7 @@ export function AppNav() {
           background: "none",
           border: "1px solid var(--border-dim)",
           borderRadius: 4,
-          padding: "3px 8px",
+          padding: "4px 10px",
           fontFamily: "var(--font-mono)",
           fontSize: 11,
           color: "var(--text-muted)",
@@ -207,10 +207,10 @@ export function AppNav() {
         <NavLink
           to="/login"
           style={{
-            padding: "3px 8px",
+            padding: "4px 10px",
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            fontWeight: 500,
+            fontSize: 12,
+            fontWeight: 600,
             color: "var(--signal-core)",
             background: "rgba(5, 173, 152, 0.1)",
             border: "1px solid var(--signal-core)",

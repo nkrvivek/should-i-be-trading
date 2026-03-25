@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
@@ -29,8 +29,15 @@ const monoStyle: React.CSSProperties = {
 };
 
 export default function TradingPage() {
-  const { account, positions, orders, loading, error, activeBroker, placeOrder, cancelOrder, refresh } = useBrokerStore();
+  const { account, positions, orders, loading, error, activeBroker, placeOrder, cancelOrder, refresh, reconnect } = useBrokerStore();
   const [tab, setTab] = useState<"portfolio" | "orders" | "journal" | "strategies" | "flow">("portfolio");
+
+  // Auto-reconnect when broker slug is saved but instance isn't connected yet (page reload)
+  useEffect(() => {
+    if (activeBroker && !account && !loading) {
+      reconnect();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <TerminalShell>

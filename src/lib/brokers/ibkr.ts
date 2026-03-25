@@ -13,8 +13,11 @@ export class IBKRBroker implements BrokerConnection {
 
   private apiUrl = "http://localhost:8321";
 
-  private async request<T>(path: string): Promise<T> {
-    const res = await fetch(`${this.apiUrl}${path}`);
+  private async request<T>(path: string, method: "GET" | "POST" = "GET"): Promise<T> {
+    const res = await fetch(`${this.apiUrl}${path}`, {
+      method,
+      headers: method === "POST" ? { "Content-Type": "application/json" } : undefined,
+    });
     if (!res.ok) throw new Error(`IBKR ${res.status}: ${await res.text()}`);
     return res.json();
   }
@@ -37,7 +40,7 @@ export class IBKRBroker implements BrokerConnection {
       bankroll?: number;
       total_value?: number;
       cash?: number;
-    }>("/portfolio/sync");
+    }>("/portfolio/sync", "POST");
     return {
       id: "ibkr-local",
       broker: "ibkr",
@@ -61,7 +64,7 @@ export class IBKRBroker implements BrokerConnection {
         unrealized_pnl?: number;
         asset_type?: string;
       }>;
-    }>("/portfolio/sync");
+    }>("/portfolio/sync", "POST");
 
     return (data.positions ?? []).map((p) => ({
       symbol: p.ticker ?? p.symbol ?? "",
@@ -89,7 +92,7 @@ export class IBKRBroker implements BrokerConnection {
         filledQuantity?: number;
         avgFillPrice?: number;
       }>;
-    }>("/orders/refresh");
+    }>("/orders/refresh", "POST");
 
     return (data.orders ?? []).map((o) => ({
       id: String(o.orderId ?? ""),

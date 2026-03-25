@@ -45,6 +45,7 @@ const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean }> = {
   "earnings-calendar":  { path: "/earnings-calendar",      requiresSymbol: false },
   "screener":           { path: "/company-screener",       requiresSymbol: false },
   "search":             { path: "/search",                 requiresSymbol: false },
+  "historical-price":   { path: "/historical-price-full",  requiresSymbol: true },
 };
 
 // ── Simple in-memory cache (per Deno isolate) ───────────────────
@@ -57,6 +58,7 @@ function getCacheTTL(endpoint: string): number {
   if (["profile"].includes(endpoint)) return 6 * 3600 * 1000; // 6 hours
   if (["analyst-estimates", "price-target", "price-target-summary"].includes(endpoint)) return 12 * 3600 * 1000; // 12 hours
   if (["earnings", "earnings-calendar"].includes(endpoint)) return 6 * 3600 * 1000; // 6 hours
+  if (["historical-price"].includes(endpoint)) return 3600 * 1000; // 1 hour
   return 3600 * 1000; // 1 hour default
 }
 
@@ -122,8 +124,8 @@ Deno.serve(async (req) => {
       url.searchParams.set("query", String(extraParams.query));
     }
 
-    // Earnings calendar: date range
-    if (endpoint === "earnings-calendar") {
+    // Date range params (earnings calendar + historical prices)
+    if (endpoint === "earnings-calendar" || endpoint === "historical-price") {
       if (extraParams.from) url.searchParams.set("from", String(extraParams.from));
       if (extraParams.to) url.searchParams.set("to", String(extraParams.to));
     }

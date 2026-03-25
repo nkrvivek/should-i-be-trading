@@ -1,8 +1,8 @@
 /**
- * SIGNALS hub — regime analysis, macro data, backtesting, strategy simulator.
+ * SIGNALS hub — regime analysis, macro data, COT positioning, backtesting, strategy simulator.
  *
- * Sub-tabs: REGIME | MACRO | BACKTEST | SIMULATOR
- * Consolidates: RegimePage + MacroPage + BacktestPage + StrategiesPage
+ * Sub-tabs: REGIME | MACRO | COT | BACKTEST | SIMULATOR
+ * Consolidates: RegimePage + MacroPage + BacktestPage + StrategiesPage + COT Dashboard
  */
 
 import { lazy, Suspense } from "react";
@@ -13,12 +13,14 @@ import { useRegime } from "../hooks/useRegime";
 // Lazy-load sub-tab content to keep initial bundle light
 const RegimeContent = lazy(() => import("./partials/RegimeContent"));
 const MacroContent = lazy(() => import("./partials/MacroContent"));
+const CotContent = lazy(() => import("./partials/CotContent"));
 const BacktestContent = lazy(() => import("./partials/BacktestContent"));
 const SimulatorContent = lazy(() => import("./partials/SimulatorContent"));
 
 const TABS: TabDef[] = [
   { id: "regime", label: "Regime" },
   { id: "macro", label: "Macro" },
+  { id: "cot", label: "COT", badge: "NEW", badgeColor: "var(--signal-core)" },
   { id: "backtest", label: "Backtest" },
   { id: "simulator", label: "Simulator" },
 ];
@@ -42,6 +44,7 @@ export default function SignalsPage() {
           <Suspense fallback={loading}>
             {activeTab === "regime" && <RegimeContent />}
             {activeTab === "macro" && <MacroContent />}
+            {activeTab === "cot" && <CotContent />}
             {activeTab === "backtest" && <BacktestContent />}
             {activeTab === "simulator" && <SimulatorContent />}
           </Suspense>

@@ -181,6 +181,7 @@ export function AppNav() {
       {user ? (
         <button
           onClick={() => navigate("/settings")}
+          title={profile?.display_name ?? "Settings"}
           style={{
             width: 28,
             height: 28,
@@ -190,15 +191,14 @@ export function AppNav() {
             background: "var(--accent-bg)",
             border: "none",
             borderRadius: "50%",
-            fontFamily: "var(--font-mono)",
-            fontSize: 14,
-            fontWeight: 700,
-            color: "var(--accent-text)",
             cursor: "pointer",
-            letterSpacing: 0,
+            flexShrink: 0,
           }}
         >
-          {profile?.display_name?.charAt(0)?.toUpperCase() ?? "U"}
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="8" r="4" fill="var(--accent-text)" />
+            <path d="M4 21c0-4 4-7 8-7s8 3 8 7" fill="var(--accent-text)" />
+          </svg>
         </button>
       ) : isSupabaseConfigured() ? (
         <NavLink

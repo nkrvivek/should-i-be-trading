@@ -47,6 +47,15 @@ export function TerminalShell({ children, cri = null }: Props) {
           >
             SIBT
           </span>
+          <span
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: 12,
+              color: "var(--text-muted)",
+            }}
+          >
+            Should I Be Trading?
+          </span>
         </div>
 
         <AppNav />

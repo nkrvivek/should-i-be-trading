@@ -21,6 +21,8 @@ import {
   searchSymbol,
 } from "../../api/fmpClient";
 import { isSupabaseConfigured } from "../../lib/supabase";
+import { useStockScore } from "../../hooks/useStockScore";
+import { StockScoreCard } from "../../components/score/StockScoreCard";
 
 /* ─── Types ────────────────────────────────────────── */
 
@@ -87,6 +89,7 @@ export default function FundamentalsContent() {
   const [estimates, setEstimates] = useState<FmpAnalystEstimate[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { score: sibtScore, compute: computeScore } = useStockScore();
 
   // Debounced search
   useEffect(() => {
@@ -135,6 +138,8 @@ export default function FundamentalsContent() {
         setIncome(inc);
         setBalance(bal);
         setEstimates(est);
+        // Compute SIBT Score in the background
+        computeScore(ticker).catch(() => {});
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load fundamentals");
@@ -412,6 +417,9 @@ export default function FundamentalsContent() {
               </div>
             </div>
           </Panel>
+
+          {/* SIBT Score */}
+          {sibtScore && sibtScore.symbol === symbol && <StockScoreCard score={sibtScore} />}
 
           {/* Valuation & Financial Ratios (two-column) */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>

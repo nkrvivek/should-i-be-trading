@@ -17,7 +17,8 @@ export type Feature =
   | "regime_detail"
   | "regime_ai"
   | "notifications_all"
-  | "strategy_simulator";
+  | "strategy_simulator"
+  | "technical_signals";
 
 const FEATURE_MAP: Record<Feature, UserTier[]> = {
   regime_dashboard: ["free", "starter", "pro", "enterprise"],
@@ -37,6 +38,7 @@ const FEATURE_MAP: Record<Feature, UserTier[]> = {
   regime_ai: ["pro", "enterprise"],
   notifications_all: ["starter", "pro", "enterprise"],
   strategy_simulator: ["starter", "pro", "enterprise"],
+  technical_signals: ["starter", "pro", "enterprise"],
 };
 
 export function hasFeature(tier: UserTier | undefined, feature: Feature): boolean {

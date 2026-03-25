@@ -3,9 +3,24 @@ import { fmtUsdExact } from "../../lib/format";
 
 type Props = {
   orders: OpenOrder[];
+  loading?: boolean;
 };
 
-export function OrdersPanel({ orders }: Props) {
+export function OrdersPanel({ orders, loading }: Props) {
+  if (loading && orders.length === 0) {
+    return (
+      <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div className="skeleton-pulse" style={{ width: 40, height: 14, borderRadius: 3, background: "var(--border-dim)" }} />
+            <div className="skeleton-pulse" style={{ width: 60, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80}ms` }} />
+            <div className="skeleton-pulse" style={{ flex: 1, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80 + 40}ms` }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (orders.length === 0) {
     return (
       <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>

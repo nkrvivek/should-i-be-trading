@@ -4,9 +4,28 @@ import { Badge } from "../shared/Badge";
 
 type Props = {
   positions: PortfolioPosition[];
+  loading?: boolean;
 };
 
-export function PositionsPanel({ positions }: Props) {
+function SkeletonRows({ rows = 4 }: { rows?: number }) {
+  return (
+    <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+          <div className="skeleton-pulse" style={{ width: 48, height: 14, borderRadius: 3, background: "var(--border-dim)" }} />
+          <div className="skeleton-pulse" style={{ width: 90, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80}ms` }} />
+          <div className="skeleton-pulse" style={{ flex: 1, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80 + 40}ms` }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function PositionsPanel({ positions, loading }: Props) {
+  if (loading && positions.length === 0) {
+    return <SkeletonRows />;
+  }
+
   if (positions.length === 0) {
     return (
       <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>

@@ -84,6 +84,20 @@ function renderBlock(block: string, i: number): React.ReactNode {
     return <hr key={i} style={{ border: "none", borderTop: "1px solid var(--border-dim)", margin: "12px 0" }} />;
   }
 
+  // H1 heading
+  if (block.startsWith("# ") && !block.startsWith("## ")) {
+    return (
+      <div key={i} style={{
+        fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700,
+        color: "var(--signal-core)", textTransform: "uppercase",
+        letterSpacing: "0.04em", marginTop: i > 0 ? 20 : 0, marginBottom: 10,
+        paddingBottom: 6, borderBottom: "1px solid var(--border-dim)",
+      }}>
+        {block.replace(/^#\s*/, "").replace(/[⚠️📡🎯📊⚡🔍]/g, "").trim()}
+      </div>
+    );
+  }
+
   // H3 heading
   if (block.startsWith("### ")) {
     return (
@@ -153,20 +167,42 @@ function renderBlock(block: string, i: number): React.ReactNode {
             }}>
               {"\u25B8"}
             </span>
-            {renderInline(line.replace(/^[-*▸]\s/, ""))}
+            {renderInline(line.trim().replace(/^[-*▸]\s/, ""))}
           </li>
         ))}
       </ul>
     );
   }
 
+  // Numbered list
+  if (lines.every((l) => /^\d+[.)]\s/.test(l.trim()))) {
+    return (
+      <ol key={i} style={{ margin: "0 0 8px 0", paddingLeft: 16, listStyle: "none", counterReset: "md-list" }}>
+        {lines.map((line, j) => (
+          <li key={j} style={{ marginBottom: 4, position: "relative", paddingLeft: 20 }}>
+            <span style={{
+              position: "absolute", left: 0, color: "var(--signal-core)",
+              fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
+              minWidth: 16, textAlign: "right",
+            }}>
+              {j + 1}.
+            </span>
+            {renderInline(line.trim().replace(/^\d+[.)]\s/, ""))}
+          </li>
+        ))}
+      </ol>
+    );
+  }
+
   // Multi-line block (mixed content)
   if (lines.length > 1) {
+    let numberedIdx = 0;
     return (
       <div key={i} style={{ margin: "0 0 8px 0" }}>
         {lines.map((line, j) => {
           const lt = line.trim();
           if (/^[-*▸]\s/.test(lt)) {
+            numberedIdx = 0;
             return (
               <div key={j} style={{ paddingLeft: 12, marginBottom: 4, position: "relative" }}>
                 <span style={{
@@ -179,6 +215,22 @@ function renderBlock(block: string, i: number): React.ReactNode {
               </div>
             );
           }
+          if (/^\d+[.)]\s/.test(lt)) {
+            numberedIdx++;
+            return (
+              <div key={j} style={{ paddingLeft: 20, marginBottom: 4, position: "relative" }}>
+                <span style={{
+                  position: "absolute", left: 0, color: "var(--signal-core)",
+                  fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
+                  minWidth: 16, textAlign: "right",
+                }}>
+                  {numberedIdx}.
+                </span>
+                {renderInline(lt.replace(/^\d+[.)]\s/, ""))}
+              </div>
+            );
+          }
+          numberedIdx = 0;
           if (lt.startsWith(">")) {
             return (
               <div key={j} style={{
@@ -255,9 +307,12 @@ function renderTable(block: string, key: number): React.ReactNode {
   );
 }
 
-/** Render inline markdown: **bold**, *italic*, `code` */
+/** Render inline markdown: **bold**, *italic*, `code`, [link](url), ~~strikethrough~~ */
 function renderInline(text: string): React.ReactNode[] {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`)/g);
+  // Split on: **bold**, *italic*, `code`, [link](url), ~~strike~~
+  const parts = text.split(
+    /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|~~[^~]+~~)/g,
+  );
 
   return parts.map((part, i) => {
     if (part.startsWith("**") && part.endsWith("**")) {
@@ -276,6 +331,22 @@ function renderInline(text: string): React.ReactNode[] {
           {part.slice(1, -1)}
         </code>
       );
+    }
+    // Markdown link: [text](url)
+    const linkMatch = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+    if (linkMatch) {
+      return (
+        <a key={i} href={linkMatch[2]} target="_blank" rel="noopener noreferrer" style={{
+          color: "var(--signal-core)", textDecoration: "underline",
+          textDecorationColor: "var(--border-dim)", textUnderlineOffset: 2,
+        }}>
+          {linkMatch[1]}
+        </a>
+      );
+    }
+    // Strikethrough: ~~text~~
+    if (part.startsWith("~~") && part.endsWith("~~")) {
+      return <s key={i} style={{ color: "var(--text-muted)" }}>{part.slice(2, -2)}</s>;
     }
     return <React.Fragment key={i}>{part}</React.Fragment>;
   });

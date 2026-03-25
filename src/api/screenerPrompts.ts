@@ -66,28 +66,50 @@ export function parseScreenerResponse(text: string): ScreenerSpec | null {
   }
 }
 
+function matchesFilter<T extends Record<string, unknown>>(item: T, f: ScreenerFilter): boolean | null {
+  const val = item[f.field];
+  // null = no data for this field — return null to indicate "unknown"
+  if (val == null) return null;
+
+  switch (f.operator) {
+    case "gt": return (val as number) > (f.value as number);
+    case "lt": return (val as number) < (f.value as number);
+    case "gte": return (val as number) >= (f.value as number);
+    case "lte": return (val as number) <= (f.value as number);
+    case "eq": return val === f.value;
+    case "neq": return val !== f.value;
+    case "contains":
+      return typeof val === "string" && val.toLowerCase().includes((f.value as string).toLowerCase());
+    default: return true;
+  }
+}
+
 export function applyFilters<T extends Record<string, unknown>>(
   data: T[],
   spec: ScreenerSpec,
 ): T[] {
-  let results = data.filter((item) =>
-    spec.filters.every((f) => {
-      const val = item[f.field];
-      if (val == null) return false;
+  // Score each item: count how many filters it matches vs total
+  const scored = data.map((item) => {
+    const results = spec.filters.map((f) => matchesFilter(item, f));
+    const matched = results.filter((r) => r === true).length;
+    const failed = results.filter((r) => r === false).length;
+    const unknown = results.filter((r) => r === null).length;
+    return { item, matched, failed, unknown, total: spec.filters.length };
+  });
 
-      switch (f.operator) {
-        case "gt": return (val as number) > (f.value as number);
-        case "lt": return (val as number) < (f.value as number);
-        case "gte": return (val as number) >= (f.value as number);
-        case "lte": return (val as number) <= (f.value as number);
-        case "eq": return val === f.value;
-        case "neq": return val !== f.value;
-        case "contains":
-          return typeof val === "string" && val.toLowerCase().includes((f.value as string).toLowerCase());
-        default: return true;
-      }
-    }),
-  );
+  // Strict pass: all known filters pass (no failures, unknowns OK)
+  let results = scored
+    .filter((s) => s.failed === 0 && s.matched > 0)
+    .map((s) => s.item);
+
+  // If strict pass returns nothing, relax: allow items that match at least half
+  // of filters and have no more than 1 failure (rest are unknown/null data)
+  if (results.length === 0 && spec.filters.length > 1) {
+    results = scored
+      .filter((s) => s.failed <= 1 && s.matched >= Math.ceil(s.total / 2))
+      .sort((a, b) => b.matched - a.matched || a.failed - b.failed)
+      .map((s) => s.item);
+  }
 
   if (spec.sort) {
     const { field, direction } = spec.sort;

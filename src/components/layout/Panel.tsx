@@ -54,8 +54,8 @@ export function Panel({ title, children, onRefresh, loading, stale, className = 
             </span>
           )}
           {loading && (
-            <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
-              ...
+            <span style={{ fontSize: 11, color: "var(--signal-core)", fontFamily: "var(--font-mono)", animation: "pulse 1.4s ease-in-out infinite" }}>
+              LOADING
             </span>
           )}
         </div>

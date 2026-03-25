@@ -3,9 +3,24 @@ import { fmtUsd } from "../../lib/format";
 
 type Props = {
   candidates: DiscoverCandidate[];
+  loading?: boolean;
 };
 
-export function OptionsFlowFeed({ candidates }: Props) {
+export function OptionsFlowFeed({ candidates, loading }: Props) {
+  if (loading && candidates.length === 0) {
+    return (
+      <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div className="skeleton-pulse" style={{ width: 48, height: 14, borderRadius: 3, background: "var(--border-dim)" }} />
+            <div className="skeleton-pulse" style={{ width: 36, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80}ms` }} />
+            <div className="skeleton-pulse" style={{ flex: 1, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80 + 40}ms` }} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   if (candidates.length === 0) {
     return (
       <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>

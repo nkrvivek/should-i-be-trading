@@ -92,17 +92,17 @@ export function TerminalPage() {
 
         {/* Middle right: portfolio */}
         <Panel title="Portfolio" onRefresh={refreshPortfolio} loading={portfolioLoading}>
-          <PositionsPanel positions={portfolio?.positions ?? []} />
+          <PositionsPanel positions={portfolio?.positions ?? []} loading={portfolioLoading} />
         </Panel>
 
         {/* Bottom left: dark pool */}
         <Panel title="Dark Pool Flow" onRefresh={refreshScanner} loading={scannerLoading}>
-          <DarkPoolFeed signals={scanner?.top_signals ?? []} />
+          <DarkPoolFeed signals={scanner?.top_signals ?? []} loading={scannerLoading} />
         </Panel>
 
         {/* Bottom right: options flow */}
         <Panel title="Options Flow" onRefresh={refreshDiscover} loading={discoverLoading}>
-          <OptionsFlowFeed candidates={discover?.candidates ?? []} />
+          <OptionsFlowFeed candidates={discover?.candidates ?? []} loading={discoverLoading} />
         </Panel>
       </div>
 

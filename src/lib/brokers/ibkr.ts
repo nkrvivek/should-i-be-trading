@@ -38,16 +38,26 @@ export class IBKRBroker implements BrokerConnection {
   async getAccount(): Promise<BrokerAccount> {
     const data = await this.request<{
       bankroll?: number;
-      total_value?: number;
-      cash?: number;
+      account_summary?: {
+        net_liquidation?: number;
+        buying_power?: number;
+        cash?: number;
+        settled_cash?: number;
+        equity_with_loan?: number;
+        excess_liquidity?: number;
+        daily_pnl?: number;
+        unrealized_pnl?: number;
+        realized_pnl?: number;
+      };
     }>("/portfolio/sync", "POST");
+    const acct = data.account_summary;
     return {
       id: "ibkr-local",
       broker: "ibkr",
-      equity: data.total_value ?? 0,
-      buyingPower: data.cash ?? 0,
-      cash: data.cash ?? 0,
-      portfolioValue: data.total_value ?? 0,
+      equity: acct?.net_liquidation ?? data.bankroll ?? 0,
+      buyingPower: acct?.buying_power ?? 0,
+      cash: acct?.cash ?? acct?.settled_cash ?? 0,
+      portfolioValue: acct?.net_liquidation ?? data.bankroll ?? 0,
       isPaperTrading: false,
     };
   }
@@ -56,56 +66,113 @@ export class IBKRBroker implements BrokerConnection {
     const data = await this.request<{
       positions?: Array<{
         ticker?: string;
-        symbol?: string;
-        quantity?: number;
-        avg_cost?: number;
-        market_price?: number;
-        market_value?: number;
-        unrealized_pnl?: number;
-        asset_type?: string;
+        contracts?: number;
+        direction?: string;
+        entry_cost?: number;
+        market_value?: number | null;
+        ib_daily_pnl?: number | null;
+        structure_type?: string;
+        risk_profile?: string;
+        structure?: string;
+        expiry?: string;
+        legs?: Array<{
+          direction?: string;
+          contracts?: number;
+          type?: string;
+          strike?: number | null;
+          entry_cost?: number;
+          avg_cost?: number;
+          market_price?: number | null;
+          market_value?: number | null;
+        }>;
       }>;
     }>("/portfolio/sync", "POST");
 
-    return (data.positions ?? []).map((p) => ({
-      symbol: p.ticker ?? p.symbol ?? "",
-      qty: Math.abs(p.quantity ?? 0),
-      side: (p.quantity ?? 0) >= 0 ? "long" as const : "short" as const,
-      avgEntryPrice: p.avg_cost ?? 0,
-      currentPrice: p.market_price ?? 0,
-      marketValue: p.market_value ?? 0,
-      unrealizedPL: p.unrealized_pnl ?? 0,
-      unrealizedPLPercent: p.avg_cost ? ((p.market_price ?? 0) - p.avg_cost) / p.avg_cost * 100 : 0,
-      assetType: (p.asset_type === "OPT" ? "option" : "stock") as BrokerPosition["assetType"],
-    }));
+    return (data.positions ?? []).map((p) => {
+      const contracts = p.contracts ?? 1;
+      const entryCost = Math.abs(p.entry_cost ?? 0);
+      const marketVal = Math.abs(p.market_value ?? 0);
+      // Compute avg entry per contract and current price per contract
+      const avgEntry = contracts > 0 ? entryCost / contracts : entryCost;
+      const currentPerContract = contracts > 0 ? marketVal / contracts : marketVal;
+      const unrealizedPL = marketVal - entryCost;
+      const unrealizedPLPct = entryCost > 0 ? (unrealizedPL / entryCost) * 100 : 0;
+
+      // Determine asset type from structure_type or legs
+      const structType = (p.structure_type ?? "").toLowerCase();
+      const hasOptions = p.legs?.some((l) => l.type === "Call" || l.type === "Put");
+      const isOption = hasOptions || structType.includes("call") || structType.includes("put")
+        || structType.includes("spread") || structType.includes("condor") || structType.includes("butterfly");
+
+      return {
+        symbol: p.ticker ?? "",
+        qty: contracts,
+        side: (p.direction === "SHORT" ? "short" : "long") as "long" | "short",
+        avgEntryPrice: avgEntry,
+        currentPrice: currentPerContract,
+        marketValue: marketVal,
+        unrealizedPL,
+        unrealizedPLPercent: unrealizedPLPct,
+        assetType: (isOption ? "option" : "stock") as BrokerPosition["assetType"],
+      };
+    });
   }
 
   async getOrders(): Promise<BrokerOrder[]> {
     const data = await this.request<{
-      orders?: Array<{
-        orderId?: string;
+      open_orders?: Array<{
+        orderId?: number;
         symbol?: string;
+        contract?: { symbol?: string; secType?: string; strike?: number | null; right?: string | null; expiry?: string | null };
         action?: string;
         orderType?: string;
         totalQuantity?: number;
-        lmtPrice?: number;
+        limitPrice?: number | null;
+        auxPrice?: number | null;
         status?: string;
-        filledQuantity?: number;
-        avgFillPrice?: number;
+        filled?: number;
+        remaining?: number;
+        avgFillPrice?: number | null;
+        tif?: string;
+      }>;
+      executed_orders?: Array<{
+        execId?: string;
+        symbol?: string;
+        contract?: { symbol?: string };
+        side?: string;
+        quantity?: number;
+        avgPrice?: number | null;
+        time?: string;
       }>;
     }>("/orders/refresh", "POST");
 
-    return (data.orders ?? []).map((o) => ({
+    const openOrders: BrokerOrder[] = (data.open_orders ?? []).map((o) => ({
       id: String(o.orderId ?? ""),
-      symbol: o.symbol ?? "",
+      symbol: o.contract?.symbol ?? o.symbol ?? "",
       side: (o.action === "BUY" ? "buy" : "sell") as "buy" | "sell",
       type: mapIBOrderType(o.orderType ?? ""),
       qty: o.totalQuantity ?? 0,
-      limitPrice: o.lmtPrice,
+      limitPrice: o.limitPrice ?? undefined,
+      stopPrice: o.auxPrice ?? undefined,
       status: mapIBStatus(o.status ?? ""),
-      filledQty: o.filledQuantity,
-      filledAvgPrice: o.avgFillPrice,
+      filledQty: o.filled,
+      filledAvgPrice: o.avgFillPrice ?? undefined,
       createdAt: new Date().toISOString(),
     }));
+
+    const executedOrders: BrokerOrder[] = (data.executed_orders ?? []).map((o) => ({
+      id: o.execId ?? "",
+      symbol: o.contract?.symbol ?? o.symbol ?? "",
+      side: (o.side === "BUY" ? "buy" : "sell") as "buy" | "sell",
+      type: "market" as const,
+      qty: o.quantity ?? 0,
+      status: "filled" as const,
+      filledQty: o.quantity,
+      filledAvgPrice: o.avgPrice ?? undefined,
+      createdAt: o.time ?? new Date().toISOString(),
+    }));
+
+    return [...openOrders, ...executedOrders];
   }
 
   async placeOrder(order: OrderRequest): Promise<BrokerOrder> {

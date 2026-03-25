@@ -27,9 +27,11 @@ import { corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
  */
 
 const FMP_BASE = "https://financialmodelingprep.com/stable";
+const FMP_V3_BASE = "https://financialmodelingprep.com/api/v3";
 
 // ── Endpoint whitelist with allowed params ──────────────────────
-const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean }> = {
+// Most use the stable API; some (historical-price) are v3-only with symbol-in-path.
+const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean; v3?: boolean; symbolInPath?: boolean }> = {
   "profile":            { path: "/profile",               requiresSymbol: true },
   "income-statement":   { path: "/income-statement",      requiresSymbol: true },
   "balance-sheet":      { path: "/balance-sheet-statement", requiresSymbol: true },
@@ -45,7 +47,7 @@ const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean }> = {
   "earnings-calendar":  { path: "/earnings-calendar",      requiresSymbol: false },
   "screener":           { path: "/company-screener",       requiresSymbol: false },
   "search":             { path: "/search",                 requiresSymbol: false },
-  "historical-price":   { path: "/historical-price-full",  requiresSymbol: true },
+  "historical-price":   { path: "/historical-price-full",  requiresSymbol: true, v3: true, symbolInPath: true },
 };
 
 // ── Simple in-memory cache (per Deno isolate) ───────────────────
@@ -94,10 +96,14 @@ Deno.serve(async (req) => {
       return errorResponse(`Endpoint "${endpoint}" requires a symbol parameter`, 400);
     }
 
-    // Build URL
-    const url = new URL(`${FMP_BASE}${config.path}`);
+    // Build URL — some endpoints use v3 base + symbol in path
+    const base = config.v3 ? FMP_V3_BASE : FMP_BASE;
+    const path = config.symbolInPath && symbol
+      ? `${config.path}/${symbol.toUpperCase()}`
+      : config.path;
+    const url = new URL(`${base}${path}`);
     url.searchParams.set("apikey", apiKey);
-    if (symbol) url.searchParams.set("symbol", symbol.toUpperCase());
+    if (symbol && !config.symbolInPath) url.searchParams.set("symbol", symbol.toUpperCase());
     if (period) url.searchParams.set("period", period);
     if (limit) url.searchParams.set("limit", String(limit));
 

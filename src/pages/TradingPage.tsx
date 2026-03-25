@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
 import FlowAnalysisPanel from "../components/trading/FlowAnalysisPanel";
@@ -32,6 +33,7 @@ export default function TradingPage() {
   const [tab, setTab] = useState<"portfolio" | "orders" | "journal" | "strategies" | "flow">("portfolio");
 
   return (
+    <TerminalShell>
     <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h1 style={{ ...monoStyle, fontSize: 24, fontWeight: 700 }}>TRADING</h1>
@@ -90,6 +92,7 @@ export default function TradingPage() {
         </>
       )}
     </div>
+    </TerminalShell>
   );
 }
 

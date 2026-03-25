@@ -1,7 +1,7 @@
 /**
- * RESEARCH hub — unified AI, fundamentals, earnings, insider research.
+ * RESEARCH hub — unified AI, fundamentals, institutional, earnings, insider research.
  *
- * Sub-tabs: AI CHAT | FUNDAMENTALS | EARNINGS | INSIDER
+ * Sub-tabs: AI CHAT | FUNDAMENTALS | 13F TRACKER | EARNINGS | INSIDER
  *
  * AI Chat tab has a side panel with Research (Exa) + AI Screener toggles.
  * No separate Screener top-level tab — it lives inside Chat to avoid redundancy.
@@ -24,10 +24,12 @@ import { ScreenerPanel } from "../components/ai/ScreenerPanel";
 const EarningsContent = lazy(() => import("./partials/EarningsContent"));
 const InsiderContent = lazy(() => import("./partials/InsiderContent"));
 const FundamentalsContent = lazy(() => import("./partials/FundamentalsContent"));
+const InstitutionalContent = lazy(() => import("./partials/InstitutionalContent"));
 
 const TABS: TabDef[] = [
   { id: "chat", label: "AI Chat" },
   { id: "fundamentals", label: "Fundamentals", badge: "NEW", badgeColor: "var(--signal-core)" },
+  { id: "institutional", label: "13F Tracker", badge: "NEW", badgeColor: "var(--signal-core)" },
   { id: "earnings", label: "Earnings" },
   { id: "insider", label: "Insider" },
 ];
@@ -96,6 +98,12 @@ export default function ResearchPage() {
           {activeTab === "fundamentals" && (
             <Suspense fallback={loading}>
               <FundamentalsContent />
+            </Suspense>
+          )}
+
+          {activeTab === "institutional" && (
+            <Suspense fallback={loading}>
+              <InstitutionalContent />
             </Suspense>
           )}
 

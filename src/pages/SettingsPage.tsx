@@ -2,7 +2,7 @@ import { useState } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { ProfileForm } from "../components/settings/ProfileForm";
 import { ApiKeyForm } from "../components/settings/ApiKeyForm";
-import { BrokerageConfig } from "../components/settings/BrokerageConfig";
+import BrokerageSettings from "../components/settings/BrokerageSettings";
 import { TierManager } from "../components/settings/TierManager";
 import { NotificationSettings } from "../components/settings/NotificationSettings";
 import { supabase } from "../lib/supabase";
@@ -76,7 +76,7 @@ export function SettingsPage() {
         {activeTab === "plan" && <TierManager />}
         {activeTab === "profile" && <ProfileForm />}
         {activeTab === "api_keys" && <ApiKeyForm />}
-        {activeTab === "brokerage" && <BrokerageConfig />}
+        {activeTab === "brokerage" && <BrokerageSettings />}
         {activeTab === "notifications" && <NotificationSettings />}
       </div>
     </TerminalShell>

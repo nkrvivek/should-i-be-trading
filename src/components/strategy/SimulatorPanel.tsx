@@ -1,7 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
 import type { SimulatorLeg } from "../../lib/strategy/payoff";
 import { computePayoffCurve, computeKeyMetrics } from "../../lib/strategy/payoff";
+import { computePositionGreeks } from "../../lib/strategy/greeks";
 import { PayoffChart } from "./PayoffChart";
+import { GreeksPanel } from "./GreeksPanel";
+import { OptionsChainLoader } from "./OptionsChainLoader";
 
 interface Props {
   initialLegs?: SimulatorLeg[];
@@ -65,6 +68,9 @@ export function SimulatorPanel({
   const [currentPrice, setCurrentPrice] = useState(initialPrice);
   const [legs, setLegs] = useState<SimulatorLeg[]>(initialLegs ?? []);
   const [highlightPrice, setHighlightPrice] = useState<number | null>(null);
+  const [showChain, setShowChain] = useState(false);
+  const [ivByLeg, setIvByLeg] = useState<number[]>([]);
+  const [dte, setDte] = useState(30);
 
   const updateLeg = useCallback(
     (idx: number, field: keyof SimulatorLeg, value: string | number) => {
@@ -83,7 +89,18 @@ export function SimulatorPanel({
 
   const removeLeg = useCallback((idx: number) => {
     setLegs((prev) => prev.filter((_, i) => i !== idx));
+    setIvByLeg((prev) => prev.filter((_, i) => i !== idx));
   }, []);
+
+  const handleChainAddLeg = useCallback((leg: SimulatorLeg, iv: number) => {
+    setLegs((prev) => [...prev, leg]);
+    setIvByLeg((prev) => [...prev, iv]);
+  }, []);
+
+  const handleChainPriceUpdate = useCallback((price: number) => {
+    setCurrentPrice(price);
+  }, []);
+
 
   const curve = useMemo(
     () => computePayoffCurve(legs, currentPrice),
@@ -94,6 +111,14 @@ export function SimulatorPanel({
     [legs, currentPrice],
   );
   const allStrikes = legs.filter((l) => l.type !== "stock").map((l) => l.strike);
+
+  // Greeks computation
+  const positionGreeks = useMemo(() => {
+    if (legs.length === 0 || currentPrice <= 0) return null;
+    // Use IVs from chain data, or default 0.30 for manually-entered legs
+    const ivs = legs.map((_, i) => ivByLeg[i] ?? 0.30);
+    return computePositionGreeks(legs, currentPrice, ivs, dte);
+  }, [legs, currentPrice, ivByLeg, dte]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -119,7 +144,18 @@ export function SimulatorPanel({
             min={1}
           />
         </div>
-        <div style={{ flex: 1 }}>
+        <div style={{ flex: "0 0 80px" }}>
+          <div style={labelStyle}>DTE</div>
+          <input
+            style={inputStyle}
+            type="number"
+            value={dte}
+            onChange={(e) => setDte(Math.max(0, Number(e.target.value)))}
+            min={0}
+            max={730}
+          />
+        </div>
+        <div style={{ flex: 1, display: "flex", alignItems: "flex-end", gap: 12 }}>
           <span
             style={{
               fontFamily: "var(--font-mono)",
@@ -130,8 +166,33 @@ export function SimulatorPanel({
           >
             {ticker || "---"} ${currentPrice > 0 ? currentPrice.toFixed(2) : "---"}
           </span>
+          <button
+            onClick={() => setShowChain(!showChain)}
+            style={{
+              padding: "4px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              fontWeight: 600,
+              color: showChain ? "#000" : "var(--info)",
+              background: showChain ? "var(--info)" : "transparent",
+              border: `1px solid var(--info)`,
+              borderRadius: 4,
+              cursor: "pointer",
+            }}
+          >
+            {showChain ? "HIDE CHAIN" : "LIVE CHAIN"}
+          </button>
         </div>
       </div>
+
+      {/* Live Options Chain */}
+      {showChain && (
+        <OptionsChainLoader
+          ticker={ticker}
+          onPriceUpdate={handleChainPriceUpdate}
+          onAddLeg={handleChainAddLeg}
+        />
+      )}
 
       {/* Legs editor */}
       <div
@@ -334,6 +395,9 @@ export function SimulatorPanel({
           />
         </div>
       )}
+
+      {/* Greeks Panel */}
+      <GreeksPanel greeks={positionGreeks} legs={legs} daysToExpiry={dte} />
 
       {/* Payoff Chart */}
       <div

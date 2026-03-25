@@ -19,6 +19,7 @@ import { EarningsPage } from "./pages/EarningsPage";
 import RegimePage from "./pages/RegimePage";
 import BacktestPage from "./pages/BacktestPage";
 import TradingPage from "./pages/TradingPage";
+import StrategiesPage from "./pages/StrategiesPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
@@ -48,6 +49,7 @@ export default function App() {
           <Route path="/macro" element={<MacroPage />} />
           <Route path="/regime" element={<RegimePage />} />
           <Route path="/backtest" element={<BacktestPage />} />
+          <Route path="/strategies" element={<GatedPage feature="strategy_simulator"><StrategiesPage /></GatedPage>} />
           <Route path="/trading" element={<GatedPage feature="terminal"><TradingPage /></GatedPage>} />
           <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
@@ -103,6 +105,7 @@ export function AppNav() {
     { to: "/macro", label: "MACRO" },
     { to: "/regime", label: "REGIME" },
     { to: "/backtest", label: "BACKTEST" },
+    { to: "/strategies", label: "STRATEGIES" },
     { to: "/trading", label: "TRADING", pro: true },
     { to: "/terminal", label: "TERMINAL", pro: true },
     { to: "/analysis", label: "ANALYSIS", pro: true },

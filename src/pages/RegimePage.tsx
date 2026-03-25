@@ -9,6 +9,7 @@ import { PillarScoreCard } from "../components/regime/PillarScore";
 import { SignalCard } from "../components/regime/SignalCard";
 import { FSIGauge } from "../components/regime/FSIGauge";
 import VCGPanel from "../components/regime/VCGPanel";
+import CTAPanel from "../components/regime/CTAPanel";
 import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import { useAuthStore } from "../stores/authStore";
 import { hasFeature } from "../lib/featureGates";
@@ -126,6 +127,9 @@ export default function RegimePage() {
 
           {/* VCG Panel (Radon Pro feature) */}
           {isPro && <VCGPanel />}
+
+          {/* CTA Positioning (Radon Pro feature) */}
+          {isPro && <CTAPanel />}
 
           {/* Pro upsell for non-pro users */}
           {!isPro && (

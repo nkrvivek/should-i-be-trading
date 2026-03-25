@@ -80,6 +80,7 @@ Deno.serve(async (req) => {
 <body>
   <div class="container">
     <div class="header">
+      <img src="https://sibt.ai/logo-192.png" alt="SIBT" width="48" height="48" style="display: block; margin: 0 auto 8px; border-radius: 8px;" />
       <div class="logo-text">SIBT</div>
       <div class="subtitle">Should I Be Trading?</div>
     </div>
@@ -97,6 +98,7 @@ Deno.serve(async (req) => {
       <li>Insider &amp; congressional trading tracker</li>
       <li>TradingView charts with fullscreen mode</li>
       <li>AI stock screener (natural language)</li>
+      <li>Strategy simulator with payoff visualizer</li>
       <li>Macro dashboard with FRED data</li>
     </ul>
 
@@ -135,6 +137,7 @@ Here's what you can do:
 - Insider & congressional trading tracker
 - TradingView charts with fullscreen mode
 - AI stock screener (natural language)
+- Strategy simulator with payoff visualizer
 - Macro dashboard with FRED data
 
 Open SIBT: https://sibt.ai

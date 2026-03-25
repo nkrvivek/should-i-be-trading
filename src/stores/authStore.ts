@@ -83,8 +83,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
   effectiveTier: () => {
     const { profile, subscription } = get();
-    // Paid subscription takes priority
-    if (subscription && ["active", "trialing", "past_due"].includes(subscription.status)) {
+    // Paid subscription takes priority (skip free-tier subscriptions)
+    if (subscription && subscription.plan_tier !== "free" && ["active", "trialing", "past_due"].includes(subscription.status)) {
       return subscription.plan_tier as UserTier;
     }
     // Check free trial (no card required)

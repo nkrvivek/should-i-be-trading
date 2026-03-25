@@ -111,7 +111,6 @@ export function AuthGate({ onSuccess }: Props) {
           textAlign: "center",
         }}
       >
-        <img src="/logo.svg" alt="SIBT" style={{ height: 40, marginBottom: 12 }} />
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: "var(--signal-core)", marginBottom: 12 }}>
           Check your email
         </div>
@@ -144,11 +143,7 @@ export function AuthGate({ onSuccess }: Props) {
       }}
     >
       <div style={{ textAlign: "center", marginBottom: 24 }}>
-        <img src="/logo.svg" alt="SIBT" style={{ height: 40, marginBottom: 8 }} />
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 700, color: "var(--signal-core)" }}>
-          SIBT
-        </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 16, color: "var(--text-muted)", marginTop: 4 }}>
           {mode === "login" ? "Sign in to your account" : "Create your account"}
         </div>
       </div>

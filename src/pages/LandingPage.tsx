@@ -33,10 +33,10 @@ export function LandingPage() {
         backdropFilter: "blur(8px)",
         zIndex: 100,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.svg" alt="SIBT" style={{ height: 36 }} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, color: "#05AD98" }}>SIBT</span>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "#94a3b8" }}>Should I Be Trading?</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <img src="/logo-icon.svg" alt="SIBT" style={{ height: 32 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: "#05AD98" }}>SIBT</span>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "#94a3b8" }}>Should I Be Trading?</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => navigate("/login")} style={navBtn}>SIGN IN</button>
@@ -230,7 +230,7 @@ export function LandingPage() {
         margin: "0 auto",
       }}>
         <div>
-          <img src="/logo.svg" alt="SIBT" style={{ height: 24, verticalAlign: "middle", marginRight: 8 }} />
+          <img src="/logo-icon.svg" alt="SIBT" style={{ height: 20, verticalAlign: "middle", marginRight: 8 }} />
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: "#94a3b8" }}>SIBT</span>
           <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "#64748b", marginLeft: 8 }}>
             &copy; {new Date().getFullYear()} Should I Be Trading?

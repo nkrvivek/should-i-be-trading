@@ -34,27 +34,18 @@ export function TerminalShell({ children, cri = null }: Props) {
           zIndex: 50,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-          <img src="/logo.svg" alt="SIBT" style={{ height: 32 }} />
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          <img src="/logo-icon.svg" alt="SIBT" style={{ height: 28 }} />
           <span
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 20,
+              fontSize: 16,
               fontWeight: 700,
               color: "var(--signal-core)",
               letterSpacing: "0.05em",
             }}
           >
             SIBT
-          </span>
-          <span
-            style={{
-              fontFamily: "var(--font-sans)",
-              fontSize: 14,
-              color: "var(--text-muted)",
-            }}
-          >
-            Should I Be Trading?
           </span>
         </div>
 

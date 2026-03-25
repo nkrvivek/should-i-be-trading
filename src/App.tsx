@@ -111,17 +111,17 @@ export function AppNav() {
   ];
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "nowrap", overflow: "auto", maxWidth: "100%" }}>
       {links.map(({ to, label, pro }) => (
         <NavLink
           key={to}
           to={to}
           style={({ isActive }) => ({
-            padding: "5px 12px",
+            padding: "4px 8px",
             fontFamily: "var(--font-mono)",
-            fontSize: 13,
+            fontSize: 11,
             fontWeight: 500,
-            letterSpacing: "0.05em",
+            letterSpacing: "0.03em",
             color: isActive ? "var(--accent-bg)" : "var(--text-muted)",
             background: isActive ? "rgba(5, 173, 152, 0.1)" : "transparent",
             border: `1px solid ${isActive ? "var(--accent-bg)" : "var(--border-dim)"}`,
@@ -129,11 +129,13 @@ export function AppNav() {
             textDecoration: "none",
             cursor: "pointer",
             position: "relative" as const,
+            whiteSpace: "nowrap" as const,
+            flexShrink: 0,
           })}
         >
           {label}
           {pro && !hasFeature(effectiveTier(), "terminal") && (
-            <span style={{ fontSize: 9, color: "var(--warning)", marginLeft: 3, verticalAlign: "super" }}>PRO</span>
+            <span style={{ fontSize: 8, color: "var(--warning)", marginLeft: 2, verticalAlign: "super" }}>PRO</span>
           )}
         </NavLink>
       ))}
@@ -141,17 +143,19 @@ export function AppNav() {
       {/* Trial badge */}
       {isTrialActive() && (
         <span style={{
-          padding: "2px 8px",
+          padding: "2px 6px",
           fontFamily: "var(--font-mono)",
-          fontSize: 11,
+          fontSize: 9,
           fontWeight: 600,
           color: "var(--signal-core)",
           background: "rgba(5, 173, 152, 0.1)",
           border: "1px solid var(--signal-core)",
           borderRadius: 999,
           letterSpacing: "0.03em",
+          whiteSpace: "nowrap",
+          flexShrink: 0,
         }}>
-          TRIAL: {trialDaysLeft()}d left
+          TRIAL {trialDaysLeft()}d
         </span>
       )}
 
@@ -162,12 +166,12 @@ export function AppNav() {
           background: "none",
           border: "1px solid var(--border-dim)",
           borderRadius: 4,
-          padding: "5px 10px",
+          padding: "3px 8px",
           fontFamily: "var(--font-mono)",
-          fontSize: 12,
+          fontSize: 11,
           color: "var(--text-muted)",
           cursor: "pointer",
-          marginLeft: 4,
+          flexShrink: 0,
         }}
       >
         {theme === "dark" ? "LIGHT" : "DARK"}
@@ -200,15 +204,17 @@ export function AppNav() {
         <NavLink
           to="/login"
           style={{
-            padding: "3px 10px",
+            padding: "3px 8px",
             fontFamily: "var(--font-mono)",
-            fontSize: 12,
+            fontSize: 11,
             fontWeight: 500,
             color: "var(--signal-core)",
             background: "rgba(5, 173, 152, 0.1)",
             border: "1px solid var(--signal-core)",
             borderRadius: 4,
             textDecoration: "none",
+            whiteSpace: "nowrap",
+            flexShrink: 0,
           }}
         >
           SIGN IN

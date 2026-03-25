@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
+import FlowAnalysisPanel from "../components/trading/FlowAnalysisPanel";
+import StrategySuggester from "../components/trading/StrategySuggester";
 import type { OrderRequest } from "../lib/brokers/types";
 
 const panelStyle: React.CSSProperties = {
@@ -27,7 +29,7 @@ const monoStyle: React.CSSProperties = {
 
 export default function TradingPage() {
   const { account, positions, orders, loading, error, activeBroker, placeOrder, cancelOrder, refresh } = useBrokerStore();
-  const [tab, setTab] = useState<"portfolio" | "orders" | "journal" | "strategies">("portfolio");
+  const [tab, setTab] = useState<"portfolio" | "orders" | "journal" | "strategies" | "flow">("portfolio");
 
   return (
     <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 16px" }}>
@@ -56,7 +58,7 @@ export default function TradingPage() {
 
           {/* Tab Navigation */}
           <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "1px solid var(--border-dim)" }}>
-            {(["portfolio", "orders", "journal", "strategies"] as const).map((t) => (
+            {(["portfolio", "orders", "flow", "journal", "strategies"] as const).map((t) => (
               <button
                 key={t}
                 onClick={() => setTab(t)}
@@ -82,6 +84,7 @@ export default function TradingPage() {
 
           {tab === "portfolio" && <PositionsTable positions={positions} />}
           {tab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
+          {tab === "flow" && <FlowAnalysisPanel />}
           {tab === "journal" && <JournalPanel />}
           {tab === "strategies" && <StrategiesPanel positions={positions} />}
         </>
@@ -348,6 +351,9 @@ function StrategiesPanel({ positions }: { positions: import("../lib/brokers/type
 
   return (
     <div>
+      {/* AI Strategy Suggester */}
+      <StrategySuggester context={{ positions: positions.map((p) => ({ symbol: p.symbol, qty: p.qty, side: p.side, currentPrice: p.currentPrice, unrealizedPL: p.unrealizedPL })) }} />
+
       {/* Covered Call Opportunities */}
       <div style={panelStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>

@@ -8,6 +8,7 @@ import { MarketStateCard } from "../components/regime/MarketStateCard";
 import { PillarScoreCard } from "../components/regime/PillarScore";
 import { SignalCard } from "../components/regime/SignalCard";
 import { FSIGauge } from "../components/regime/FSIGauge";
+import VCGPanel from "../components/regime/VCGPanel";
 import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import { useAuthStore } from "../stores/authStore";
 import { hasFeature } from "../lib/featureGates";
@@ -122,6 +123,9 @@ export default function RegimePage() {
               <SignalCard key={s.id} signal={s} showInterpretation={isPro} />
             ))}
           </div>
+
+          {/* VCG Panel (Radon Pro feature) */}
+          {isPro && <VCGPanel />}
 
           {/* Pro upsell for non-pro users */}
           {!isPro && (

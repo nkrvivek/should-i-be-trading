@@ -1,8 +1,10 @@
 /**
- * RESEARCH hub — unified AI, screener, earnings, insider research.
+ * RESEARCH hub — unified AI, fundamentals, earnings, insider research.
  *
- * Sub-tabs: CHAT | SCREENER | EARNINGS | INSIDER
- * Consolidates: AnalysisPage + InsiderPage + EarningsPage
+ * Sub-tabs: AI CHAT | FUNDAMENTALS | EARNINGS | INSIDER
+ *
+ * AI Chat tab has a side panel with Research (Exa) + AI Screener toggles.
+ * No separate Screener top-level tab — it lives inside Chat to avoid redundancy.
  */
 
 import { lazy, Suspense, useMemo, useState } from "react";
@@ -21,10 +23,11 @@ import { ScreenerPanel } from "../components/ai/ScreenerPanel";
 // Lazy-load heavier sub-tab content
 const EarningsContent = lazy(() => import("./partials/EarningsContent"));
 const InsiderContent = lazy(() => import("./partials/InsiderContent"));
+const FundamentalsContent = lazy(() => import("./partials/FundamentalsContent"));
 
 const TABS: TabDef[] = [
   { id: "chat", label: "AI Chat" },
-  { id: "screener", label: "Screener" },
+  { id: "fundamentals", label: "Fundamentals", badge: "NEW", badgeColor: "var(--signal-core)" },
   { id: "earnings", label: "Earnings" },
   { id: "insider", label: "Insider" },
 ];
@@ -52,7 +55,7 @@ export default function ResearchPage() {
     [cri, status, marketScore],
   );
 
-  // Chat sub-tab layout: side-by-side chat + research
+  // Chat sub-tab layout: side panel toggle (research vs screener)
   const [rightPanel, setRightPanel] = useState<"research" | "screener">("research");
 
   return (
@@ -76,16 +79,10 @@ export default function ResearchPage() {
                     background: "var(--bg-panel)",
                   }}
                 >
-                  <button
-                    style={miniTab(rightPanel === "research")}
-                    onClick={() => setRightPanel("research")}
-                  >
+                  <button style={miniTab(rightPanel === "research")} onClick={() => setRightPanel("research")}>
                     RESEARCH
                   </button>
-                  <button
-                    style={miniTab(rightPanel === "screener")}
-                    onClick={() => setRightPanel("screener")}
-                  >
+                  <button style={miniTab(rightPanel === "screener")} onClick={() => setRightPanel("screener")}>
                     AI SCREENER
                   </button>
                 </div>
@@ -96,10 +93,10 @@ export default function ResearchPage() {
             </div>
           )}
 
-          {activeTab === "screener" && (
-            <Panel title="AI Stock Screener">
-              <ScreenerPanel />
-            </Panel>
+          {activeTab === "fundamentals" && (
+            <Suspense fallback={loading}>
+              <FundamentalsContent />
+            </Suspense>
           )}
 
           {activeTab === "earnings" && (

@@ -35,7 +35,7 @@ export function AlertsPage() {
     <TerminalShell cri={null}>
       <div style={{ maxWidth: 900, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 500 }}>Alerts</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 500 }}>Alerts</div>
           <div style={{ display: "flex", gap: 8 }}>
             <button onClick={requestNotificationPermission} style={btnStyle("var(--text-muted)")}>
               ENABLE NOTIFICATIONS
@@ -61,7 +61,7 @@ export function AlertsPage() {
 
         <Panel title={`Active Rules (${rules.length})`} loading={loading}>
           {rules.length === 0 ? (
-            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
               No alert rules configured
             </div>
           ) : (
@@ -75,13 +75,13 @@ export function AlertsPage() {
 
         <Panel title="Alert History">
           {history.length === 0 ? (
-            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>No alerts triggered yet</div>
+            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>No alerts triggered yet</div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
               {history.map((h) => (
-                <div key={h.id} style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+                <div key={h.id} style={{ display: "flex", justifyContent: "space-between", padding: "4px 8px", borderBottom: "1px solid var(--border-dim)", fontFamily: "var(--font-mono)", fontSize: 13 }}>
                   <span>{h.message}</span>
-                  <span style={{ color: "var(--text-muted)", fontSize: 9 }}>{new Date(h.created_at).toLocaleString()}</span>
+                  <span style={{ color: "var(--text-muted)", fontSize: 11 }}>{new Date(h.created_at).toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -97,8 +97,8 @@ function RuleRow({ rule, onToggle, onDelete }: { rule: AlertRule; onToggle: (ena
     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 8px", background: "var(--bg-panel-raised)", borderRadius: 4 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <Badge label={rule.enabled ? "ON" : "OFF"} variant={rule.enabled ? "positive" : "default"} />
-        <span style={{ fontFamily: "var(--font-sans)", fontSize: 12 }}>{rule.name}</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>{rule.trigger_type}</span>
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: 14 }}>{rule.name}</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>{rule.trigger_type}</span>
       </div>
       <div style={{ display: "flex", gap: 4 }}>
         <button onClick={() => onToggle(!rule.enabled)} style={btnStyle("var(--text-muted)")}>{rule.enabled ? "DISABLE" : "ENABLE"}</button>
@@ -110,9 +110,9 @@ function RuleRow({ rule, onToggle, onDelete }: { rule: AlertRule; onToggle: (ena
 
 const inputStyle: React.CSSProperties = {
   padding: "6px 12px", background: "var(--bg-panel)", border: "1px solid var(--border-dim)",
-  borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-primary)", outline: "none",
+  borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-primary)", outline: "none",
 };
 
 function btnStyle(color: string): React.CSSProperties {
-  return { background: "none", border: `1px solid ${color}`, borderRadius: 4, padding: "4px 12px", fontFamily: "var(--font-mono)", fontSize: 9, color, cursor: "pointer" };
+  return { background: "none", border: `1px solid ${color}`, borderRadius: 4, padding: "4px 12px", fontFamily: "var(--font-mono)", fontSize: 11, color, cursor: "pointer" };
 }

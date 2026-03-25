@@ -39,7 +39,7 @@ export function Panel({ title, children, onRefresh, loading, stale, className = 
           <span
             style={{
               fontFamily: "var(--font-sans)",
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 600,
               color: "var(--text-secondary)",
               textTransform: "uppercase",
@@ -49,12 +49,12 @@ export function Panel({ title, children, onRefresh, loading, stale, className = 
             {title}
           </span>
           {stale && (
-            <span style={{ fontSize: 9, color: "var(--warning)", fontFamily: "var(--font-mono)" }}>
+            <span style={{ fontSize: 11, color: "var(--warning)", fontFamily: "var(--font-mono)" }}>
               STALE
             </span>
           )}
           {loading && (
-            <span style={{ fontSize: 9, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
+            <span style={{ fontSize: 11, color: "var(--text-muted)", fontFamily: "var(--font-mono)" }}>
               ...
             </span>
           )}
@@ -67,7 +67,7 @@ export function Panel({ title, children, onRefresh, loading, stale, className = 
               background: "none",
               border: "none",
               fontFamily: "var(--font-mono)",
-              fontSize: 9,
+              fontSize: 11,
               color: "var(--text-muted)",
               cursor: loading ? "default" : "pointer",
               padding: "2px 4px",

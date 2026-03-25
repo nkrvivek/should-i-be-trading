@@ -92,7 +92,7 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
         <div style={{
           fontFamily: "var(--font-sans)",
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: 500,
           color: "var(--text-muted)",
           textTransform: "uppercase",
@@ -109,7 +109,7 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
             borderRadius: 4,
             padding: "3px 10px",
             fontFamily: "var(--font-mono)",
-            fontSize: 9,
+            fontSize: 11,
             color: "var(--signal-core)",
             cursor: loading ? "default" : "pointer",
             opacity: loading ? 0.5 : 1,
@@ -120,20 +120,20 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
       </div>
 
       {!briefing && !loading && !error && (
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
           Click "Generate" to get an AI-powered market briefing based on current regime data.
           Requires an Anthropic API key configured in Settings.
         </div>
       )}
 
       {loading && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
           Analyzing regime data and generating briefing...
         </div>
       )}
 
       {error && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)" }}>
           {error}
         </div>
       )}
@@ -141,7 +141,7 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
       {briefing && (
         <div style={{
           fontFamily: "var(--font-sans)",
-          fontSize: 12,
+          fontSize: 14,
           color: "var(--text-secondary)",
           lineHeight: 1.7,
         }}>

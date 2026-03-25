@@ -36,10 +36,10 @@ export function FSIGauge({ fsi }: Props) {
       {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             FINANCIAL STRESS INDICATOR
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             (HYG/TLT) / (Vol x HY Spread)
           </div>
         </div>
@@ -50,7 +50,7 @@ export function FSIGauge({ fsi }: Props) {
           <div
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 600,
               color,
               textTransform: "uppercase",
@@ -83,7 +83,7 @@ export function FSIGauge({ fsi }: Props) {
       </div>
 
       {/* Explanation */}
-      <div style={{ marginTop: 12, fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", lineHeight: 1.6 }}>
+      <div style={{ marginTop: 12, fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
         Rising = healthy risk appetite, low bond vol, tight credit spreads. Falling = deteriorating conditions across all three.
         When all components deteriorate simultaneously, the indicator collapses — a leading signal for equity drawdowns.
       </div>
@@ -94,13 +94,13 @@ export function FSIGauge({ fsi }: Props) {
 function ComponentChip({ label, value, desc }: { label: string; value: string; desc: string }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase" }}>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>
         {label}
       </span>
       <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
         {value}
       </span>
-      <span style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)" }}>
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
         {desc}
       </span>
     </div>

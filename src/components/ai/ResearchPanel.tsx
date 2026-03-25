@@ -46,7 +46,7 @@ export function ResearchPanel() {
             border: "1px solid var(--border-dim)",
             borderRadius: 4,
             fontFamily: "var(--font-sans)",
-            fontSize: 12,
+            fontSize: 14,
             color: "var(--text-primary)",
             outline: "none",
           }}
@@ -61,7 +61,7 @@ export function ResearchPanel() {
             border: "none",
             borderRadius: 4,
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: 500,
             color: "var(--accent-text)",
             cursor: loading ? "default" : "pointer",
@@ -74,12 +74,12 @@ export function ResearchPanel() {
 
       <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
         {loading && (
-          <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+          <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
             Searching...
           </div>
         )}
         {error && (
-          <div style={{ padding: 12, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)", background: "rgba(232,93,108,0.08)", borderRadius: 4, border: "1px solid rgba(232,93,108,0.2)" }}>
+          <div style={{ padding: 12, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)", background: "rgba(232,93,108,0.08)", borderRadius: 4, border: "1px solid rgba(232,93,108,0.2)" }}>
             {error}
           </div>
         )}
@@ -99,7 +99,7 @@ export function ResearchPanel() {
               rel="noopener noreferrer"
               style={{
                 fontFamily: "var(--font-sans)",
-                fontSize: 12,
+                fontSize: 14,
                 fontWeight: 500,
                 color: "var(--signal-core)",
                 textDecoration: "none",
@@ -107,16 +107,16 @@ export function ResearchPanel() {
             >
               {r.title}
             </a>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", margin: "4px 0" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", margin: "4px 0" }}>
               {r.publishedDate ? new Date(r.publishedDate).toLocaleDateString() : ""} {r.score ? `| Score: ${r.score.toFixed(2)}` : ""}
             </div>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
               {r.text?.slice(0, 200)}{r.text && r.text.length > 200 ? "..." : ""}
             </div>
           </div>
         ))}
         {!loading && results.length === 0 && !error && (
-          <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>
+          <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
             {hasKey
               ? "Search for market news, company research, or trading topics via Exa."
               : "Configure your Exa API key in Settings to enable research. Get a free key at exa.ai"}

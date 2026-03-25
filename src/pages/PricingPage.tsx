@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useAuthStore } from "../stores/authStore";
 import { redirectToCheckout } from "../lib/stripe";
-import { isSupabaseConfigured } from "../lib/supabase";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 
 type BillingInterval = "month" | "year";
 
@@ -114,6 +114,8 @@ export function PricingContent() {
   const [interval, setInterval] = useState<BillingInterval>("year");
   const [loading, setLoading] = useState<string | null>(null);
 
+  const [trialSuccess, setTrialSuccess] = useState<string | null>(null);
+
   const handleSelect = async (tier: Tier) => {
     if (tier.tier === "free") {
       navigate(user ? "/" : "/login");
@@ -126,16 +128,52 @@ export function PricingContent() {
       return;
     }
 
-    // User is on trial: clicking a paid tier means they want to subscribe after trial
-    // Or trial expired: they need to pay now
     if (!isSupabaseConfigured()) {
       navigate("/settings");
       return;
     }
 
     setLoading(tier.tier);
+    setTrialSuccess(null);
+
     try {
-      await redirectToCheckout(tier.tier as "starter" | "pro" | "enterprise", interval);
+      const hasActiveSub = useAuthStore.getState().hasActiveSubscription();
+
+      // If user already has an active paid subscription, go to Stripe to change plan
+      if (hasActiveSub) {
+        await redirectToCheckout(tier.tier as "starter" | "pro" | "enterprise", interval);
+        return;
+      }
+
+      // If user is on an active trial, they want to subscribe (go to Stripe)
+      if (isTrialActive()) {
+        await redirectToCheckout(tier.tier as "starter" | "pro" | "enterprise", interval);
+        return;
+      }
+
+      // No active trial and no subscription — activate a free 14-day trial
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 14);
+      const { error: dbError } = await supabase
+        .from("profiles")
+        .update({
+          trial_tier: tier.tier,
+          trial_ends_at: trialEnd.toISOString(),
+        })
+        .eq("id", user.id);
+
+      if (dbError) throw new Error(dbError.message);
+
+      const store = useAuthStore.getState();
+      if (store.profile) {
+        store.setProfile({
+          ...store.profile,
+          trial_tier: tier.tier as "starter" | "pro" | "enterprise",
+          trial_ends_at: trialEnd.toISOString(),
+        });
+      }
+      setTrialSuccess(`${tier.name} trial activated! You have 14 days of full access.`);
+      setLoading(null);
     } catch (err) {
       console.error("Checkout error:", err);
       setLoading(null);
@@ -167,10 +205,12 @@ export function PricingContent() {
     if (tier.tier === "free") return "GET STARTED";
     // Not logged in: show trial CTA
     if (!user) return "START 14-DAY FREE TRIAL";
-    // Logged in + on trial: show subscribe CTA
+    // Logged in + on active trial: show subscribe CTA
     if (isTrialActive()) return `SUBSCRIBE — ${formatPrice(tier)}${interval === "year" ? "/yr" : "/mo"}`;
-    // Trial expired: show subscribe
-    return `SUBSCRIBE — ${formatPrice(tier)}${interval === "year" ? "/yr" : "/mo"}`;
+    // Logged in + has active subscription: show change plan
+    if (useAuthStore.getState().hasActiveSubscription()) return `SWITCH TO ${tier.name.toUpperCase()}`;
+    // Logged in + no trial + no subscription: offer free trial
+    return "START 14-DAY FREE TRIAL";
   };
 
   return (
@@ -179,7 +219,7 @@ export function PricingContent() {
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
           Simple, Transparent Pricing
         </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", maxWidth: 520, margin: "0 auto 20px" }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 16, color: "var(--text-secondary)", maxWidth: 520, margin: "0 auto 20px" }}>
           Start with a 14-day free trial on any paid plan. Cancel anytime.
           You bring your own API keys and brokerage — we provide the tools.
         </div>
@@ -191,7 +231,7 @@ export function PricingContent() {
             style={{
               padding: "6px 16px",
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 500,
               background: interval === "month" ? "var(--signal-core)" : "transparent",
               color: interval === "month" ? "var(--bg-base)" : "var(--text-muted)",
@@ -206,7 +246,7 @@ export function PricingContent() {
             style={{
               padding: "6px 16px",
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 500,
               background: interval === "year" ? "var(--signal-core)" : "transparent",
               color: interval === "year" ? "var(--bg-base)" : "var(--text-muted)",
@@ -218,6 +258,22 @@ export function PricingContent() {
           </button>
         </div>
       </div>
+
+      {trialSuccess && (
+        <div style={{
+          padding: "12px 20px",
+          marginBottom: 16,
+          background: "rgba(5, 173, 152, 0.1)",
+          border: "1px solid var(--positive)",
+          borderRadius: 4,
+          fontFamily: "var(--font-mono)",
+          fontSize: 14,
+          color: "var(--positive)",
+          textAlign: "center",
+        }}>
+          {trialSuccess}
+        </div>
+      )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
         {TIERS.map((tier) => {
@@ -246,7 +302,7 @@ export function PricingContent() {
                   background: "var(--signal-core)",
                   color: "var(--bg-base)",
                   fontFamily: "var(--font-mono)",
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: 600,
                   borderRadius: 999,
                   letterSpacing: "0.05em",
@@ -256,7 +312,7 @@ export function PricingContent() {
               )}
 
               <div style={{ marginBottom: 16 }}>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, color: "var(--text-primary)", marginBottom: 4 }}>
                   {tier.name}
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
@@ -264,27 +320,27 @@ export function PricingContent() {
                     {formatPrice(tier)}
                   </span>
                   {tier.tier !== "free" && (
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--text-muted)" }}>
                       {interval === "year" ? "/yr" : "/mo"}
                     </span>
                   )}
                 </div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
                   {priceNote(tier)}
                 </div>
                 {tier.trial && (
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--signal-core)", marginTop: 4 }}>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--signal-core)", marginTop: 4 }}>
                     14-day free trial included
                   </div>
                 )}
-                <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", marginTop: 8 }}>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", marginTop: 8 }}>
                   {tier.description}
                 </div>
               </div>
 
               <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 6, marginBottom: 20 }}>
                 {tier.features.map((f, i) => (
-                  <div key={i} style={{ display: "flex", gap: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)" }}>
+                  <div key={i} style={{ display: "flex", gap: 8, fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)" }}>
                     <span style={{ color: "var(--positive)", flexShrink: 0 }}>{"\u2713"}</span>
                     <span>{f}</span>
                   </div>
@@ -301,7 +357,7 @@ export function PricingContent() {
                   border: `1px solid ${tier.highlighted ? "var(--signal-core)" : "var(--border-dim)"}`,
                   borderRadius: 4,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: 600,
                   cursor: isCurrent ? "default" : "pointer",
                   letterSpacing: "0.03em",
@@ -324,7 +380,7 @@ export function PricingContent() {
         borderRadius: 4,
         textAlign: "center",
       }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", lineHeight: 1.6 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
           SIBT is an analytical tool. It does not provide investment advice or recommendations.
           All trading decisions are your sole responsibility. Not a registered investment adviser.
           Cancel your subscription anytime from the Settings page. See our{" "}
@@ -337,7 +393,7 @@ export function PricingContent() {
 
       {/* FAQ */}
       <div style={{ marginTop: 48, textAlign: "center" }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 500, marginBottom: 16 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 500, marginBottom: 16 }}>
           Common Questions
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 700, margin: "0 auto", textAlign: "left" }}>
@@ -356,8 +412,8 @@ export function PricingContent() {
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
     <div style={{ padding: 12, background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4 }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-primary)", marginBottom: 4 }}>{q}</div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.5 }}>{a}</div>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, color: "var(--text-primary)", marginBottom: 4 }}>{q}</div>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{a}</div>
     </div>
   );
 }

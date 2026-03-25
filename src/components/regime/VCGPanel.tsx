@@ -27,7 +27,7 @@ interface VCGData {
 }
 
 const mono: React.CSSProperties = { fontFamily: "'IBM Plex Mono', monospace" };
-const header: React.CSSProperties = { ...mono, fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
+const header: React.CSSProperties = { ...mono, fontSize: 14, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
 const panel: React.CSSProperties = { background: "var(--bg-panel, #fff)", border: "1px solid var(--border-dim, #e2e8f0)", borderRadius: 4, padding: 16, marginBottom: 16 };
 
 export default function VCGPanel() {
@@ -62,22 +62,22 @@ export default function VCGPanel() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
           <span style={header}>VCG Signal</span>
-          <span style={{ ...mono, fontSize: 10, color: "var(--text-secondary)", marginLeft: 8 }}>Volatility-Credit Gap</span>
+          <span style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", marginLeft: 8 }}>Volatility-Credit Gap</span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {s && (
-            <span style={{ ...mono, fontSize: 10, padding: "2px 10px", background: regimeColor, color: "#fff", borderRadius: 4, fontWeight: 600 }}>
+            <span style={{ ...mono, fontSize: 12, padding: "2px 10px", background: regimeColor, color: "#fff", borderRadius: 4, fontWeight: 600 }}>
               {s.regime}
             </span>
           )}
-          <span style={{ ...mono, fontSize: 10, color: "var(--text-secondary)" }}>{data?.credit_proxy}</span>
-          <button onClick={scan} disabled={loading} style={{ ...mono, fontSize: 11, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+          <span style={{ ...mono, fontSize: 12, color: "var(--text-secondary)" }}>{data?.credit_proxy}</span>
+          <button onClick={scan} disabled={loading} style={{ ...mono, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
             {loading ? "..." : "SCAN"}
           </button>
         </div>
       </div>
 
-      {error && <div style={{ color: "var(--fault)", ...mono, fontSize: 12, marginBottom: 12 }}>{error}</div>}
+      {error && <div style={{ color: "var(--fault)", ...mono, fontSize: 14, marginBottom: 12 }}>{error}</div>}
 
       {s && (
         <>
@@ -90,9 +90,9 @@ export default function VCGPanel() {
               { label: "RESIDUAL", value: s.residual.toFixed(6), sub: "MODEL \u03B5" },
             ].map((m) => (
               <div key={m.label} style={{ padding: 12, background: "var(--bg-panel-raised, #f8fafc)", borderRadius: 4 }}>
-                <div style={{ ...header, fontSize: 10 }}>{m.label}</div>
+                <div style={{ ...header, fontSize: 12 }}>{m.label}</div>
                 <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: m.color, marginTop: 4 }}>{m.value}</div>
-                {m.sub && <div style={{ ...mono, fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>{m.sub}</div>}
+                {m.sub && <div style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>{m.sub}</div>}
               </div>
             ))}
           </div>
@@ -100,23 +100,23 @@ export default function VCGPanel() {
           {/* Signal Detail */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 16 }}>
             <div style={{ padding: 12, background: "var(--bg-panel-raised, #f8fafc)", borderRadius: 4 }}>
-              <div style={{ ...header, fontSize: 10, marginBottom: 8 }}>Severity</div>
-              <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 12, marginBottom: 4 }}>
+              <div style={{ ...header, fontSize: 12, marginBottom: 8 }}>Severity</div>
+              <div style={{ display: "flex", justifyContent: "space-between", ...mono, fontSize: 14, marginBottom: 4 }}>
                 <span>VVIX Severity</span>
                 <span style={{ color: s.vvix_severity === "extreme" ? "var(--fault)" : "var(--text-secondary)", fontWeight: 600 }}>{s.vvix_severity.toUpperCase()}</span>
               </div>
-              <div style={{ ...mono, fontSize: 11, color: "var(--text-secondary)" }}>VVIX {s.vvix.toFixed(2)} | VIX {s.vix.toFixed(2)}</div>
+              <div style={{ ...mono, fontSize: 13, color: "var(--text-secondary)" }}>VVIX {s.vvix.toFixed(2)} | VIX {s.vix.toFixed(2)}</div>
             </div>
 
             <div style={{ padding: 12, background: "var(--bg-panel-raised, #f8fafc)", borderRadius: 4 }}>
-              <div style={{ ...header, fontSize: 10, marginBottom: 8 }}>Attribution</div>
+              <div style={{ ...header, fontSize: 12, marginBottom: 8 }}>Attribution</div>
               <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: 4 }}>
                 <div style={{ flex: s.attribution.vvix_pct, height: 8, background: "#3b82f6", borderRadius: 2 }} />
-                <span style={{ ...mono, fontSize: 10 }}>VVIX {s.attribution.vvix_pct}%</span>
+                <span style={{ ...mono, fontSize: 12 }}>VVIX {s.attribution.vvix_pct}%</span>
               </div>
               <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                 <div style={{ flex: s.attribution.vix_pct, height: 8, background: "var(--signal-core)", borderRadius: 2 }} />
-                <span style={{ ...mono, fontSize: 10 }}>VIX {s.attribution.vix_pct}%</span>
+                <span style={{ ...mono, fontSize: 12 }}>VIX {s.attribution.vix_pct}%</span>
               </div>
             </div>
           </div>
@@ -124,13 +124,13 @@ export default function VCGPanel() {
           {/* History Table */}
           {data.history && data.history.length > 0 && (
             <div>
-              <div style={{ ...header, fontSize: 10, marginBottom: 8 }}>VCG HISTORY (20D)</div>
+              <div style={{ ...header, fontSize: 12, marginBottom: 8 }}>VCG HISTORY (20D)</div>
               <div style={{ maxHeight: 200, overflowY: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 11 }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 13 }}>
                   <thead>
                     <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
                       {["Date", "VCG", "VCG Adj", "Residual", "VIX", "VVIX", data.credit_proxy].map((h) => (
-                        <th key={h} style={{ ...header, fontSize: 9, padding: "4px 8px", textAlign: "right" }}>{h}</th>
+                        <th key={h} style={{ ...header, fontSize: 11, padding: "4px 8px", textAlign: "right" }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
@@ -154,7 +154,7 @@ export default function VCGPanel() {
         </>
       )}
 
-      {!s && !loading && <div style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", textAlign: "center", padding: 24 }}>Connect Radon to view VCG signal data</div>}
+      {!s && !loading && <div style={{ ...mono, fontSize: 14, color: "var(--text-secondary)", textAlign: "center", padding: 24 }}>Connect Radon to view VCG signal data</div>}
     </div>
   );
 }

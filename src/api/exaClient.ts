@@ -20,6 +20,7 @@ const EXA_BASE = "/exa-api";
 export async function exaSearch(
   query: string,
   numResults = 5,
+  maxCharacters = 1000,
 ): Promise<ExaSearchResponse> {
   const apiKey = import.meta.env.VITE_EXA_API_KEY;
   if (!apiKey) throw new Error("Exa API key not configured. Add VITE_EXA_API_KEY to your .env file or configure it in Settings.");
@@ -34,7 +35,7 @@ export async function exaSearch(
       query,
       numResults,
       type: "auto",
-      contents: { text: { maxCharacters: 1000 } },
+      contents: { text: { maxCharacters } },
     }),
   });
 

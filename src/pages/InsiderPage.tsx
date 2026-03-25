@@ -16,7 +16,7 @@ export function InsiderPage() {
         }}>
           <h2 style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 14,
+            fontSize: 16,
             fontWeight: 700,
             color: "var(--text-primary)",
             margin: 0,
@@ -25,7 +25,7 @@ export function InsiderPage() {
           </h2>
           <p style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 11,
+            fontSize: 13,
             color: "var(--text-muted)",
             margin: "4px 0 0",
           }}>

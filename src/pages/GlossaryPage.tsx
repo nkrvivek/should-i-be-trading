@@ -22,7 +22,7 @@ export function GlossaryPage() {
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
           Glossary
         </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", marginBottom: 20 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", marginBottom: 20 }}>
           Every term used in SIBT, explained. Click any term to learn more.
         </div>
 
@@ -38,7 +38,7 @@ export function GlossaryPage() {
             border: "1px solid var(--border-dim)",
             borderRadius: 4,
             fontFamily: "var(--font-sans)",
-            fontSize: 12,
+            fontSize: 14,
             color: "var(--text-primary)",
             outline: "none",
             marginBottom: 12,
@@ -80,7 +80,7 @@ export function GlossaryPage() {
                 </span>
                 <span style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: 9,
+                  fontSize: 11,
                   padding: "1px 6px",
                   borderRadius: 999,
                   background: "var(--bg-panel-raised)",
@@ -89,7 +89,7 @@ export function GlossaryPage() {
                   {entry.category}
                 </span>
               </div>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
                 {entry.definition}
               </div>
               {entry.example && (
@@ -99,7 +99,7 @@ export function GlossaryPage() {
                   background: "var(--bg-panel-raised)",
                   borderRadius: 4,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 10,
+                  fontSize: 12,
                   color: "var(--text-muted)",
                 }}>
                   {entry.example}
@@ -109,7 +109,7 @@ export function GlossaryPage() {
           ))}
 
           {filtered.length === 0 && (
-            <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+            <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
               No terms match "{search}"
             </div>
           )}
@@ -126,7 +126,7 @@ function CategoryPill({ label, active, onClick }: { label: string; active: boole
       style={{
         padding: "3px 10px",
         fontFamily: "var(--font-mono)",
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: 500,
         color: active ? "var(--signal-core)" : "var(--text-muted)",
         background: active ? "rgba(5, 173, 152, 0.1)" : "transparent",

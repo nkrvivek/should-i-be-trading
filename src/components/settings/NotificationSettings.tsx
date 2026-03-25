@@ -56,10 +56,10 @@ export function NotificationSettings() {
         borderRadius: 4,
       }}>
         <div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 500, color: "var(--text-primary)" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>
             Browser Notifications
           </div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
             {permission === "denied"
               ? "Notifications blocked by browser. Enable in browser settings."
               : permission === "granted"
@@ -77,7 +77,7 @@ export function NotificationSettings() {
             background: prefs.enabled ? "var(--signal-core)" : "var(--bg-panel)",
             color: prefs.enabled ? "var(--bg-base)" : "var(--text-primary)",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: 12,
             cursor: permission === "denied" ? "not-allowed" : "pointer",
             opacity: permission === "denied" ? 0.5 : 1,
           }}
@@ -103,8 +103,8 @@ export function NotificationSettings() {
           }}
         >
           <div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-primary)" }}>{label}</div>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)" }}>{description}</div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-primary)" }}>{label}</div>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)" }}>{description}</div>
           </div>
           <div
             style={{
@@ -142,7 +142,7 @@ export function NotificationSettings() {
             border: "1px solid var(--border-dim)",
             borderRadius: 4,
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: 12,
             color: "var(--text-muted)",
             cursor: "pointer",
             alignSelf: "flex-start",

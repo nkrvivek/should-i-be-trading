@@ -9,7 +9,7 @@ type Props = {
 
 export function DayChange({ value, previous, showPercent = true, decimals = 2 }: Props) {
   if (value == null || previous == null || previous === 0) {
-    return <span style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 11 }}>---</span>;
+    return <span style={{ color: "var(--text-muted)", fontFamily: "var(--font-mono)", fontSize: 13 }}>---</span>;
   }
 
   const change = value - previous;
@@ -24,7 +24,7 @@ export function DayChange({ value, previous, showPercent = true, decimals = 2 }:
         alignItems: "center",
         gap: 4,
         fontFamily: "var(--font-mono)",
-        fontSize: 11,
+        fontSize: 13,
         color: tone,
       }}
     >

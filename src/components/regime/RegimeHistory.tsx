@@ -52,13 +52,13 @@ export function RegimeHistory({ history }: Props) {
       }}
     >
       <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
           VIX + VVIX (20 sessions)
         </div>
         <svg ref={leftRef} style={{ width: "100%", height: 200 }} />
       </div>
       <div style={{ flex: 1 }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
           RVOL + COR1M (20 sessions)
         </div>
         <svg ref={rightRef} style={{ width: "100%", height: 200 }} />

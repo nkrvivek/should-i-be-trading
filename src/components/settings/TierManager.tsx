@@ -36,61 +36,69 @@ export function TierManager() {
   const currentTier = effectiveTier();
   const tierInfo = TIER_INFO[currentTier];
 
+  const [success, setSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   const handleUpgrade = async (tier: "starter" | "pro" | "enterprise") => {
     if (!user) return;
     setLoading(true);
+    setSuccess(null);
+    setError(null);
     try {
-      const currentProfile = useAuthStore.getState().profile;
       const trialActive = isTrialActive();
       const hasSubscription = subscription && subscription.status === "active" && subscription.plan_tier !== "free";
 
+      // If user has an active paid subscription, go to Stripe to change plan
+      if (hasSubscription) {
+        await redirectToCheckout(tier, "year");
+        return;
+      }
+
       // If user is on an active trial, just upgrade the trial tier
-      if (trialActive && !hasSubscription) {
-        const { error } = await supabase
+      if (trialActive) {
+        const { error: dbError } = await supabase
           .from("profiles")
           .update({ trial_tier: tier })
           .eq("id", user.id);
 
-        if (error) throw new Error(error.message);
+        if (dbError) throw new Error(dbError.message);
 
         const store = useAuthStore.getState();
         if (store.profile) {
           store.setProfile({ ...store.profile, trial_tier: tier });
         }
+        setSuccess(`Trial upgraded to ${tier.toUpperCase()}! You have ${trialDaysLeft()} days remaining.`);
         setLoading(false);
         return;
       }
 
-      // If no trial at all, activate 14-day trial
-      if (!currentProfile?.trial_ends_at) {
-        const trialEnd = new Date();
-        trialEnd.setDate(trialEnd.getDate() + 14);
-        const { error } = await supabase
-          .from("profiles")
-          .update({
-            trial_tier: tier,
-            trial_ends_at: trialEnd.toISOString(),
-          })
-          .eq("id", user.id);
+      // No active trial (either never had one, or it expired) — start a new 14-day trial
+      const trialEnd = new Date();
+      trialEnd.setDate(trialEnd.getDate() + 14);
+      const { error: dbError } = await supabase
+        .from("profiles")
+        .update({
+          trial_tier: tier,
+          trial_ends_at: trialEnd.toISOString(),
+        })
+        .eq("id", user.id);
 
-        if (error) throw new Error(error.message);
+      if (dbError) throw new Error(dbError.message);
 
-        const store = useAuthStore.getState();
-        if (store.profile) {
-          store.setProfile({
-            ...store.profile,
-            trial_tier: tier,
-            trial_ends_at: trialEnd.toISOString(),
-          });
-        }
-        setLoading(false);
-        return;
+      const store = useAuthStore.getState();
+      if (store.profile) {
+        store.setProfile({
+          ...store.profile,
+          trial_tier: tier,
+          trial_ends_at: trialEnd.toISOString(),
+        });
       }
-
-      // Trial expired + no subscription — go to Stripe checkout
-      await redirectToCheckout(tier, "year");
+      setSuccess(`${tier.toUpperCase()} trial activated! You have 14 days of full access.`);
+      setLoading(false);
     } catch (err) {
+      const msg = err instanceof Error ? err.message : "Upgrade failed";
       console.error("Upgrade error:", err);
+      setError(msg);
       setLoading(false);
     }
   };
@@ -120,7 +128,7 @@ export function TierManager() {
         borderRadius: 4,
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
             Current Plan
           </span>
           <Badge label={tierInfo.label} variant={currentTier === "pro" ? "positive" : currentTier === "enterprise" ? "info" : "default"} />
@@ -146,7 +154,7 @@ export function TierManager() {
               border: "1px solid var(--border-dim)",
               borderRadius: 4,
               fontFamily: "var(--font-sans)",
-              fontSize: 10,
+              fontSize: 12,
               color: "var(--text-secondary)",
             }}>
               {f}
@@ -166,18 +174,18 @@ export function TierManager() {
             gap: 4,
           }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
                 Billing
               </span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-secondary)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-secondary)" }}>
                 {subscription.billing_interval === "year" ? "Annual" : "Monthly"}
               </span>
             </div>
             <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
                 {subscription.cancel_at_period_end ? "Access until" : "Renews on"}
               </span>
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-secondary)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-secondary)" }}>
                 {formatDate(subscription.current_period_end)}
               </span>
             </div>
@@ -191,7 +199,7 @@ export function TierManager() {
                 border: "1px solid var(--border-dim)",
                 borderRadius: 4,
                 fontFamily: "var(--font-mono)",
-                fontSize: 10,
+                fontSize: 12,
                 color: "var(--text-primary)",
                 cursor: loading ? "default" : "pointer",
                 opacity: loading ? 0.6 : 1,
@@ -203,6 +211,34 @@ export function TierManager() {
         )}
       </div>
 
+      {/* Success/Error feedback */}
+      {success && (
+        <div style={{
+          padding: "12px 16px",
+          background: "rgba(5, 173, 152, 0.1)",
+          border: "1px solid var(--positive)",
+          borderRadius: 4,
+          fontFamily: "var(--font-mono)",
+          fontSize: 13,
+          color: "var(--positive)",
+        }}>
+          {success}
+        </div>
+      )}
+      {error && (
+        <div style={{
+          padding: "12px 16px",
+          background: "rgba(232, 93, 108, 0.1)",
+          border: "1px solid var(--negative)",
+          borderRadius: 4,
+          fontFamily: "var(--font-mono)",
+          fontSize: 13,
+          color: "var(--negative)",
+        }}>
+          {error}
+        </div>
+      )}
+
       {/* Upgrade options */}
       {currentTier !== "enterprise" && (
         <div style={{
@@ -211,7 +247,7 @@ export function TierManager() {
           border: "1px solid var(--border-dim)",
           borderRadius: 4,
         }}>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>
             Upgrade
           </div>
 
@@ -253,7 +289,7 @@ export function TierManager() {
               background: "none",
               border: "none",
               fontFamily: "var(--font-sans)",
-              fontSize: 11,
+              fontSize: 13,
               color: "var(--signal-core)",
               cursor: "pointer",
               padding: 0,
@@ -265,7 +301,7 @@ export function TierManager() {
       )}
 
       {currentTier === "enterprise" && (
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textAlign: "center", padding: 16 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", textAlign: "center", padding: 16 }}>
           You have the highest tier. All features are unlocked.
         </div>
       )}
@@ -288,10 +324,10 @@ function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
       flexDirection: "column",
       gap: 8,
     }}>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 500 }}>{label}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600, color: "var(--signal-core)" }}>{price}</div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>{description}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--signal-core)" }}>{trial}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 500 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, color: "var(--signal-core)" }}>{price}</div>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>{description}</div>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--signal-core)" }}>{trial}</div>
       <button
         onClick={onUpgrade}
         disabled={loading}
@@ -301,7 +337,7 @@ function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
           border: "none",
           borderRadius: 4,
           fontFamily: "var(--font-mono)",
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 500,
           color: "var(--bg-base)",
           cursor: loading ? "default" : "pointer",

@@ -43,15 +43,15 @@ export function ApiKeyForm() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
         API Keys & Integrations
       </div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", marginBottom: 8 }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", marginBottom: 8 }}>
         Add your own API keys to unlock features. Keys are encrypted and stored securely.
       </div>
 
       {error && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)", padding: 8, background: "rgba(232,93,108,0.1)", borderRadius: 4 }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)", padding: 8, background: "rgba(232,93,108,0.1)", borderRadius: 4 }}>
           {error}
         </div>
       )}
@@ -91,7 +91,7 @@ export function ApiKeyForm() {
               </div>
             </div>
 
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", marginBottom: 4 }}>
               {config.description}
             </div>
 
@@ -109,7 +109,7 @@ export function ApiKeyForm() {
                     border: "1px solid var(--border-dim)",
                     borderRadius: 4,
                     fontFamily: "var(--font-mono)",
-                    fontSize: 11,
+                    fontSize: 13,
                     color: "var(--text-primary)",
                     outline: "none",
                   }}
@@ -127,7 +127,7 @@ export function ApiKeyForm() {
               href={config.docsUrl}
               target="_blank"
               rel="noopener noreferrer"
-              style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--signal-deep)", textDecoration: "none" }}
+              style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--signal-deep)", textDecoration: "none" }}
             >
               Get API key &rarr;
             </a>
@@ -145,7 +145,7 @@ function smallBtnStyle(color: string): React.CSSProperties {
     borderRadius: 4,
     padding: "2px 8px",
     fontFamily: "var(--font-mono)",
-    fontSize: 9,
+    fontSize: 11,
     color,
     cursor: "pointer",
     whiteSpace: "nowrap",

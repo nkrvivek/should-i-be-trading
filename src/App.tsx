@@ -117,9 +117,9 @@ export function AppNav() {
           key={to}
           to={to}
           style={({ isActive }) => ({
-            padding: "3px 10px",
+            padding: "5px 12px",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: 13,
             fontWeight: 500,
             letterSpacing: "0.05em",
             color: isActive ? "var(--accent-bg)" : "var(--text-muted)",
@@ -133,7 +133,7 @@ export function AppNav() {
         >
           {label}
           {pro && !hasFeature(effectiveTier(), "terminal") && (
-            <span style={{ fontSize: 7, color: "var(--warning)", marginLeft: 3, verticalAlign: "super" }}>PRO</span>
+            <span style={{ fontSize: 9, color: "var(--warning)", marginLeft: 3, verticalAlign: "super" }}>PRO</span>
           )}
         </NavLink>
       ))}
@@ -143,7 +143,7 @@ export function AppNav() {
         <span style={{
           padding: "2px 8px",
           fontFamily: "var(--font-mono)",
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           color: "var(--signal-core)",
           background: "rgba(5, 173, 152, 0.1)",
@@ -162,9 +162,9 @@ export function AppNav() {
           background: "none",
           border: "1px solid var(--border-dim)",
           borderRadius: 4,
-          padding: "3px 8px",
+          padding: "5px 10px",
           fontFamily: "var(--font-mono)",
-          fontSize: 9,
+          fontSize: 12,
           color: "var(--text-muted)",
           cursor: "pointer",
           marginLeft: 4,
@@ -178,14 +178,20 @@ export function AppNav() {
         <button
           onClick={() => navigate("/settings")}
           style={{
-            background: "none",
-            border: "1px solid var(--border-dim)",
-            borderRadius: 4,
-            padding: "3px 10px",
+            width: 28,
+            height: 28,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "var(--accent-bg)",
+            border: "none",
+            borderRadius: "50%",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
-            color: "var(--text-secondary)",
+            fontSize: 14,
+            fontWeight: 700,
+            color: "var(--accent-text)",
             cursor: "pointer",
+            letterSpacing: 0,
           }}
         >
           {profile?.display_name?.charAt(0)?.toUpperCase() ?? "U"}
@@ -196,7 +202,7 @@ export function AppNav() {
           style={{
             padding: "3px 10px",
             fontFamily: "var(--font-mono)",
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 500,
             color: "var(--signal-core)",
             background: "rgba(5, 173, 152, 0.1)",

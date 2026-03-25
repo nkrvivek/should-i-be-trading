@@ -25,7 +25,7 @@ export function Badge({ label, variant = "default" }: Props) {
         padding: "0 8px",
         borderRadius: 999,
         fontFamily: "var(--font-mono)",
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: 500,
         letterSpacing: "0.03em",
         background: style.bg,

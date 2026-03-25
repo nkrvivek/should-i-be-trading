@@ -26,7 +26,7 @@ export function TerminalShell({ children, cri = null }: Props) {
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          height: 40,
+          height: 48,
           padding: "0 16px",
           background: "var(--bg-panel)",
           borderBottom: "1px solid var(--border-dim)",
@@ -34,12 +34,13 @@ export function TerminalShell({ children, cri = null }: Props) {
           zIndex: 50,
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/logo.svg" alt="SIBT" style={{ height: 32 }} />
           <span
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 14,
-              fontWeight: 600,
+              fontSize: 20,
+              fontWeight: 700,
               color: "var(--signal-core)",
               letterSpacing: "0.05em",
             }}
@@ -49,7 +50,7 @@ export function TerminalShell({ children, cri = null }: Props) {
           <span
             style={{
               fontFamily: "var(--font-sans)",
-              fontSize: 11,
+              fontSize: 14,
               color: "var(--text-muted)",
             }}
           >

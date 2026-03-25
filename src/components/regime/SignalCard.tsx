@@ -55,14 +55,14 @@ export function SignalCard({ signal, showInterpretation = true }: Props) {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
           <span style={{ display: "inline-block", width: 6, height: 6, borderRadius: "50%", background: categoryDotColor(signal.category) }} />
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             {signal.category}
           </span>
         </div>
         <span
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 9,
+            fontSize: 11,
             fontWeight: 600,
             padding: "2px 8px",
             borderRadius: 999,
@@ -80,7 +80,7 @@ export function SignalCard({ signal, showInterpretation = true }: Props) {
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
           {signal.metricName}
         </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
           {signal.description}
         </div>
       </div>
@@ -92,14 +92,14 @@ export function SignalCard({ signal, showInterpretation = true }: Props) {
 
       {/* Interpretation (Pro-gated) */}
       {showInterpretation ? (
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.5, flex: 1 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5, flex: 1 }}>
           {signal.interpretation}
         </div>
       ) : (
         <div
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 11,
+            fontSize: 13,
             color: "var(--text-muted)",
             lineHeight: 1.5,
             flex: 1,
@@ -124,7 +124,7 @@ export function SignalCard({ signal, showInterpretation = true }: Props) {
             }}
           />
         </div>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", minWidth: 20, textAlign: "right" }}>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)", minWidth: 20, textAlign: "right" }}>
           {signal.score}
         </span>
       </div>

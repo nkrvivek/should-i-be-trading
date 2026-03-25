@@ -130,9 +130,9 @@ export function FearGreedGauge({ score }: Props) {
 
       {/* Zone bar labels */}
       <div style={{ display: "flex", justifyContent: "space-between", maxWidth: 280, margin: "0 auto", padding: "0 4px" }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--text-muted)" }}>EXTREME FEAR</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--text-muted)" }}>NEUTRAL</span>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 8, color: "var(--text-muted)" }}>EXTREME GREED</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>EXTREME FEAR</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>NEUTRAL</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>EXTREME GREED</span>
       </div>
 
       {/* Link to Regime page */}
@@ -142,7 +142,7 @@ export function FearGreedGauge({ score }: Props) {
           display: "inline-block",
           marginTop: 8,
           fontFamily: "var(--font-mono)",
-          fontSize: 10,
+          fontSize: 12,
           color: "var(--signal-core)",
           textDecoration: "none",
         }}

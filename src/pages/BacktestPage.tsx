@@ -36,7 +36,7 @@ export default function BacktestPage() {
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 600, color: "var(--text-primary)" }}>
             Signal Backtester
           </div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", marginTop: 4 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>
             Historical performance of SIBT traffic light signals vs buy-and-hold SPY
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function BacktestPage() {
                   background: period === p ? "var(--signal-core)" : "var(--bg-panel)",
                   color: period === p ? "var(--bg-base)" : disabled ? "var(--text-muted)" : "var(--text-primary)",
                   fontFamily: "var(--font-mono)",
-                  fontSize: 11,
+                  fontSize: 13,
                   cursor: disabled ? "not-allowed" : "pointer",
                   opacity: disabled ? 0.5 : 1,
                 }}
@@ -75,7 +75,7 @@ export default function BacktestPage() {
               background: "var(--bg-panel)",
               color: "var(--text-primary)",
               fontFamily: "var(--font-mono)",
-              fontSize: 11,
+              fontSize: 13,
               cursor: "pointer",
             }}
           >
@@ -86,14 +86,14 @@ export default function BacktestPage() {
 
       {/* Loading */}
       {loading && (
-        <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+        <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--text-muted)" }}>
           Computing backtest results...
         </div>
       )}
 
       {/* Error */}
       {error && (
-        <div style={{ padding: 12, borderRadius: 4, border: "1px solid var(--fault)", background: "color-mix(in srgb, var(--fault) 8%, transparent)", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--fault)", marginBottom: 16 }}>
+        <div style={{ padding: 12, borderRadius: 4, border: "1px solid var(--fault)", background: "color-mix(in srgb, var(--fault) 8%, transparent)", fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--fault)", marginBottom: 16 }}>
           {error}
         </div>
       )}
@@ -101,10 +101,10 @@ export default function BacktestPage() {
       {/* No data yet */}
       {!loading && !error && !dataAvailable && (
         <div style={{ padding: 32, textAlign: "center", background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4 }}>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--text-primary)", marginBottom: 8 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: "var(--text-primary)", marginBottom: 8 }}>
             Recording market data...
           </div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", lineHeight: 1.6 }}>
             SIBT is recording daily market scores for backtesting. Check back in a few days once we have enough data points.
             The backtester will show how following SIBT's traffic light signals compares to buy-and-hold SPY.
           </div>
@@ -156,27 +156,27 @@ export default function BacktestPage() {
 
           {/* Signal Distribution */}
           <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4, padding: 16 }}>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
               Signal Distribution ({result.totalDays} trading days)
             </div>
             <div style={{ display: "flex", gap: 2, height: 24, borderRadius: 4, overflow: "hidden" }}>
               <div style={{ flex: result.tradeDays, background: "#05AD98", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {result.tradeDays > 5 && (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#fff" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff" }}>
                     TRADE {result.tradeDays}
                   </span>
                 )}
               </div>
               <div style={{ flex: result.cautionDays, background: "#F5A623", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {result.cautionDays > 5 && (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#fff" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff" }}>
                     CAUTION {result.cautionDays}
                   </span>
                 )}
               </div>
               <div style={{ flex: result.noTradeDays, background: "#E85D6C", display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {result.noTradeDays > 5 && (
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "#fff" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#fff" }}>
                     NO TRADE {result.noTradeDays}
                   </span>
                 )}
@@ -187,31 +187,31 @@ export default function BacktestPage() {
           {/* Equity Curve (simple SVG) */}
           {result.equityCurve.length > 0 && (
             <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4, padding: 16 }}>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
                 Equity Curve ($100 starting)
               </div>
               <EquityCurve data={result.equityCurve} />
               <div style={{ display: "flex", gap: 16, justifyContent: "center", marginTop: 8 }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#05AD98" }}>&#9632; SIBT Strategy</span>
-                <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#94a3b8" }}>&#9632; Buy & Hold SPY</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#05AD98" }}>&#9632; SIBT Strategy</span>
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#94a3b8" }}>&#9632; Buy & Hold SPY</span>
               </div>
             </div>
           )}
 
           {/* Daily Returns Table (last 20) */}
           <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4, padding: 16, overflow: "auto" }}>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 12 }}>
               Recent Signals (last 20 days)
             </div>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-                  <th style={{ textAlign: "left", padding: "4px 8px", color: "var(--text-muted)", fontSize: 9 }}>DATE</th>
-                  <th style={{ textAlign: "center", padding: "4px 8px", color: "var(--text-muted)", fontSize: 9 }}>SIGNAL</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 9 }}>SCORE</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 9 }}>VIX</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 9 }}>SPY</th>
-                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 9 }}>SPY CHG</th>
+                  <th style={{ textAlign: "left", padding: "4px 8px", color: "var(--text-muted)", fontSize: 11 }}>DATE</th>
+                  <th style={{ textAlign: "center", padding: "4px 8px", color: "var(--text-muted)", fontSize: 11 }}>SIGNAL</th>
+                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 11 }}>SCORE</th>
+                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 11 }}>VIX</th>
+                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 11 }}>SPY</th>
+                  <th style={{ textAlign: "right", padding: "4px 8px", color: "var(--text-muted)", fontSize: 11 }}>SPY CHG</th>
                 </tr>
               </thead>
               <tbody>
@@ -234,7 +234,7 @@ export default function BacktestPage() {
           </div>
 
           {/* Disclaimer */}
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textAlign: "center", padding: "8px 0", lineHeight: 1.6 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textAlign: "center", padding: "8px 0", lineHeight: 1.6 }}>
             Past performance does not guarantee future results. This backtest uses simplified scoring on historical FRED data.
             Actual trading results will vary. Not investment advice. Contact: hello@sibt.ai
           </div>
@@ -249,13 +249,13 @@ export default function BacktestPage() {
 function StatCard({ label, value, color, detail }: { label: string; value: string; color: string; detail: string }) {
   return (
     <div style={{ background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4, padding: 16 }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
         {label}
       </div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 700, color, marginTop: 4 }}>
         {value}
       </div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
         {detail}
       </div>
     </div>

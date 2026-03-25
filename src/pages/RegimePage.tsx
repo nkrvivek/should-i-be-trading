@@ -34,7 +34,7 @@ export default function RegimePage() {
         }}
       >
         <div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em" }}>
             US EQUITY MARKET &middot; SPX
           </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 600, color: "var(--text-primary)", margin: "4px 0" }}>
@@ -42,7 +42,7 @@ export default function RegimePage() {
           </div>
           <a
             href="/risk"
-            style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--signal-core)", textDecoration: "underline" }}
+            style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--signal-core)", textDecoration: "underline" }}
           >
             Important Disclaimer
           </a>
@@ -53,7 +53,7 @@ export default function RegimePage() {
             disabled={loading}
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 11,
+              fontSize: 13,
               padding: "6px 12px",
               border: "1px solid var(--border-dim)",
               borderRadius: 4,
@@ -66,7 +66,7 @@ export default function RegimePage() {
             &#8635; REFRESH
           </button>
           {regime && (
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
               {new Date(regime.timestamp).toLocaleString()}
             </span>
           )}
@@ -75,7 +75,7 @@ export default function RegimePage() {
 
       {/* Loading / Error */}
       {loading && !regime && (
-        <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+        <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--text-muted)" }}>
           Loading regime data from FRED + Finnhub...
         </div>
       )}
@@ -88,7 +88,7 @@ export default function RegimePage() {
             border: "1px solid var(--fault)",
             background: "color-mix(in srgb, var(--fault) 8%, transparent)",
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: 13,
             color: "var(--fault)",
             marginBottom: 16,
           }}
@@ -149,7 +149,7 @@ export default function RegimePage() {
                 href="/pricing"
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: 11,
+                  fontSize: 13,
                   color: "var(--signal-core)",
                   textDecoration: "underline",
                 }}
@@ -160,7 +160,7 @@ export default function RegimePage() {
           )}
 
           {/* Disclaimer */}
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textAlign: "center", padding: "8px 0" }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textAlign: "center", padding: "8px 0" }}>
             Analytical tool only. Not investment advice. Data from FRED and Finnhub. Past performance does not indicate future results.
             Contact: hello@sibt.ai
           </div>

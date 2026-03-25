@@ -31,7 +31,7 @@ export function StatusBar({ cri }: Props) {
         background: "var(--bg-panel)",
         borderTop: "1px solid var(--border-dim)",
         fontFamily: "var(--font-mono)",
-        fontSize: 11,
+        fontSize: 13,
         color: "var(--text-secondary)",
       }}
     >

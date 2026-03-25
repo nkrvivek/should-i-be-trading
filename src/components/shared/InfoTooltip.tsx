@@ -40,7 +40,7 @@ export function InfoTooltip({ definition, currentValue, children }: Props) {
           borderRadius: "50%",
           border: "1px solid var(--border-dim)",
           fontFamily: "var(--font-mono)",
-          fontSize: 9,
+          fontSize: 11,
           fontWeight: 600,
           color: open ? "var(--signal-core)" : "var(--text-muted)",
           cursor: "pointer",
@@ -70,21 +70,21 @@ export function InfoTooltip({ definition, currentValue, children }: Props) {
           }}
         >
           {/* Header */}
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color: "var(--signal-core)", marginBottom: 4 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600, color: "var(--signal-core)", marginBottom: 4 }}>
             {definition.name}
           </div>
 
           {/* Description */}
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 10 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 10 }}>
             {definition.description}
           </div>
 
           {/* Why it matters */}
           <div style={{ marginBottom: 10 }}>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>
               Why it matters
             </div>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6 }}>
               {definition.whyItMatters}
             </div>
           </div>
@@ -97,10 +97,10 @@ export function InfoTooltip({ definition, currentValue, children }: Props) {
               borderRadius: 4,
               border: "1px solid var(--border-dim)",
             }}>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 3 }}>
                 Current reading
               </div>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-primary)", lineHeight: 1.5 }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-primary)", lineHeight: 1.5 }}>
                 {definition.interpret(currentValue)}
               </div>
             </div>
@@ -121,7 +121,7 @@ function PercentileBar({ value, low, high, unit = "" }: { value: number; low: nu
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", marginBottom: 3 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginBottom: 3 }}>
         <span>{low}{unit}</span>
         <span>{high}{unit}</span>
       </div>

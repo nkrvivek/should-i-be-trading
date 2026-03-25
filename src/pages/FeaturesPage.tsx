@@ -333,7 +333,7 @@ export function FeaturesPage() {
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
             Features
           </div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", maxWidth: 520, margin: "0 auto" }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 16, color: "var(--text-secondary)", maxWidth: 520, margin: "0 auto" }}>
             Everything you need to make informed trading decisions. From free market signals to automated execution.
           </div>
         </div>
@@ -359,7 +359,7 @@ export function FeaturesPage() {
                 </span>
                 <span style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: 9,
+                  fontSize: 11,
                   padding: "2px 8px",
                   borderRadius: 999,
                   background: `${TIER_COLORS[feature.tier]}22`,
@@ -376,7 +376,7 @@ export function FeaturesPage() {
 
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {feature.details.map((d, j) => (
-                  <div key={j} style={{ display: "flex", gap: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
+                  <div key={j} style={{ display: "flex", gap: 8, fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
                     <span style={{ color: TIER_COLORS[feature.tier], flexShrink: 0 }}>{"\u2713"}</span>
                     <span>{d}</span>
                   </div>
@@ -387,7 +387,7 @@ export function FeaturesPage() {
             <div style={{ order: i % 2 === 0 ? 1 : 0 }}>
               <pre style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 10,
+                fontSize: 12,
                 lineHeight: 1.5,
                 color: "var(--text-secondary)",
                 background: "var(--bg-panel-raised)",
@@ -423,7 +423,7 @@ export function FeaturesPage() {
           >
             START 14-DAY FREE TRIAL
           </button>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", marginTop: 12 }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)", marginTop: 12 }}>
             No credit card required. All features unlocked for 14 days.
           </p>
         </div>

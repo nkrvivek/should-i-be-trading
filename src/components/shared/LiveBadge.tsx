@@ -11,7 +11,7 @@ export function LiveBadge({ live, label }: Props) {
         alignItems: "center",
         gap: 4,
         fontFamily: "var(--font-mono)",
-        fontSize: 10,
+        fontSize: 12,
         fontWeight: 500,
         letterSpacing: "0.05em",
         color: live ? "var(--positive)" : "var(--text-muted)",

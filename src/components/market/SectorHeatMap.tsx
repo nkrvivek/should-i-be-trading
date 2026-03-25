@@ -111,7 +111,7 @@ export function SectorHeatMap() {
         <div style={{
           padding: "8px 12px", background: "rgba(232, 93, 108, 0.1)",
           border: "1px solid var(--negative)", borderRadius: 4,
-          fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)", marginBottom: 8,
+          fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)", marginBottom: 8,
         }}>
           {error}
         </div>
@@ -148,25 +148,25 @@ export function SectorHeatMap() {
                   }}
                 >
                   <div style={{
-                    fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700,
+                    fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
                     color: "var(--text-primary)", marginBottom: 2,
                   }}>
                     {s.symbol}
                   </div>
                   <div style={{
-                    fontFamily: "var(--font-sans)", fontSize: 9,
+                    fontFamily: "var(--font-sans)", fontSize: 11,
                     color: "var(--text-muted)", marginBottom: 4,
                   }}>
                     {s.name}
                   </div>
                   <div style={{
-                    fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
+                    fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700,
                     color: isPositive ? "var(--positive)" : "var(--negative)",
                   }}>
                     {isPositive ? "+" : ""}{s.change.toFixed(2)}%
                   </div>
                   <div style={{
-                    fontFamily: "var(--font-mono)", fontSize: 10,
+                    fontFamily: "var(--font-mono)", fontSize: 12,
                     color: "var(--text-muted)", marginTop: 2,
                   }}>
                     ${s.price.toFixed(2)}
@@ -185,7 +185,7 @@ export function SectorHeatMap() {
 
               return (
                 <div key={s.symbol} style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 3 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, width: 40, textAlign: "right", color: "var(--text-muted)" }}>
+                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, width: 40, textAlign: "right", color: "var(--text-muted)" }}>
                     {s.symbol}
                   </span>
                   <div style={{ flex: 1, height: 14, background: "var(--border-dim)", borderRadius: 2, overflow: "hidden", position: "relative" }}>
@@ -205,7 +205,7 @@ export function SectorHeatMap() {
                     }} />
                   </div>
                   <span style={{
-                    fontFamily: "var(--font-mono)", fontSize: 10, width: 55, textAlign: "right",
+                    fontFamily: "var(--font-mono)", fontSize: 12, width: 55, textAlign: "right",
                     color: isPositive ? "var(--positive)" : "var(--negative)", fontWeight: 600,
                   }}>
                     {isPositive ? "+" : ""}{s.change.toFixed(2)}%

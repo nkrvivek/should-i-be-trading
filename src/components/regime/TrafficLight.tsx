@@ -42,7 +42,7 @@ export function TrafficLight({ verdict }: Props) {
         <span
           style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: 700,
             color: "var(--bg-base)",
             letterSpacing: "0.05em",
@@ -69,7 +69,7 @@ export function TrafficLight({ verdict }: Props) {
       <span
         style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 11,
+          fontSize: 13,
           color: "var(--text-muted)",
         }}
       >
@@ -81,7 +81,7 @@ export function TrafficLight({ verdict }: Props) {
         <div
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 500,
             color: "var(--text-muted)",
             textTransform: "uppercase",
@@ -96,7 +96,7 @@ export function TrafficLight({ verdict }: Props) {
             key={i}
             style={{
               fontFamily: "var(--font-sans)",
-              fontSize: 12,
+              fontSize: 14,
               color: "var(--text-secondary)",
               padding: "2px 0",
             }}
@@ -120,7 +120,7 @@ export function TrafficLight({ verdict }: Props) {
         <div
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 500,
             color: "var(--text-muted)",
             textTransform: "uppercase",
@@ -144,7 +144,7 @@ export function TrafficLight({ verdict }: Props) {
         <div
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 11,
+            fontSize: 13,
             color: "var(--text-secondary)",
           }}
         >
@@ -158,7 +158,7 @@ export function TrafficLight({ verdict }: Props) {
           <div
             style={{
               fontFamily: "var(--font-sans)",
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 500,
               color: "var(--text-muted)",
               textTransform: "uppercase",
@@ -173,7 +173,7 @@ export function TrafficLight({ verdict }: Props) {
               key={i}
               style={{
                 fontFamily: "var(--font-sans)",
-                fontSize: 11,
+                fontSize: 13,
                 color: "var(--text-muted)",
                 fontStyle: "italic",
                 padding: "2px 0",

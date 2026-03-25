@@ -3,7 +3,7 @@ import { TerminalShell } from "../components/layout/TerminalShell";
 export function TermsPage() {
   return (
     <TerminalShell cri={null}>
-      <div style={{ maxWidth: 700, margin: "0 auto", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 2 }}>
+      <div style={{ maxWidth: 700, margin: "0 auto", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 2 }}>
         <h1 style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 24 }}>
           Terms of Service
         </h1>

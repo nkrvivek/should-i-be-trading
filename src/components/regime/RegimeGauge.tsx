@@ -95,7 +95,7 @@ export function RegimeGauge({ score, level }: Props) {
       <div
         style={{
           fontFamily: "var(--font-sans)",
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: 500,
           color: "var(--text-muted)",
           textTransform: "uppercase",

@@ -84,7 +84,7 @@ function SignalBadge({ signal }: { signal: InsiderSignal }) {
       display: "inline-flex", alignItems: "center", gap: 4,
       padding: "2px 8px", borderRadius: 999,
       border: `1px solid ${cfg.color}`,
-      fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
+      fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
       color: cfg.color, background: `color-mix(in srgb, ${cfg.color} 10%, transparent)`,
     }}>
       {cfg.icon} {cfg.label}
@@ -98,7 +98,7 @@ function ScoreBar({ score }: { score: number }) {
 
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", marginBottom: 2 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginBottom: 2 }}>
         <span>SELL</span>
         <span style={{ color: barColor, fontWeight: 600 }}>{score > 0 ? "+" : ""}{score}</span>
         <span>BUY</span>
@@ -127,8 +127,8 @@ function MetricRow({ label, value, tone }: { label: string; value: string; tone?
   const color = tone === "positive" ? "var(--positive)" : tone === "negative" ? "var(--negative)" : "var(--text-primary)";
   return (
     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0" }}>
-      <span style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>{label}</span>
-      <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600, color }}>{value}</span>
+      <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>{label}</span>
+      <span style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600, color }}>{value}</span>
     </div>
   );
 }
@@ -143,7 +143,7 @@ function TransactionRow({ t }: { t: InsiderTransaction }) {
       <td style={{ ...tdStyle, maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
         {t.name}
         {t.officerTitle && (
-          <span style={{ fontSize: 8, color: "var(--text-muted)", marginLeft: 3 }}>
+          <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 3 }}>
             ({t.officerTitle})
           </span>
         )}
@@ -161,7 +161,7 @@ function TransactionRow({ t }: { t: InsiderTransaction }) {
         {value > 0 ? formatDollar(value) : "---"}
       </td>
       {t.securityTitle && (
-        <td style={{ ...tdStyle, fontSize: 8, color: "var(--text-muted)", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <td style={{ ...tdStyle, fontSize: 10, color: "var(--text-muted)", maxWidth: 80, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {t.securityTitle}
         </td>
       )}
@@ -217,7 +217,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
                 padding: "2px 8px", borderRadius: 999,
                 border: `1px solid ${period === p ? "var(--signal-core)" : "var(--border-dim)"}`,
                 background: period === p ? "rgba(5, 173, 152, 0.1)" : "transparent",
-                fontFamily: "var(--font-mono)", fontSize: 9,
+                fontFamily: "var(--font-mono)", fontSize: 11,
                 color: period === p ? "var(--signal-core)" : "var(--text-muted)",
                 cursor: "pointer", fontWeight: period === p ? 600 : 400,
               }}
@@ -229,7 +229,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
       </div>
 
       {sector && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
           Sector: <span style={{ color: "var(--text-secondary)" }}>{sector}</span>
         </div>
       )}
@@ -259,7 +259,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
       {filteredTx.length > 0 && (
         <div style={{ borderTop: "1px solid var(--border-dim)", paddingTop: 8 }}>
           <div style={{ maxHeight: 350, overflow: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 10 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 12 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
                   <th style={thStyle}>Date</th>
@@ -283,7 +283,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
           {totalPages > 1 && (
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 10,
+              marginTop: 6, fontFamily: "var(--font-mono)", fontSize: 12,
             }}>
               <button
                 onClick={() => setPage(Math.max(0, page - 1))}
@@ -292,7 +292,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
                   padding: "3px 10px", borderRadius: 4,
                   border: "1px solid var(--border-dim)", background: "transparent",
                   color: page === 0 ? "var(--text-muted)" : "var(--signal-core)",
-                  cursor: page === 0 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                  cursor: page === 0 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 12,
                 }}
               >
                 PREV
@@ -307,7 +307,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
                   padding: "3px 10px", borderRadius: 4,
                   border: "1px solid var(--border-dim)", background: "transparent",
                   color: page >= totalPages - 1 ? "var(--text-muted)" : "var(--signal-core)",
-                  cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                  cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 12,
                 }}
               >
                 NEXT
@@ -318,12 +318,12 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
       )}
 
       {filteredTx.length === 0 && (
-        <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", padding: "8px 0" }}>
+        <div style={{ textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)", padding: "8px 0" }}>
           No transactions in the {PERIOD_LABELS[period]} window.
         </div>
       )}
 
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
         {filteredTx.length} transactions in {PERIOD_LABELS[period]} window
       </div>
     </div>
@@ -365,7 +365,7 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
           style={{
             flex: 1, padding: "6px 10px",
             background: "var(--bg-panel-raised)", border: "1px solid var(--border-dim)",
-            borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 12,
+            borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 14,
             color: "var(--text-primary)", outline: "none",
           }}
         />
@@ -375,7 +375,7 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
           style={{
             padding: "6px 14px", background: "var(--signal-core)",
             color: "#000", border: "none", borderRadius: 4,
-            fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
+            fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600,
             cursor: inputSymbol.trim() ? "pointer" : "not-allowed",
             opacity: inputSymbol.trim() ? 1 : 0.5,
           }}
@@ -386,10 +386,10 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
 
       {/* Company name + sector */}
       {companyInfo && (
-        <div style={{ marginBottom: 10, fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.4 }}>
+        <div style={{ marginBottom: 10, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.4 }}>
           <span style={{ fontWeight: 600, color: "var(--text-primary)" }}>{companyInfo.name}</span>
           {companyInfo.sector && (
-            <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 6 }}>
+            <span style={{ fontSize: 12, color: "var(--text-muted)", marginLeft: 6 }}>
               {companyInfo.sector}
             </span>
           )}
@@ -400,7 +400,7 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
         <div style={{
           padding: "8px 12px", background: "rgba(232, 93, 108, 0.1)",
           border: "1px solid var(--negative)", borderRadius: 4,
-          fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)",
+          fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)",
         }}>
           {error}
         </div>
@@ -409,12 +409,12 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
       {!data && !loading && !error && (
         <div style={{
           padding: "20px 0", textAlign: "center",
-          fontFamily: "var(--font-sans)", fontSize: 12,
+          fontFamily: "var(--font-sans)", fontSize: 14,
           color: "var(--text-muted)", lineHeight: 1.6,
         }}>
           Enter a ticker to scan SEC Form 4 insider filings.
           <br />
-          <span style={{ fontSize: 10 }}>Tracks insider buys and sells with dates, quantities, and values.</span>
+          <span style={{ fontSize: 12 }}>Tracks insider buys and sells with dates, quantities, and values.</span>
         </div>
       )}
 
@@ -424,7 +424,7 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
 }
 
 const thStyle: React.CSSProperties = {
-  padding: "4px 6px", textAlign: "left", fontSize: 9,
+  padding: "4px 6px", textAlign: "left", fontSize: 11,
   color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em",
   position: "sticky", top: 0, background: "var(--bg-panel)", fontWeight: 500,
 };

@@ -32,7 +32,7 @@ export function MacroIndicators({ series }: Props) {
               borderRadius: 4,
             }}
           >
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.03em", marginBottom: 4 }}>
               {s.label}
             </div>
             <MonoValue
@@ -40,12 +40,12 @@ export function MacroIndicators({ series }: Props) {
               size="lg"
             />
             {change != null && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: change > 0 ? "var(--positive)" : change < 0 ? "var(--negative)" : "var(--neutral)", marginTop: 4 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: change > 0 ? "var(--positive)" : change < 0 ? "var(--negative)" : "var(--neutral)", marginTop: 4 }}>
                 {change >= 0 ? "+" : ""}{change.toFixed(2)}{s.unit} vs prior
               </div>
             )}
             {latest && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
                 {latest.date}
               </div>
             )}

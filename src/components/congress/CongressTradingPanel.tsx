@@ -232,7 +232,7 @@ export function CongressTradingPanel() {
         <div style={{
           padding: "8px 12px", background: "rgba(232, 93, 108, 0.1)",
           border: "1px solid var(--negative)", borderRadius: 4,
-          fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)", marginBottom: 8,
+          fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)", marginBottom: 8,
         }}>
           {error}
         </div>
@@ -243,11 +243,11 @@ export function CongressTradingPanel() {
           <button onClick={fetchTrades} style={{
             padding: "8px 24px", background: "var(--signal-core)", color: "#000",
             border: "none", borderRadius: 4, fontFamily: "var(--font-mono)",
-            fontSize: 12, fontWeight: 600, cursor: "pointer",
+            fontSize: 14, fontWeight: 600, cursor: "pointer",
           }}>
             LOAD CONGRESS TRADES
           </button>
-          <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
+          <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
             Recent stock trades by US politicians (STOCK Act disclosures).
           </div>
         </div>
@@ -263,13 +263,13 @@ export function CongressTradingPanel() {
               {filter !== "all" && (
                 <button onClick={() => handleFilter("all")} style={{
                   background: "none", border: "none", fontFamily: "var(--font-mono)",
-                  fontSize: 9, color: "var(--text-muted)", cursor: "pointer", padding: "2px 6px",
+                  fontSize: 11, color: "var(--text-muted)", cursor: "pointer", padding: "2px 6px",
                 }}>
                   CLEAR
                 </button>
               )}
             </div>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
               {filtered.length} trades
             </span>
           </div>
@@ -281,7 +281,7 @@ export function CongressTradingPanel() {
                 padding: "2px 8px", borderRadius: 999,
                 border: party ? `1px solid ${partyColor(party)}33` : "1px solid var(--border-dim)",
                 background: party ? `${partyColor(party)}11` : "var(--bg-panel-raised)",
-                fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-secondary)",
+                fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-secondary)",
               }}>
                 {party && (
                   <span style={{ color: partyColor(party), fontWeight: 600, marginRight: 2 }}>
@@ -299,7 +299,7 @@ export function CongressTradingPanel() {
               <span key={ticker} style={{
                 padding: "2px 8px", borderRadius: 999,
                 border: "1px solid var(--border-dim)", background: "var(--bg-panel-raised)",
-                fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-secondary)",
+                fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-secondary)",
               }}>
                 {ticker} <span style={{ fontWeight: 700, color: "var(--text-primary)" }}>{count}</span>
               </span>
@@ -308,7 +308,7 @@ export function CongressTradingPanel() {
 
           {/* Table */}
           <div style={{ maxHeight: 400, overflow: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 10 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 12 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
                   <Th>Date</Th>
@@ -330,7 +330,7 @@ export function CongressTradingPanel() {
                         {t.party && (
                           <span style={{
                             display: "inline-block", width: 14, height: 14, lineHeight: "14px",
-                            textAlign: "center", borderRadius: 2, fontSize: 8, fontWeight: 700,
+                            textAlign: "center", borderRadius: 2, fontSize: 10, fontWeight: 700,
                             color: "#fff", background: partyColor(t.party), marginRight: 4,
                             verticalAlign: "middle",
                           }}>
@@ -339,10 +339,10 @@ export function CongressTradingPanel() {
                         )}
                         {t.name}
                         {t.state && (
-                          <span style={{ fontSize: 8, color: "var(--text-muted)", marginLeft: 4 }}>({t.state})</span>
+                          <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>({t.state})</span>
                         )}
                         {t.chamber && !t.state && (
-                          <span style={{ fontSize: 8, color: "var(--text-muted)", marginLeft: 4 }}>({t.chamber})</span>
+                          <span style={{ fontSize: 10, color: "var(--text-muted)", marginLeft: 4 }}>({t.chamber})</span>
                         )}
                       </td>
                       <td style={{ ...tdStyle, fontWeight: 600 }}>{t.ticker}</td>
@@ -358,7 +358,7 @@ export function CongressTradingPanel() {
                         <td style={{ ...tdStyle, textAlign: "right", color: "var(--text-secondary)" }}>{t.price || "N/A"}</td>
                       )}
                       {source === "uw" && (
-                        <td style={{ ...tdStyle, color: "var(--text-muted)", fontSize: 9 }}>{t.filedDate}</td>
+                        <td style={{ ...tdStyle, color: "var(--text-muted)", fontSize: 11 }}>{t.filedDate}</td>
                       )}
                     </tr>
                   );
@@ -371,7 +371,7 @@ export function CongressTradingPanel() {
           {totalPages > 1 && (
             <div style={{
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              fontFamily: "var(--font-mono)", fontSize: 10,
+              fontFamily: "var(--font-mono)", fontSize: 12,
             }}>
               <button
                 onClick={() => setPage(Math.max(0, page - 1))}
@@ -380,7 +380,7 @@ export function CongressTradingPanel() {
                   padding: "3px 10px", borderRadius: 4,
                   border: "1px solid var(--border-dim)", background: "transparent",
                   color: page === 0 ? "var(--text-muted)" : "var(--signal-core)",
-                  cursor: page === 0 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                  cursor: page === 0 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 12,
                 }}
               >
                 PREV
@@ -395,7 +395,7 @@ export function CongressTradingPanel() {
                   padding: "3px 10px", borderRadius: 4,
                   border: "1px solid var(--border-dim)", background: "transparent",
                   color: page >= totalPages - 1 ? "var(--text-muted)" : "var(--signal-core)",
-                  cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 10,
+                  cursor: page >= totalPages - 1 ? "default" : "pointer", fontFamily: "var(--font-mono)", fontSize: 12,
                 }}
               >
                 NEXT
@@ -403,7 +403,7 @@ export function CongressTradingPanel() {
             </div>
           )}
 
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
             Source: {sourceLabel}
           </div>
         </div>
@@ -422,7 +422,7 @@ function SummaryPill({ label, count, tone, active, onClick }: {
       padding: "3px 10px", borderRadius: 999,
       border: `1px solid ${active ? color : "var(--border-dim)"}`,
       background: active ? `color-mix(in srgb, ${color} 10%, transparent)` : "transparent",
-      fontFamily: "var(--font-mono)", fontSize: 10, color: active ? color : "var(--text-muted)",
+      fontFamily: "var(--font-mono)", fontSize: 12, color: active ? color : "var(--text-muted)",
       cursor: "pointer", fontWeight: active ? 600 : 400,
     }}>
       {label} <span style={{ fontWeight: 700 }}>{count}</span>
@@ -433,7 +433,7 @@ function SummaryPill({ label, count, tone, active, onClick }: {
 function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
     <th style={{
-      padding: "6px 8px", textAlign: align, fontSize: 9,
+      padding: "6px 8px", textAlign: align, fontSize: 11,
       color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em",
       position: "sticky", top: 0, background: "var(--bg-panel)", fontWeight: 500,
     }}>

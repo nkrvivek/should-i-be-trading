@@ -31,7 +31,7 @@ interface CFTCData {
 }
 
 const mono: React.CSSProperties = { fontFamily: "'IBM Plex Mono', monospace" };
-const headerStyle: React.CSSProperties = { ...mono, fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
+const headerStyle: React.CSSProperties = { ...mono, fontSize: 14, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
 const panelStyle: React.CSSProperties = { background: "var(--bg-panel, #fff)", border: "1px solid var(--border-dim, #e2e8f0)", borderRadius: 4, padding: 16, marginBottom: 16 };
 
 export default function CTAPanel() {
@@ -87,17 +87,17 @@ export default function CTAPanel() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <div>
           <span style={headerStyle}>Institutional Positioning</span>
-          <span style={{ ...mono, fontSize: 10, color: "var(--text-secondary)", marginLeft: 8 }}>CFTC Commitments of Traders</span>
+          <span style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", marginLeft: 8 }}>CFTC Commitments of Traders</span>
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {data && <span style={{ ...mono, fontSize: 10, color: "var(--text-secondary)" }}>Report: {data.lastReport}</span>}
-          <button onClick={fetchCFTC} disabled={loading} style={{ ...mono, fontSize: 11, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+          {data && <span style={{ ...mono, fontSize: 12, color: "var(--text-secondary)" }}>Report: {data.lastReport}</span>}
+          <button onClick={fetchCFTC} disabled={loading} style={{ ...mono, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
             {loading ? "..." : "REFRESH"}
           </button>
         </div>
       </div>
 
-      {error && <div style={{ color: "var(--fault)", ...mono, fontSize: 12, marginBottom: 12 }}>{error}</div>}
+      {error && <div style={{ color: "var(--fault)", ...mono, fontSize: 14, marginBottom: 12 }}>{error}</div>}
 
       {data && (
         <>
@@ -105,22 +105,22 @@ export default function CTAPanel() {
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12, marginBottom: 16 }}>
             {spx && (
               <div style={{ padding: 12, background: "var(--bg-panel-raised, #f8fafc)", borderRadius: 4 }}>
-                <div style={{ ...headerStyle, fontSize: 10 }}>S&P 500 POSTURE</div>
+                <div style={{ ...headerStyle, fontSize: 12 }}>S&P 500 POSTURE</div>
                 <div style={{ ...mono, fontSize: 18, fontWeight: 700, color: postureColor(spx.latest.posture), marginTop: 4 }}>
                   {spx.latest.posture}
                 </div>
-                <div style={{ ...mono, fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>
+                <div style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>
                   Net: {(spx.latest.netSpeculative / 1000).toFixed(1)}K contracts
                 </div>
               </div>
             )}
             {data.contracts.filter((c) => ["E-Mini Nasdaq 100", "UST 10Y Note", "Gold"].includes(c.name)).map((c) => (
               <div key={c.code} style={{ padding: 12, background: "var(--bg-panel-raised, #f8fafc)", borderRadius: 4 }}>
-                <div style={{ ...headerStyle, fontSize: 10 }}>{c.name.toUpperCase()}</div>
+                <div style={{ ...headerStyle, fontSize: 12 }}>{c.name.toUpperCase()}</div>
                 <div style={{ ...mono, fontSize: 18, fontWeight: 700, color: postureColor(c.latest.posture), marginTop: 4 }}>
                   {c.latest.posture}
                 </div>
-                <div style={{ ...mono, fontSize: 10, color: "var(--text-secondary)", marginTop: 2 }}>
+                <div style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", marginTop: 2 }}>
                   {c.latest.netPctOI > 0 ? "+" : ""}{c.latest.netPctOI.toFixed(1)}% of OI
                 </div>
               </div>
@@ -134,7 +134,7 @@ export default function CTAPanel() {
                 key={cat}
                 onClick={() => setActiveCategory(cat)}
                 style={{
-                  ...mono, fontSize: 11, padding: "6px 14px", border: "none",
+                  ...mono, fontSize: 13, padding: "6px 14px", border: "none",
                   borderBottom: activeCategory === cat ? "2px solid var(--signal-core)" : "2px solid transparent",
                   background: "none", color: activeCategory === cat ? "var(--signal-core)" : "var(--text-secondary)",
                   cursor: "pointer", textTransform: "uppercase", fontWeight: activeCategory === cat ? 600 : 400,
@@ -147,11 +147,11 @@ export default function CTAPanel() {
 
           {/* Positioning Table */}
           <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 11 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
                   {["Contract", "Posture", "Net Spec", "% of OI", "Wk Chg", "Spec Long", "Spec Short", "Comm Net", "OI"].map((h) => (
-                    <th key={h} style={{ ...headerStyle, fontSize: 9, padding: "6px 8px", textAlign: h === "Contract" ? "left" : "right" }}>{h}</th>
+                    <th key={h} style={{ ...headerStyle, fontSize: 11, padding: "6px 8px", textAlign: h === "Contract" ? "left" : "right" }}>{h}</th>
                   ))}
                 </tr>
               </thead>
@@ -163,7 +163,7 @@ export default function CTAPanel() {
                       <td style={{ padding: "6px 8px", fontWeight: 500 }}>{c.name}</td>
                       <td style={{ padding: "6px 8px", textAlign: "right" }}>
                         <span style={{
-                          padding: "2px 8px", borderRadius: 4, fontSize: 9, fontWeight: 600,
+                          padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
                           color: postureColor(l.posture),
                           background: l.posture.includes("SHORT") ? "rgba(232, 93, 108, 0.1)" : l.posture.includes("LONG") ? "rgba(5, 173, 152, 0.1)" : "#f1f5f9",
                         }}>
@@ -193,14 +193,14 @@ export default function CTAPanel() {
           </div>
 
           {/* Source attribution */}
-          <div style={{ ...mono, fontSize: 9, color: "var(--text-secondary)", marginTop: 12, borderTop: "1px solid var(--border-dim)", paddingTop: 8 }}>
+          <div style={{ ...mono, fontSize: 11, color: "var(--text-secondary)", marginTop: 12, borderTop: "1px solid var(--border-dim)", paddingTop: 8 }}>
             Source: CFTC Commitments of Traders (weekly, Tuesday data released Friday). Speculative = non-commercial traders (hedge funds, CTAs). Commercial = hedgers.
           </div>
         </>
       )}
 
       {!data && !loading && !error && (
-        <div style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", textAlign: "center", padding: 24 }}>
+        <div style={{ ...mono, fontSize: 14, color: "var(--text-secondary)", textAlign: "center", padding: 24 }}>
           Loading CFTC institutional positioning data...
         </div>
       )}

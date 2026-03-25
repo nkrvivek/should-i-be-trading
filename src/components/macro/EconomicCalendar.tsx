@@ -19,7 +19,7 @@ const SOURCE_LABELS: Record<string, string> = {
 export function EconomicCalendar({ events }: Props) {
   if (events.length === 0) {
     return (
-      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
         Loading economic events...
       </div>
     );
@@ -27,7 +27,7 @@ export function EconomicCalendar({ events }: Props) {
 
   return (
     <div style={{ overflow: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
             <Th>Date</Th>
@@ -49,7 +49,7 @@ export function EconomicCalendar({ events }: Props) {
                   display: "inline-block",
                   padding: "1px 6px",
                   borderRadius: 999,
-                  fontSize: 9,
+                  fontSize: 11,
                   fontWeight: 600,
                   color: IMPACT_COLORS[e.impact] ?? "var(--text-muted)",
                   border: `1px solid ${IMPACT_COLORS[e.impact] ?? "var(--border-dim)"}`,
@@ -57,7 +57,7 @@ export function EconomicCalendar({ events }: Props) {
                   {e.impact.toUpperCase()}
                 </span>
               </td>
-              <td style={{ padding: "0 8px", color: "var(--text-muted)", fontSize: 9 }}>
+              <td style={{ padding: "0 8px", color: "var(--text-muted)", fontSize: 11 }}>
                 {SOURCE_LABELS[e.source] ?? e.source}
               </td>
               <td style={{ padding: "0 8px", textAlign: "right", color: "var(--text-secondary)" }}>
@@ -81,7 +81,7 @@ function formatDate(d: string): string {
 
 function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
-    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
       {children}
     </th>
   );

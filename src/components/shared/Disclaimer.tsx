@@ -7,7 +7,7 @@ export function Disclaimer({ compact = false }: Props) {
     return (
       <div style={{
         fontFamily: "var(--font-sans)",
-        fontSize: 9,
+        fontSize: 11,
         color: "var(--text-muted)",
         textAlign: "center",
         padding: "4px 16px",
@@ -24,11 +24,11 @@ export function Disclaimer({ compact = false }: Props) {
       border: "1px solid var(--border-dim)",
       borderRadius: 4,
       fontFamily: "var(--font-sans)",
-      fontSize: 11,
+      fontSize: 13,
       color: "var(--text-secondary)",
       lineHeight: 1.8,
     }}>
-      <div style={{ fontWeight: 600, fontSize: 12, marginBottom: 8, color: "var(--text-primary)" }}>
+      <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 8, color: "var(--text-primary)" }}>
         Important Disclaimer
       </div>
       <p>

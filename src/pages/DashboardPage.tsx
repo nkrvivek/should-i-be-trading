@@ -50,7 +50,7 @@ export function DashboardPage() {
             border: "1px solid rgba(5, 173, 152, 0.2)",
             borderRadius: 4,
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: 13,
             color: "var(--signal-core)",
             marginBottom: 12,
           }}

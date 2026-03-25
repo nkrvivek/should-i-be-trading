@@ -13,7 +13,7 @@ function directionColor(dir: string): string {
 export function DarkPoolFeed({ signals }: Props) {
   if (signals.length === 0) {
     return (
-      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
         No dark pool signals detected
       </div>
     );
@@ -21,7 +21,7 @@ export function DarkPoolFeed({ signals }: Props) {
 
   return (
     <div style={{ overflow: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
             <Th>Ticker</Th>
@@ -44,7 +44,7 @@ export function DarkPoolFeed({ signals }: Props) {
               <td style={{ padding: "0 8px", textAlign: "right" }}>{(s.strength * 100).toFixed(0)}%</td>
               <td style={{ padding: "0 8px", textAlign: "right", color: "var(--text-secondary)" }}>{s.num_prints}</td>
               <td style={{ padding: "0 8px", textAlign: "right", color: "var(--text-secondary)" }}>{s.sustained_days}</td>
-              <td style={{ padding: "0 8px", color: "var(--text-muted)", fontSize: 10 }}>{s.sector}</td>
+              <td style={{ padding: "0 8px", color: "var(--text-muted)", fontSize: 12 }}>{s.sector}</td>
             </tr>
           ))}
         </tbody>
@@ -55,7 +55,7 @@ export function DarkPoolFeed({ signals }: Props) {
 
 function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
-    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
       {children}
     </th>
   );

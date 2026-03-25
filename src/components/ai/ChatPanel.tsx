@@ -90,7 +90,7 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
       {/* Messages */}
       <div style={{ flex: 1, overflow: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
         {messages.length === 0 && (
-          <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", textAlign: "center" }}>
+          <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
             Ask about the current market regime, portfolio positioning, or any trading question.
           </div>
         )}
@@ -103,11 +103,11 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
               background: msg.role === "user" ? "var(--bg-panel-raised)" : "var(--bg-panel)",
               border: msg.role === "assistant" ? "1px solid var(--border-dim)" : "none",
               fontFamily: "var(--font-sans)",
-              fontSize: 12,
+              fontSize: 14,
               color: "var(--text-primary)",
             }}
           >
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", marginBottom: 4, textTransform: "uppercase" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginBottom: 4, textTransform: "uppercase" }}>
               {msg.role}
             </div>
             {msg.role === "assistant" ? (
@@ -120,12 +120,12 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
           </div>
         ))}
         {loading && (
-          <div style={{ padding: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+          <div style={{ padding: 8, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
             Analyzing...
           </div>
         )}
         {error && (
-          <div style={{ padding: 8, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)" }}>
+          <div style={{ padding: 8, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)" }}>
             {error}
           </div>
         )}
@@ -147,7 +147,7 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
             border: "1px solid var(--border-dim)",
             borderRadius: 4,
             fontFamily: "var(--font-sans)",
-            fontSize: 12,
+            fontSize: 14,
             color: "var(--text-primary)",
             outline: "none",
           }}
@@ -162,7 +162,7 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
             border: "none",
             borderRadius: 4,
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: 500,
             color: "var(--accent-text)",
             cursor: loading ? "default" : "pointer",

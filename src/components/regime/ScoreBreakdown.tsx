@@ -62,7 +62,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
             <div>
               <div style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 11,
+                fontSize: 13,
                 color: "var(--text-muted)",
                 marginBottom: 4,
                 textTransform: "uppercase",
@@ -78,7 +78,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
                 lineHeight: 1,
               }}>
                 {score.total}
-                <span style={{ fontSize: 14, color: "var(--text-muted)", marginLeft: 2 }}>/100</span>
+                <span style={{ fontSize: 16, color: "var(--text-muted)", marginLeft: 2 }}>/100</span>
               </div>
             </div>
 
@@ -90,7 +90,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
             }}>
               <div style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 11,
+                fontSize: 13,
                 color: "var(--text-muted)",
                 textTransform: "uppercase",
                 letterSpacing: 1,
@@ -120,7 +120,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
                 <div style={{
                   width: 36,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 10,
+                  fontSize: 12,
                   fontWeight: 700,
                   color: "var(--text-muted)",
                   textAlign: "right",
@@ -136,7 +136,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
                 <div style={{
                   width: 30,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 12,
+                  fontSize: 14,
                   fontWeight: 700,
                   color: getScoreColor(cat.score),
                   textAlign: "right",
@@ -149,7 +149,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
                 <div style={{
                   width: 28,
                   fontFamily: "var(--font-mono)",
-                  fontSize: 9,
+                  fontSize: 11,
                   color: "var(--text-muted)",
                   textAlign: "right",
                   flexShrink: 0,
@@ -173,7 +173,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
             {score.categories.map((cat) => (
               <div key={cat.name} style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 10,
+                fontSize: 12,
                 color: "var(--text-muted)",
                 lineHeight: 1.4,
               }}>
@@ -186,7 +186,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
           {/* Summary */}
           <div style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 12,
+            fontSize: 14,
             color: "var(--text-secondary)",
             lineHeight: 1.5,
             padding: "8px 0",
@@ -198,7 +198,7 @@ export function ScoreBreakdown({ score, loading, onRefresh }: Props) {
           {/* Timestamp */}
           <div style={{
             fontFamily: "var(--font-mono)",
-            fontSize: 9,
+            fontSize: 11,
             color: "var(--text-muted)",
             textAlign: "right",
           }}>

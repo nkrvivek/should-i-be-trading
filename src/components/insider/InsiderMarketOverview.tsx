@@ -298,20 +298,20 @@ export function InsiderMarketOverview() {
             style={{
               padding: "8px 24px", background: "var(--signal-core)", color: "#000",
               border: "none", borderRadius: 4, fontFamily: "var(--font-mono)",
-              fontSize: 12, fontWeight: 600, cursor: hasAnyKey ? "pointer" : "not-allowed",
+              fontSize: 14, fontWeight: 600, cursor: hasAnyKey ? "pointer" : "not-allowed",
               opacity: hasAnyKey ? 1 : 0.5,
             }}
           >
             SCAN {SCAN_TICKERS.length} TICKERS
           </button>
-          <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)" }}>
+          <div style={{ marginTop: 8, fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>
             {hasUWToken()
               ? "Scans insider transactions via Unusual Whales (single API call, fast)."
               : "Scans SEC Form 4 filings across top stocks for insider buying/selling patterns."
             }
           </div>
           {!hasAnyKey && (
-            <div style={{ marginTop: 4, fontSize: 10, color: "var(--warning)" }}>
+            <div style={{ marginTop: 4, fontSize: 12, color: "var(--warning)" }}>
               Add UW token (recommended) or Finnhub API key in Settings.
             </div>
           )}
@@ -321,7 +321,7 @@ export function InsiderMarketOverview() {
       {/* Progress */}
       {loading && (
         <div style={{ padding: "8px 0" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", marginBottom: 4 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)", marginBottom: 4 }}>
             <span>{source === "uw" || hasUWToken() ? "Fetching insider data from UW..." : "Scanning insider filings..."}</span>
             <span>{progress.done}/{progress.total}</span>
           </div>
@@ -338,7 +338,7 @@ export function InsiderMarketOverview() {
         <div style={{
           padding: "8px 12px", background: "rgba(232, 93, 108, 0.1)",
           border: "1px solid var(--negative)", borderRadius: 4,
-          fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)",
+          fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)",
         }}>
           {error}
         </div>
@@ -359,7 +359,7 @@ export function InsiderMarketOverview() {
           <div style={{
             padding: "10px 12px", background: "var(--bg-panel-raised)",
             borderRadius: 4, border: "1px solid var(--border-dim)",
-            fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", lineHeight: 1.6,
+            fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6,
           }}>
             {heavySellers.length > heavyBuyers.length * 2
               ? `Broad insider selling detected across ${heavySellers.length} tickers (${formatDollar(totalSellValue)}). This pattern often precedes market weakness. Exercise caution.`
@@ -370,7 +370,7 @@ export function InsiderMarketOverview() {
 
           {/* Table */}
           <div style={{ maxHeight: 400, overflow: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
                   <th style={thStyle}>Ticker</th>
@@ -387,7 +387,7 @@ export function InsiderMarketOverview() {
                   <tr key={t.symbol} style={{ borderBottom: "1px solid var(--border-dim)" }}>
                     <td style={{ ...tdStyle, fontWeight: 600 }}>{t.symbol}</td>
                     <td style={tdStyle}>
-                      <span style={{ color: SIGNAL_COLORS[t.signal], fontWeight: 600, fontSize: 10 }}>
+                      <span style={{ color: SIGNAL_COLORS[t.signal], fontWeight: 600, fontSize: 12 }}>
                         {SIGNAL_LABELS[t.signal]}
                       </span>
                     </td>
@@ -405,9 +405,9 @@ export function InsiderMarketOverview() {
                     </td>
                     <td style={{ ...tdStyle, textAlign: "right", color: "var(--text-muted)" }}>{t.totalTx}</td>
                     {source === "uw" && (
-                      <td style={{ ...tdStyle, fontSize: 9, color: "var(--text-muted)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <td style={{ ...tdStyle, fontSize: 11, color: "var(--text-muted)", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                         {t.topInsider ?? ""}
-                        {t.officerTitle && <span style={{ fontSize: 8, marginLeft: 4 }}>({t.officerTitle})</span>}
+                        {t.officerTitle && <span style={{ fontSize: 10, marginLeft: 4 }}>({t.officerTitle})</span>}
                       </td>
                     )}
                   </tr>
@@ -417,7 +417,7 @@ export function InsiderMarketOverview() {
           </div>
 
           {lastScan && (
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)", textAlign: "right" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", textAlign: "right" }}>
               Last scan: {lastScan} · {tickers.length} tickers · Source: {source === "uw" ? "Unusual Whales" : "Finnhub"}
             </div>
           )}
@@ -435,16 +435,16 @@ function SummaryCard({ label, count, value, tone }: { label: string; count: numb
       borderRadius: 4, border: "1px solid var(--border-dim)", textAlign: "center",
     }}>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color }}>{count}</div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)", marginTop: 2 }}>{label}</div>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>{label}</div>
       {value > 0 && (
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color, marginTop: 2 }}>{formatDollar(value)}</div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color, marginTop: 2 }}>{formatDollar(value)}</div>
       )}
     </div>
   );
 }
 
 const thStyle: React.CSSProperties = {
-  padding: "6px 8px", textAlign: "left", fontSize: 9,
+  padding: "6px 8px", textAlign: "left", fontSize: 11,
   color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em",
   position: "sticky", top: 0, background: "var(--bg-panel)", fontWeight: 500,
 };

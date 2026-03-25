@@ -24,7 +24,7 @@ interface FlowData {
 }
 
 const mono: React.CSSProperties = { fontFamily: "'IBM Plex Mono', monospace" };
-const header: React.CSSProperties = { ...mono, fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
+const header: React.CSSProperties = { ...mono, fontSize: 14, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
 const panel: React.CSSProperties = { background: "var(--bg-panel, #fff)", border: "1px solid var(--border-dim, #e2e8f0)", borderRadius: 4, padding: 16, marginBottom: 16 };
 
 export default function FlowAnalysisPanel() {
@@ -60,7 +60,7 @@ export default function FlowAnalysisPanel() {
       <div style={panel}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span style={header}>Flow Analysis</span>
-          <button onClick={scan} style={{ ...mono, fontSize: 11, padding: "4px 14px", background: "var(--signal-core)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
+          <button onClick={scan} style={{ ...mono, fontSize: 13, padding: "4px 14px", background: "var(--signal-core)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
             SCAN FLOW
           </button>
         </div>
@@ -76,8 +76,8 @@ export default function FlowAnalysisPanel() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <span style={header}>Flow Analysis</span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {data && <span style={{ ...mono, fontSize: 10, color: "var(--text-secondary)" }}>{new Date(data.analysis_time).toLocaleTimeString()}</span>}
-          <button onClick={scan} disabled={loading} style={{ ...mono, fontSize: 11, padding: "4px 14px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+          {data && <span style={{ ...mono, fontSize: 12, color: "var(--text-secondary)" }}>{new Date(data.analysis_time).toLocaleTimeString()}</span>}
+          <button onClick={scan} disabled={loading} style={{ ...mono, fontSize: 13, padding: "4px 14px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
             {loading ? "SCANNING..." : "REFRESH"}
           </button>
         </div>
@@ -92,7 +92,7 @@ export default function FlowAnalysisPanel() {
             <div style={{ ...panel, borderLeft: "3px solid var(--warn, #F5A623)" }}>
               <div style={{ ...header, color: "var(--warn)", marginBottom: 8 }}>Action Items</div>
               {data.action_items.map((item, i) => (
-                <div key={i} style={{ ...mono, fontSize: 12, marginBottom: 4 }}>• {item}</div>
+                <div key={i} style={{ ...mono, fontSize: 14, marginBottom: 4 }}>• {item}</div>
               ))}
             </div>
           )}
@@ -121,17 +121,17 @@ function FlowSection({ title, entries, color, emptyText }: { title: string; entr
     <div style={{ ...panel }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <span style={{ ...header, color }}>{title}</span>
-        <span style={{ ...mono, fontSize: 10, padding: "2px 8px", border: `1px solid ${color}`, borderRadius: 4, color }}>{entries.length} POSITIONS</span>
+        <span style={{ ...mono, fontSize: 12, padding: "2px 8px", border: `1px solid ${color}`, borderRadius: 4, color }}>{entries.length} POSITIONS</span>
       </div>
 
       {!entries.length ? (
-        <div style={{ ...mono, fontSize: 12, color: "var(--text-secondary)", padding: "8px 0" }}>• {emptyText}</div>
+        <div style={{ ...mono, fontSize: 14, color: "var(--text-secondary)", padding: "8px 0" }}>• {emptyText}</div>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 12 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", ...mono, fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
               {["Ticker", "Position", "Flow", "Strength", "Note"].map((h) => (
-                <th key={h} style={{ ...header, padding: "6px 10px", textAlign: "left", fontSize: 10 }}>{h}</th>
+                <th key={h} style={{ ...header, padding: "6px 10px", textAlign: "left", fontSize: 12 }}>{h}</th>
               ))}
             </tr>
           </thead>
@@ -144,7 +144,7 @@ function FlowSection({ title, entries, color, emptyText }: { title: string; entr
                   <span style={{
                     padding: "2px 8px",
                     borderRadius: 4,
-                    fontSize: 10,
+                    fontSize: 12,
                     fontWeight: 600,
                     background: e.flow_class === "accum" ? "rgba(5, 173, 152, 0.1)" : e.flow_class === "distrib" ? "rgba(232, 93, 108, 0.1)" : "#f1f5f9",
                     color: e.flow_class === "accum" ? "var(--signal-core)" : e.flow_class === "distrib" ? "var(--fault)" : "var(--text-secondary)",
@@ -186,7 +186,7 @@ function StrengthBar({ value, ratios }: { value: number; ratios: { date: string;
           />
         ))}
       </div>
-      <span style={{ ...mono, fontSize: 11 }}>{value.toFixed(1)}</span>
+      <span style={{ ...mono, fontSize: 13 }}>{value.toFixed(1)}</span>
     </div>
   );
 }

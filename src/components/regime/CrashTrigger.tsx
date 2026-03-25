@@ -30,7 +30,7 @@ export function CrashTrigger({ trigger }: Props) {
         <span
           style={{
             fontFamily: "var(--font-sans)",
-            fontSize: 10,
+            fontSize: 12,
             fontWeight: 500,
             color: trigger.triggered ? "var(--negative)" : "var(--text-muted)",
             textTransform: "uppercase",
@@ -43,7 +43,7 @@ export function CrashTrigger({ trigger }: Props) {
           <span
             style={{
               fontFamily: "var(--font-mono)",
-              fontSize: 9,
+              fontSize: 11,
               padding: "1px 6px",
               borderRadius: 999,
               background: "rgba(232, 93, 108, 0.2)",
@@ -62,10 +62,10 @@ export function CrashTrigger({ trigger }: Props) {
             alignItems: "center",
             gap: 8,
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: 13,
           }}
         >
-          <span style={{ color: c.met ? "var(--negative)" : "var(--positive)", fontSize: 14 }}>
+          <span style={{ color: c.met ? "var(--negative)" : "var(--positive)", fontSize: 16 }}>
             {c.met ? "\u2717" : "\u2713"}
           </span>
           <span style={{ color: c.met ? "var(--text-primary)" : "var(--text-muted)" }}>

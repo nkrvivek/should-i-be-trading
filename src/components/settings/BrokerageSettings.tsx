@@ -3,8 +3,8 @@ import { BROKER_REGISTRY } from "../../lib/brokers/registry";
 import { useBrokerStore } from "../../stores/brokerStore";
 
 const monoStyle: React.CSSProperties = { fontFamily: "'IBM Plex Mono', monospace" };
-const headerStyle: React.CSSProperties = { ...monoStyle, fontSize: 12, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
-const inputStyle: React.CSSProperties = { ...monoStyle, fontSize: 12, padding: "8px 12px", border: "1px solid var(--border-dim, #e2e8f0)", borderRadius: 4, background: "var(--bg-panel-raised, #f8fafc)", width: "100%" };
+const headerStyle: React.CSSProperties = { ...monoStyle, fontSize: 14, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
+const inputStyle: React.CSSProperties = { ...monoStyle, fontSize: 14, padding: "8px 12px", border: "1px solid var(--border-dim, #e2e8f0)", borderRadius: 4, background: "var(--bg-panel-raised, #f8fafc)", width: "100%" };
 
 export default function BrokerageSettings() {
   const { activeBroker, account, connect, disconnect, loading, error } = useBrokerStore();
@@ -31,7 +31,7 @@ export default function BrokerageSettings() {
       </p>
 
       {error && (
-        <div style={{ padding: 12, background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 4, color: "#dc2626", ...monoStyle, fontSize: 12, marginBottom: 16 }}>
+        <div style={{ padding: 12, background: "#fef2f2", border: "1px solid #fca5a5", borderRadius: 4, color: "#dc2626", ...monoStyle, fontSize: 14, marginBottom: 16 }}>
           {error}
         </div>
       )}
@@ -57,31 +57,31 @@ export default function BrokerageSettings() {
                 <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                   <span style={{ fontSize: 24 }}>{broker.icon}</span>
                   <div>
-                    <div style={{ fontWeight: 600, fontSize: 14 }}>{broker.name}</div>
-                    <div style={{ fontSize: 12, color: "var(--text-secondary)" }}>{broker.description}</div>
+                    <div style={{ fontWeight: 600, fontSize: 16 }}>{broker.name}</div>
+                    <div style={{ fontSize: 14, color: "var(--text-secondary)" }}>{broker.description}</div>
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
                   {isActive && (
-                    <span style={{ ...monoStyle, fontSize: 10, padding: "4px 10px", background: "var(--signal-core)", color: "#fff", borderRadius: 999 }}>
+                    <span style={{ ...monoStyle, fontSize: 12, padding: "4px 10px", background: "var(--signal-core)", color: "#fff", borderRadius: 999 }}>
                       CONNECTED{account?.isPaperTrading ? " (PAPER)" : ""}
                     </span>
                   )}
                   {broker.isPaperAvailable && !isComingSoon && (
-                    <span style={{ ...monoStyle, fontSize: 10, padding: "4px 10px", border: "1px solid var(--border-dim)", borderRadius: 999, color: "var(--text-secondary)" }}>
+                    <span style={{ ...monoStyle, fontSize: 12, padding: "4px 10px", border: "1px solid var(--border-dim)", borderRadius: 999, color: "var(--text-secondary)" }}>
                       PAPER
                     </span>
                   )}
                   {isComingSoon ? (
-                    <span style={{ ...monoStyle, fontSize: 10, padding: "4px 10px", background: "#f1f5f9", borderRadius: 999, color: "#94a3b8" }}>COMING SOON</span>
+                    <span style={{ ...monoStyle, fontSize: 12, padding: "4px 10px", background: "#f1f5f9", borderRadius: 999, color: "#94a3b8" }}>COMING SOON</span>
                   ) : isActive ? (
-                    <button onClick={disconnect} style={{ ...monoStyle, fontSize: 11, padding: "6px 14px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+                    <button onClick={disconnect} style={{ ...monoStyle, fontSize: 13, padding: "6px 14px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>
                       DISCONNECT
                     </button>
                   ) : (
                     <button
                       onClick={() => setExpandedBroker(isExpanded ? null : broker.slug)}
-                      style={{ ...monoStyle, fontSize: 11, padding: "6px 14px", border: "1px solid var(--signal-core)", color: "var(--signal-core)", borderRadius: 4, background: "none", cursor: "pointer" }}
+                      style={{ ...monoStyle, fontSize: 13, padding: "6px 14px", border: "1px solid var(--signal-core)", color: "var(--signal-core)", borderRadius: 4, background: "none", cursor: "pointer" }}
                     >
                       {isExpanded ? "CANCEL" : "CONNECT"}
                     </button>
@@ -94,7 +94,7 @@ export default function BrokerageSettings() {
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                     {broker.credentialFields.map((field) => (
                       <div key={field.key}>
-                        <label style={{ ...headerStyle, fontSize: 10, display: "block", marginBottom: 4 }}>{field.label}</label>
+                        <label style={{ ...headerStyle, fontSize: 12, display: "block", marginBottom: 4 }}>{field.label}</label>
                         {field.type === "select" ? (
                           <select
                             value={credentials[field.key] ?? "paper"}
@@ -117,12 +117,12 @@ export default function BrokerageSettings() {
                     ))}
                   </div>
                   {connectError && (
-                    <div style={{ marginTop: 8, color: "var(--fault)", ...monoStyle, fontSize: 11 }}>{connectError}</div>
+                    <div style={{ marginTop: 8, color: "var(--fault)", ...monoStyle, fontSize: 13 }}>{connectError}</div>
                   )}
                   <button
                     onClick={() => handleConnect(broker.slug)}
                     disabled={loading}
-                    style={{ marginTop: 12, ...monoStyle, fontSize: 11, padding: "8px 24px", background: "var(--signal-core)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
+                    style={{ marginTop: 12, ...monoStyle, fontSize: 13, padding: "8px 24px", background: "var(--signal-core)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}
                   >
                     {loading ? "CONNECTING..." : "TEST & CONNECT"}
                   </button>
@@ -130,7 +130,7 @@ export default function BrokerageSettings() {
               )}
 
               {isActive && account && (
-                <div style={{ marginTop: 12, display: "flex", gap: 16, ...monoStyle, fontSize: 11, color: "var(--text-secondary)" }}>
+                <div style={{ marginTop: 12, display: "flex", gap: 16, ...monoStyle, fontSize: 13, color: "var(--text-secondary)" }}>
                   <span>Equity: ${account.equity.toLocaleString()}</span>
                   <span>Cash: ${account.cash.toLocaleString()}</span>
                   <span>Buying Power: ${account.buyingPower.toLocaleString()}</span>

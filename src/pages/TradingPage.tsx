@@ -16,7 +16,7 @@ const panelStyle: React.CSSProperties = {
 
 const headerStyle: React.CSSProperties = {
   fontFamily: "'IBM Plex Mono', monospace",
-  fontSize: 12,
+  fontSize: 14,
   fontWeight: 600,
   letterSpacing: "0.05em",
   textTransform: "uppercase" as const,
@@ -39,11 +39,11 @@ export default function TradingPage() {
         <h1 style={{ ...monoStyle, fontSize: 24, fontWeight: 700 }}>TRADING</h1>
         {activeBroker && (
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ ...monoStyle, fontSize: 11, color: "var(--signal-core, #05AD98)" }}>
+            <span style={{ ...monoStyle, fontSize: 13, color: "var(--signal-core, #05AD98)" }}>
               {activeBroker.toUpperCase()} CONNECTED
               {account?.isPaperTrading && " (PAPER)"}
             </span>
-            <button onClick={refresh} style={{ ...monoStyle, fontSize: 11, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+            <button onClick={refresh} style={{ ...monoStyle, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
               REFRESH
             </button>
           </div>
@@ -66,7 +66,7 @@ export default function TradingPage() {
                 onClick={() => setTab(t)}
                 style={{
                   ...monoStyle,
-                  fontSize: 12,
+                  fontSize: 14,
                   padding: "8px 20px",
                   border: "none",
                   borderBottom: tab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
@@ -106,12 +106,12 @@ function NoBrokerConnected() {
       </p>
       <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
         {["Alpaca", "Interactive Brokers", "Schwab", "Robinhood"].map((b) => (
-          <span key={b} style={{ ...monoStyle, fontSize: 11, padding: "6px 14px", border: "1px solid var(--border-dim)", borderRadius: 999, color: "var(--text-secondary)" }}>
+          <span key={b} style={{ ...monoStyle, fontSize: 13, padding: "6px 14px", border: "1px solid var(--border-dim)", borderRadius: 999, color: "var(--text-secondary)" }}>
             {b}
           </span>
         ))}
       </div>
-      <a href="/settings" style={{ display: "inline-block", marginTop: 24, ...monoStyle, fontSize: 12, color: "var(--signal-core)", textDecoration: "none" }}>
+      <a href="/settings" style={{ display: "inline-block", marginTop: 24, ...monoStyle, fontSize: 14, color: "var(--signal-core)", textDecoration: "none" }}>
         Go to Settings →
       </a>
     </div>
@@ -147,7 +147,7 @@ function PositionsTable({ positions }: { positions: import("../lib/brokers/types
 
   return (
     <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 12 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 14 }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
             {["Symbol", "Side", "Qty", "Avg Entry", "Current", "Mkt Value", "P&L", "P&L %"].map((h) => (
@@ -213,39 +213,39 @@ function OrdersPanel({ orders, onCancel, onPlace }: {
   };
 
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
-  const inputStyle: React.CSSProperties = { ...monoStyle, fontSize: 12, padding: "6px 10px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "var(--bg-panel-raised, #f8fafc)", width: "100%" };
+  const inputStyle: React.CSSProperties = { ...monoStyle, fontSize: 14, padding: "6px 10px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "var(--bg-panel-raised, #f8fafc)", width: "100%" };
   const selectStyle: React.CSSProperties = { ...inputStyle, cursor: "pointer" };
 
   return (
     <div>
       <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
         <span style={headerStyle}>Recent Orders</span>
-        <button onClick={() => setShowForm(!showForm)} style={{ ...monoStyle, fontSize: 11, padding: "4px 14px", background: "var(--signal-core)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
+        <button onClick={() => setShowForm(!showForm)} style={{ ...monoStyle, fontSize: 13, padding: "4px 14px", background: "var(--signal-core)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer" }}>
           {showForm ? "CANCEL" : "NEW ORDER"}
         </button>
       </div>
 
       {showForm && (
         <div style={{ ...panelStyle, display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr 1fr auto", gap: 8, alignItems: "end" }}>
-          <div><label style={{ ...headerStyle, fontSize: 10 }}>Symbol</label><input value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="AAPL" style={inputStyle} /></div>
-          <div><label style={{ ...headerStyle, fontSize: 10 }}>Side</label><select value={side} onChange={(e) => setSide(e.target.value as "buy" | "sell")} style={selectStyle}><option value="buy">BUY</option><option value="sell">SELL</option></select></div>
-          <div><label style={{ ...headerStyle, fontSize: 10 }}>Type</label><select value={orderType} onChange={(e) => setOrderType(e.target.value as OrderRequest["type"])} style={selectStyle}><option value="market">Market</option><option value="limit">Limit</option><option value="stop">Stop</option></select></div>
-          <div><label style={{ ...headerStyle, fontSize: 10 }}>Qty</label><input value={qty} onChange={(e) => setQty(e.target.value)} placeholder="100" type="number" style={inputStyle} /></div>
+          <div><label style={{ ...headerStyle, fontSize: 12 }}>Symbol</label><input value={symbol} onChange={(e) => setSymbol(e.target.value)} placeholder="AAPL" style={inputStyle} /></div>
+          <div><label style={{ ...headerStyle, fontSize: 12 }}>Side</label><select value={side} onChange={(e) => setSide(e.target.value as "buy" | "sell")} style={selectStyle}><option value="buy">BUY</option><option value="sell">SELL</option></select></div>
+          <div><label style={{ ...headerStyle, fontSize: 12 }}>Type</label><select value={orderType} onChange={(e) => setOrderType(e.target.value as OrderRequest["type"])} style={selectStyle}><option value="market">Market</option><option value="limit">Limit</option><option value="stop">Stop</option></select></div>
+          <div><label style={{ ...headerStyle, fontSize: 12 }}>Qty</label><input value={qty} onChange={(e) => setQty(e.target.value)} placeholder="100" type="number" style={inputStyle} /></div>
           {orderType !== "market" && (
-            <div><label style={{ ...headerStyle, fontSize: 10 }}>Price</label><input value={limitPrice} onChange={(e) => setLimitPrice(e.target.value)} placeholder="150.00" type="number" step="0.01" style={inputStyle} /></div>
+            <div><label style={{ ...headerStyle, fontSize: 12 }}>Price</label><input value={limitPrice} onChange={(e) => setLimitPrice(e.target.value)} placeholder="150.00" type="number" step="0.01" style={inputStyle} /></div>
           )}
-          <div><label style={{ ...headerStyle, fontSize: 10 }}>TIF</label><select value={tif} onChange={(e) => setTif(e.target.value as OrderRequest["timeInForce"])} style={selectStyle}><option value="day">DAY</option><option value="gtc">GTC</option></select></div>
-          <button onClick={handlePlace} disabled={placing} style={{ ...monoStyle, fontSize: 11, padding: "6px 20px", background: side === "buy" ? "var(--signal-core)" : "var(--fault)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", height: 32 }}>
+          <div><label style={{ ...headerStyle, fontSize: 12 }}>TIF</label><select value={tif} onChange={(e) => setTif(e.target.value as OrderRequest["timeInForce"])} style={selectStyle}><option value="day">DAY</option><option value="gtc">GTC</option></select></div>
+          <button onClick={handlePlace} disabled={placing} style={{ ...monoStyle, fontSize: 13, padding: "6px 20px", background: side === "buy" ? "var(--signal-core)" : "var(--fault)", color: "#fff", border: "none", borderRadius: 4, cursor: "pointer", height: 32 }}>
             {placing ? "..." : "SUBMIT"}
           </button>
-          {orderError && <div style={{ gridColumn: "1/-1", color: "var(--fault)", fontSize: 11 }}>{orderError}</div>}
+          {orderError && <div style={{ gridColumn: "1/-1", color: "var(--fault)", fontSize: 13 }}>{orderError}</div>}
         </div>
       )}
 
       {!orders.length ? (
         <div style={{ ...panelStyle, textAlign: "center", color: "var(--text-secondary)", padding: 32 }}>No orders</div>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 12 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
               {["Symbol", "Side", "Type", "Qty", "Price", "Status", "Filled", ""].map((h) => (
@@ -262,14 +262,14 @@ function OrdersPanel({ orders, onCancel, onPlace }: {
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>{o.qty}</td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>{o.limitPrice ? fmt(o.limitPrice) : "MKT"}</td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>
-                  <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 10, background: o.status === "filled" ? "#dcfce7" : o.status === "rejected" ? "#fef2f2" : "#f1f5f9", color: o.status === "filled" ? "#16a34a" : o.status === "rejected" ? "#dc2626" : "#64748b" }}>
+                  <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 12, background: o.status === "filled" ? "#dcfce7" : o.status === "rejected" ? "#fef2f2" : "#f1f5f9", color: o.status === "filled" ? "#16a34a" : o.status === "rejected" ? "#dc2626" : "#64748b" }}>
                     {o.status.toUpperCase()}
                   </span>
                 </td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>{o.filledQty ?? 0}/{o.qty}</td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>
                   {o.status === "pending" && (
-                    <button onClick={() => onCancel(o.id)} style={{ ...monoStyle, fontSize: 10, padding: "2px 8px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>CANCEL</button>
+                    <button onClick={() => onCancel(o.id)} style={{ ...monoStyle, fontSize: 12, padding: "2px 8px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>CANCEL</button>
                   )}
                 </td>
               </tr>
@@ -308,7 +308,7 @@ function JournalPanel() {
           No trades logged yet. Trades will be recorded automatically when you execute through a connected brokerage, or add them manually.
         </div>
       ) : (
-        <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 12 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
               {["Date", "Ticker", "Strategy", "Dir", "Entry", "Exit", "P&L", "Score", "Status", ""].map((h) => (
@@ -330,15 +330,15 @@ function JournalPanel() {
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "right" }}>{e.marketScoreAtEntry}/100</td>
                 <td style={{ padding: "8px 10px", textAlign: "right" }}>
-                  <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 10, background: e.status === "open" ? "#dbeafe" : e.status === "closed" ? "#dcfce7" : "#f1f5f9", color: e.status === "open" ? "#2563eb" : e.status === "closed" ? "#16a34a" : "#64748b" }}>
+                  <span style={{ padding: "2px 8px", borderRadius: 999, fontSize: 12, background: e.status === "open" ? "#dbeafe" : e.status === "closed" ? "#dcfce7" : "#f1f5f9", color: e.status === "open" ? "#2563eb" : e.status === "closed" ? "#16a34a" : "#64748b" }}>
                     {e.status.toUpperCase()}
                   </span>
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "right", display: "flex", gap: 4 }}>
                   {e.status === "open" && (
-                    <button onClick={() => { const p = prompt("Exit price?"); if (p) closeTrade(e.id, parseFloat(p)); }} style={{ ...monoStyle, fontSize: 10, padding: "2px 8px", border: "1px solid var(--signal-core)", color: "var(--signal-core)", borderRadius: 4, background: "none", cursor: "pointer" }}>CLOSE</button>
+                    <button onClick={() => { const p = prompt("Exit price?"); if (p) closeTrade(e.id, parseFloat(p)); }} style={{ ...monoStyle, fontSize: 12, padding: "2px 8px", border: "1px solid var(--signal-core)", color: "var(--signal-core)", borderRadius: 4, background: "none", cursor: "pointer" }}>CLOSE</button>
                   )}
-                  <button onClick={() => deleteTrade(e.id)} style={{ ...monoStyle, fontSize: 10, padding: "2px 8px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>DEL</button>
+                  <button onClick={() => deleteTrade(e.id)} style={{ ...monoStyle, fontSize: 12, padding: "2px 8px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>DEL</button>
                 </td>
               </tr>
             ))}
@@ -361,14 +361,14 @@ function StrategiesPanel({ positions }: { positions: import("../lib/brokers/type
       <div style={panelStyle}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <span style={headerStyle}>Covered Call Opportunities</span>
-          <span style={{ ...monoStyle, fontSize: 10, color: "var(--text-secondary)" }}>{ccEligible.length} eligible positions (100+ shares)</span>
+          <span style={{ ...monoStyle, fontSize: 12, color: "var(--text-secondary)" }}>{ccEligible.length} eligible positions (100+ shares)</span>
         </div>
         {!ccEligible.length ? (
           <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: 24, fontSize: 13 }}>
             No positions with 100+ shares. Buy stock first to sell covered calls.
           </div>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 12 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 14 }}>
             <thead>
               <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
                 {["Symbol", "Shares", "Current", "Suggested Strike", "Est. Premium", "Yield", "DTE"].map((h) => (

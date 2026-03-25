@@ -9,7 +9,7 @@ type Props = {
 export function WatchlistPanel({ prices, symbols }: Props) {
   return (
     <div style={{ overflow: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
             <Th>Symbol</Th>
@@ -57,7 +57,7 @@ function Th({ children, align = "left" }: { children: React.ReactNode; align?: "
         padding: "4px 8px",
         textAlign: align,
         fontWeight: 500,
-        fontSize: 9,
+        fontSize: 11,
         color: "var(--text-muted)",
         textTransform: "uppercase",
         letterSpacing: "0.05em",

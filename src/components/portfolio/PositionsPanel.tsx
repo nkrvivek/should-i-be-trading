@@ -9,7 +9,7 @@ type Props = {
 export function PositionsPanel({ positions }: Props) {
   if (positions.length === 0) {
     return (
-      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
         No open positions
       </div>
     );
@@ -17,7 +17,7 @@ export function PositionsPanel({ positions }: Props) {
 
   return (
     <div style={{ overflow: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
             <Th>Ticker</Th>
@@ -39,7 +39,7 @@ export function PositionsPanel({ positions }: Props) {
             return (
               <tr key={pos.id} style={{ borderBottom: "1px solid var(--border-dim)", height: 28 }}>
                 <td style={{ padding: "0 8px", fontWeight: 500 }}>{pos.ticker}</td>
-                <td style={{ padding: "0 8px", color: "var(--text-secondary)", fontSize: 10 }}>{pos.structure}</td>
+                <td style={{ padding: "0 8px", color: "var(--text-secondary)", fontSize: 12 }}>{pos.structure}</td>
                 <td style={{ padding: "0 8px", color: pos.direction === "LONG" ? "var(--positive)" : "var(--negative)" }}>
                   {pos.direction}
                 </td>
@@ -64,7 +64,7 @@ export function PositionsPanel({ positions }: Props) {
 
 function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
-    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
       {children}
     </th>
   );

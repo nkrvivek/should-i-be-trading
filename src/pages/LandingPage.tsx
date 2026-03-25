@@ -33,9 +33,10 @@ export function LandingPage() {
         backdropFilter: "blur(8px)",
         zIndex: 100,
       }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 700, color: "#05AD98" }}>SIBT</span>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "#94a3b8" }}>Should I Be Trading?</span>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <img src="/logo.svg" alt="SIBT" style={{ height: 36 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, color: "#05AD98" }}>SIBT</span>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: 15, color: "#94a3b8" }}>Should I Be Trading?</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => navigate("/login")} style={navBtn}>SIGN IN</button>
@@ -118,7 +119,7 @@ export function LandingPage() {
           </button>
         </div>
 
-        <p style={{ position: "relative", fontFamily: "var(--font-mono)", fontSize: 10, color: "#64748b", marginTop: 16 }}>
+        <p style={{ position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", marginTop: 16 }}>
           Not investment advice. Analytical tool only.
         </p>
       </section>
@@ -133,11 +134,11 @@ export function LandingPage() {
         borderTop: "1px solid #1e293b",
         borderBottom: "1px solid #1e293b",
       }}>
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#64748b", letterSpacing: "0.05em" }}>POWERED BY</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", letterSpacing: "0.05em" }}>POWERED BY</span>
         {["FRED", "Finnhub", "Anthropic Claude", "Radon", "Interactive Brokers", "Exa"].map((name) => (
-          <span key={name} style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#94a3b8" }}>{name}</span>
+          <span key={name} style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#94a3b8" }}>{name}</span>
         ))}
-        <a href="https://github.com/nkrvivek/should-i-be-trading" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "#05AD98", textDecoration: "none" }}>
+        <a href="https://github.com/nkrvivek/should-i-be-trading" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#05AD98", textDecoration: "none" }}>
           GitHub
         </a>
       </section>
@@ -229,13 +230,14 @@ export function LandingPage() {
         margin: "0 auto",
       }}>
         <div>
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#94a3b8" }}>SIBT</span>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "#64748b", marginLeft: 8 }}>
+          <img src="/logo.svg" alt="SIBT" style={{ height: 24, verticalAlign: "middle", marginRight: 8 }} />
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 16, color: "#94a3b8" }}>SIBT</span>
+          <span style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "#64748b", marginLeft: 8 }}>
             &copy; {new Date().getFullYear()} Should I Be Trading?
           </span>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <a href="mailto:hello@sibt.ai" style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#05AD98", textDecoration: "none" }}>
+          <a href="mailto:hello@sibt.ai" style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#05AD98", textDecoration: "none" }}>
             hello@sibt.ai
           </a>
           {[
@@ -244,7 +246,7 @@ export function LandingPage() {
             { to: "/risk", label: "Risk Disclosure" },
             { to: "/glossary", label: "Glossary" },
           ].map(({ to, label }) => (
-            <a key={to} href={to} style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "#64748b", textDecoration: "none" }}>
+            <a key={to} href={to} style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", textDecoration: "none" }}>
               {label}
             </a>
           ))}
@@ -253,7 +255,7 @@ export function LandingPage() {
 
       {/* Bottom disclaimer */}
       <div style={{ padding: "16px 32px", background: "#0f1519", textAlign: "center" }}>
-        <p style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "#475569", maxWidth: 700, margin: "0 auto", lineHeight: 1.6 }}>
+        <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "#475569", maxWidth: 700, margin: "0 auto", lineHeight: 1.6 }}>
           SIBT is not a registered investment adviser, broker-dealer, or financial planner. The platform provides
           market data analysis tools for informational and educational purposes only. Nothing on this platform
           constitutes investment advice, a recommendation, or a solicitation to buy or sell any security. All
@@ -278,7 +280,7 @@ function Light({ color, label, active }: { color: string; label: string; active?
       }} />
       <span style={{
         fontFamily: "var(--font-mono)",
-        fontSize: 11,
+        fontSize: 13,
         fontWeight: 600,
         color: active ? color : "#475569",
         letterSpacing: "0.05em",
@@ -302,7 +304,7 @@ function FeatureCard({ title, description, tag }: { title: string; description: 
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600 }}>{title}</span>
         <span style={{
           fontFamily: "var(--font-mono)",
-          fontSize: 9,
+          fontSize: 11,
           padding: "2px 8px",
           borderRadius: 999,
           background: `${tagColor}22`,
@@ -312,7 +314,7 @@ function FeatureCard({ title, description, tag }: { title: string; description: 
           {tag}
         </span>
       </div>
-      <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>{description}</p>
+      <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>{description}</p>
     </div>
   );
 }
@@ -336,8 +338,8 @@ function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
       }}>
         {n}
       </div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600, marginBottom: 8 }}>{title}</div>
-      <p style={{ fontSize: 12, color: "#94a3b8", lineHeight: 1.6 }}>{desc}</p>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, marginBottom: 8 }}>{title}</div>
+      <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6 }}>{desc}</p>
     </div>
   );
 }
@@ -345,7 +347,7 @@ function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
 const navBtn: React.CSSProperties = {
   padding: "6px 14px",
   fontFamily: "var(--font-mono)",
-  fontSize: 10,
+  fontSize: 12,
   fontWeight: 500,
   background: "transparent",
   color: "#e2e8f0",

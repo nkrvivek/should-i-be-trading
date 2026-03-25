@@ -53,7 +53,7 @@ export function WatchlistManager() {
             style={{
               padding: "4px 10px",
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: w.id === activeId ? 600 : 400,
               color: w.id === activeId ? "var(--signal-core)" : "var(--text-muted)",
               background: w.id === activeId ? "rgba(5, 173, 152, 0.1)" : "transparent",
@@ -68,7 +68,7 @@ export function WatchlistManager() {
         <button
           onClick={() => setShowCreate(!showCreate)}
           style={{
-            padding: "4px 10px", fontFamily: "var(--font-mono)", fontSize: 10,
+            padding: "4px 10px", fontFamily: "var(--font-mono)", fontSize: 12,
             color: "var(--text-muted)", background: "transparent",
             border: "1px dashed var(--border-dim)", borderRadius: 4, cursor: "pointer",
           }}
@@ -125,14 +125,14 @@ export function WatchlistManager() {
                 border: "1px solid var(--border-dim)", borderRadius: 4,
               }}
             >
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--text-primary)" }}>
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                 {ticker}
               </span>
               <button
                 onClick={() => handleRemoveTicker(ticker)}
                 style={{
                   background: "none", border: "none", cursor: "pointer",
-                  fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)",
+                  fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--text-muted)",
                   padding: "0 2px", lineHeight: 1,
                 }}
                 title="Remove ticker"
@@ -142,7 +142,7 @@ export function WatchlistManager() {
             </div>
           ))}
           {activeWatchlist.tickers.length === 0 && (
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", padding: "8px 0" }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", padding: "8px 0" }}>
               No tickers yet. Add some above.
             </div>
           )}
@@ -157,7 +157,7 @@ export function WatchlistManager() {
             style={{
               background: "none", border: "1px solid var(--negative)",
               borderRadius: 4, padding: "4px 12px", fontFamily: "var(--font-mono)",
-              fontSize: 10, color: "var(--negative)", cursor: "pointer",
+              fontSize: 12, color: "var(--negative)", cursor: "pointer",
             }}
           >
             DELETE "{activeWatchlist.name}"
@@ -171,7 +171,7 @@ export function WatchlistManager() {
 const inputStyle: React.CSSProperties = {
   flex: 1, padding: "6px 10px",
   background: "var(--bg-panel-raised)", border: "1px solid var(--border-dim)",
-  borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 12,
+  borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 14,
   color: "var(--text-primary)", outline: "none",
 };
 
@@ -179,7 +179,7 @@ function btnStyle(disabled: boolean): React.CSSProperties {
   return {
     padding: "6px 14px", background: "var(--signal-core)",
     color: "#000", border: "none", borderRadius: 4,
-    fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
+    fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600,
     cursor: disabled ? "not-allowed" : "pointer",
     opacity: disabled ? 0.5 : 1,
   };
@@ -188,6 +188,6 @@ function btnStyle(disabled: boolean): React.CSSProperties {
 const cancelBtnStyle: React.CSSProperties = {
   padding: "6px 12px", background: "none",
   border: "1px solid var(--border-dim)", borderRadius: 4,
-  fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)",
+  fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)",
   cursor: "pointer",
 };

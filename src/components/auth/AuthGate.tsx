@@ -12,10 +12,11 @@ export function AuthGate({ onSuccess }: Props) {
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [signupSuccess, setSignupSuccess] = useState(false);
 
   if (!isSupabaseConfigured()) {
     return (
-      <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+      <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 14, color: "var(--text-muted)" }}>
         Auth not configured. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env
       </div>
     );
@@ -43,23 +44,93 @@ export function AuthGate({ onSuccess }: Props) {
 
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: { data: { display_name: displayName || email.split("@")[0] } },
+          options: {
+            data: { display_name: displayName || email.split("@")[0] },
+            emailRedirectTo: `${window.location.origin}/`,
+          },
         });
         if (error) throw error;
+
+        // Check if user already exists (Supabase returns user with empty identities)
+        if (data.user && data.user.identities && data.user.identities.length === 0) {
+          throw new Error("An account with this email already exists. Try signing in instead.");
+        }
+
+        // Fire welcome email (best-effort, don't block on failure)
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+        if (supabaseUrl && supabaseKey && data.user) {
+          fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "apikey": supabaseKey,
+              "Authorization": `Bearer ${supabaseKey}`,
+            },
+            body: JSON.stringify({
+              user_id: data.user.id,
+              email,
+              display_name: displayName || email.split("@")[0],
+            }),
+          }).catch(() => { /* best-effort */ });
+        }
+
+        // If email confirmation is required, user won't have a session yet
+        if (data.user && !data.session) {
+          setSignupSuccess(true);
+          setLoading(false);
+          return;
+        }
+        // If auto-confirm is on, we get a session immediately
+        onSuccess?.();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        onSuccess?.();
       }
-      onSuccess?.();
     } catch (e) {
       setError(e instanceof Error ? e.message : "Auth failed");
     } finally {
       setLoading(false);
     }
   };
+
+  if (signupSuccess) {
+    return (
+      <div
+        style={{
+          maxWidth: 380,
+          margin: "80px auto",
+          padding: 32,
+          background: "var(--bg-panel)",
+          border: "1px solid var(--border-dim)",
+          borderRadius: 4,
+          textAlign: "center",
+        }}
+      >
+        <img src="/logo.svg" alt="SIBT" style={{ height: 40, marginBottom: 12 }} />
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: "var(--signal-core)", marginBottom: 12 }}>
+          Check your email
+        </div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 16 }}>
+          We sent a confirmation link to <strong style={{ color: "var(--text-primary)" }}>{email}</strong>.
+          Click the link to activate your account and start your 14-day free trial.
+        </div>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+          Didn't get it? Check your spam folder or{" "}
+          <button
+            onClick={() => { setSignupSuccess(false); setMode("signup"); }}
+            style={{ background: "none", border: "none", color: "var(--signal-core)", cursor: "pointer", fontFamily: "var(--font-mono)", fontSize: 12 }}
+          >
+            try again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -73,10 +144,11 @@ export function AuthGate({ onSuccess }: Props) {
       }}
     >
       <div style={{ textAlign: "center", marginBottom: 24 }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 600, color: "var(--signal-core)" }}>
+        <img src="/logo.svg" alt="SIBT" style={{ height: 40, marginBottom: 8 }} />
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 700, color: "var(--signal-core)" }}>
           SIBT
         </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", marginTop: 4 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-muted)", marginTop: 4 }}>
           {mode === "login" ? "Sign in to your account" : "Create your account"}
         </div>
       </div>
@@ -111,7 +183,7 @@ export function AuthGate({ onSuccess }: Props) {
       {/* Divider */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "16px 0" }}>
         <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
-        <span style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>OR</span>
+        <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>OR</span>
         <div style={{ flex: 1, height: 1, background: "var(--border-dim)" }} />
       </div>
 
@@ -124,7 +196,7 @@ export function AuthGate({ onSuccess }: Props) {
         <Input label="Password" type="password" value={password} onChange={setPassword} placeholder="Min 6 characters" required />
 
         {error && (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)", padding: "4px 0" }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)", padding: "4px 0" }}>
             {error}
           </div>
         )}
@@ -138,7 +210,7 @@ export function AuthGate({ onSuccess }: Props) {
             border: "none",
             borderRadius: 4,
             fontFamily: "var(--font-mono)",
-            fontSize: 12,
+            fontSize: 14,
             fontWeight: 500,
             color: "var(--accent-text)",
             cursor: loading ? "default" : "pointer",
@@ -157,7 +229,7 @@ export function AuthGate({ onSuccess }: Props) {
             background: "none",
             border: "none",
             fontFamily: "var(--font-sans)",
-            fontSize: 11,
+            fontSize: 13,
             color: "var(--signal-core)",
             cursor: "pointer",
           }}
@@ -167,7 +239,7 @@ export function AuthGate({ onSuccess }: Props) {
       </div>
 
       <div style={{ marginTop: 24, padding: "12px 0", borderTop: "1px solid var(--border-dim)", textAlign: "center" }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)", lineHeight: 1.6 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", lineHeight: 1.6 }}>
           SIBT provides analytical tools and market data. It does not provide investment advice.
           By signing up you agree to our Terms of Service and acknowledge that all trading
           decisions are your own responsibility.
@@ -189,7 +261,7 @@ function oauthBtnStyle(loading: boolean): React.CSSProperties {
     border: "1px solid var(--border-dim)",
     borderRadius: 4,
     fontFamily: "var(--font-sans)",
-    fontSize: 12,
+    fontSize: 14,
     fontWeight: 500,
     color: "var(--text-primary)",
     cursor: loading ? "default" : "pointer",
@@ -204,7 +276,7 @@ function Input({
 }) {
   return (
     <div>
-      <label style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      <label style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
         {label}
       </label>
       <input
@@ -220,7 +292,7 @@ function Input({
           border: "1px solid var(--border-dim)",
           borderRadius: 4,
           fontFamily: "var(--font-sans)",
-          fontSize: 12,
+          fontSize: 14,
           color: "var(--text-primary)",
           outline: "none",
         }}

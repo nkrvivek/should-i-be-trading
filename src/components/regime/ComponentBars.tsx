@@ -40,7 +40,7 @@ export function ComponentBars({ components }: Props) {
       <div
         style={{
           fontFamily: "var(--font-sans)",
-          fontSize: 10,
+          fontSize: 12,
           fontWeight: 500,
           color: "var(--text-muted)",
           textTransform: "uppercase",
@@ -56,7 +56,7 @@ export function ComponentBars({ components }: Props) {
             style={{
               width: 40,
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: 12,
               color: "var(--text-secondary)",
               textAlign: "right",
             }}
@@ -86,7 +86,7 @@ export function ComponentBars({ components }: Props) {
             style={{
               width: 44,
               fontFamily: "var(--font-mono)",
-              fontSize: 10,
+              fontSize: 12,
               color: barColor(bar.value),
               textAlign: "right",
             }}

@@ -3,7 +3,7 @@ import { TerminalShell } from "../components/layout/TerminalShell";
 export function RiskDisclosurePage() {
   return (
     <TerminalShell cri={null}>
-      <div style={{ maxWidth: 700, margin: "0 auto", fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 2 }}>
+      <div style={{ maxWidth: 700, margin: "0 auto", fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 2 }}>
         <h1 style={{ fontFamily: "var(--font-mono)", fontSize: 18, fontWeight: 600, color: "var(--text-primary)", marginBottom: 24 }}>
           Risk Disclosure
         </h1>
@@ -99,7 +99,7 @@ export function RiskDisclosurePage() {
           borderRadius: 4,
           textAlign: "center",
         }}>
-          <p style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", margin: 0 }}>
+          <p style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", margin: 0 }}>
             By using SIBT, you acknowledge that you have read, understood, and agree to this Risk Disclosure.
           </p>
         </div>

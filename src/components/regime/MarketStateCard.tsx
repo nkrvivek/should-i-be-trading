@@ -46,7 +46,7 @@ export function MarketStateCard({ regime }: Props) {
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", flexWrap: "wrap", gap: 16 }}>
         {/* Left: Market State */}
         <div>
-          <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
             MARKET STATE
           </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 28, fontWeight: 700, color, lineHeight: 1.2 }}>
@@ -57,7 +57,7 @@ export function MarketStateCard({ regime }: Props) {
         {/* Right: Scores + Stance */}
         <div style={{ display: "flex", gap: 32, alignItems: "center" }}>
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
               COMPOSITE RISK
             </div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 36, fontWeight: 700, color }}>
@@ -66,7 +66,7 @@ export function MarketStateCard({ regime }: Props) {
           </div>
 
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
               CONFIDENCE
             </div>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 36, fontWeight: 700, color: "var(--text-primary)" }}>
@@ -75,7 +75,7 @@ export function MarketStateCard({ regime }: Props) {
           </div>
 
           <div style={{ textAlign: "center" }}>
-            <div style={{ fontFamily: "var(--font-sans)", fontSize: 9, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 4 }}>
               ACTION STANCE
             </div>
             <div
@@ -111,7 +111,7 @@ export function MarketStateCard({ regime }: Props) {
                 border: "1px solid var(--warning)",
                 background: "color-mix(in srgb, var(--warning) 8%, transparent)",
                 fontFamily: "var(--font-mono)",
-                fontSize: 11,
+                fontSize: 13,
                 color: "var(--warning)",
               }}
             >

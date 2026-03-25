@@ -39,7 +39,7 @@ export function SettingsPage() {
                 style={{
                   padding: "6px 16px",
                   fontFamily: "var(--font-mono)",
-                  fontSize: 11,
+                  fontSize: 13,
                   fontWeight: 500,
                   letterSpacing: "0.03em",
                   color: activeTab === tab.id ? "var(--signal-core)" : "var(--text-muted)",
@@ -62,7 +62,7 @@ export function SettingsPage() {
                 border: "1px solid var(--border-dim)",
                 borderRadius: 4,
                 fontFamily: "var(--font-mono)",
-                fontSize: 9,
+                fontSize: 11,
                 color: "var(--text-muted)",
                 cursor: "pointer",
               }}

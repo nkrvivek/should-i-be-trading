@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { Panel } from "../components/layout/Panel";
 import { useEarningsCalendar, type EarningsEntry } from "../hooks/useEarningsCalendar";
+import { EarningsSummaryPanel } from "../components/ai/EarningsSummaryPanel";
 
 const HOUR_LABELS: Record<string, { label: string; color: string }> = {
   bmo: { label: "PRE-MKT", color: "var(--warning)" },
@@ -72,6 +73,7 @@ export function EarningsPage() {
   const { earnings, loading, error, refresh } = useEarningsCalendar(6);
   const [sectorFilter, setSectorFilter] = useState<string | null>(null);
   const [hourFilter, setHourFilter] = useState<string | null>(null);
+  const [summaryTarget, setSummaryTarget] = useState<{ symbol: string; quarter: number; year: number } | null>(null);
 
   // Get unique sectors
   const sectors = [...new Set(earnings.map((e) => e.sector ?? "Other"))].sort();
@@ -106,20 +108,20 @@ export function EarningsPage() {
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div>
               <h2 style={{
-                fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700,
+                fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700,
                 color: "var(--text-primary)", margin: 0,
               }}>
                 Earnings Calendar
               </h2>
               <p style={{
-                fontFamily: "var(--font-sans)", fontSize: 11,
+                fontFamily: "var(--font-sans)", fontSize: 13,
                 color: "var(--text-muted)", margin: "4px 0 0",
               }}>
                 Upcoming earnings for {earnings.length} major stocks across {sectors.length} sectors.
                 {thisWeek.length > 0 && ` ${thisWeek.length} reporting this week.`}
               </p>
             </div>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
               Next 6 weeks
             </div>
           </div>
@@ -153,7 +155,7 @@ export function EarningsPage() {
         </div>
 
         {error && (
-          <div style={{ padding: "8px 12px", background: "rgba(232, 93, 108, 0.1)", border: "1px solid var(--negative)", borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--negative)" }}>
+          <div style={{ padding: "8px 12px", background: "rgba(232, 93, 108, 0.1)", border: "1px solid var(--negative)", borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--negative)" }}>
             {error}
           </div>
         )}
@@ -161,14 +163,14 @@ export function EarningsPage() {
         {/* Weekly groupings */}
         {loading && earnings.length === 0 ? (
           <Panel title="Loading...">
-            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
               Fetching earnings calendar...
             </div>
           </Panel>
         ) : (
           weeks.map(({ weekLabel, entries }) => (
             <Panel key={weekLabel} title={`Week of ${weekLabel}`} onRefresh={refresh} loading={loading}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
                 <thead>
                   <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
                     <Th>Date</Th>
@@ -181,6 +183,7 @@ export function EarningsPage() {
                     <Th>Result</Th>
                     <Th>Analyst</Th>
                     <Th>Track</Th>
+                    <Th>AI</Th>
                   </tr>
                 </thead>
                 <tbody>
@@ -198,7 +201,7 @@ export function EarningsPage() {
                         <td style={{ padding: "0 8px" }}>
                           <span style={{
                             display: "inline-block", padding: "1px 6px", borderRadius: 999,
-                            fontSize: 9, color: SECTOR_COLORS[e.sector ?? "Other"],
+                            fontSize: 11, color: SECTOR_COLORS[e.sector ?? "Other"],
                             border: `1px solid ${SECTOR_COLORS[e.sector ?? "Other"]}`,
                           }}>
                             {e.sector}
@@ -207,7 +210,7 @@ export function EarningsPage() {
                         <td style={{ padding: "0 8px" }}>
                           <span style={{
                             display: "inline-block", padding: "1px 6px", borderRadius: 999,
-                            fontSize: 9, fontWeight: 600, color: hourCfg.color,
+                            fontSize: 11, fontWeight: 600, color: hourCfg.color,
                             border: `1px solid ${hourCfg.color}`,
                           }}>
                             {hourCfg.label}
@@ -225,7 +228,7 @@ export function EarningsPage() {
                         <td style={{ padding: "0 8px" }}>
                           <span style={{
                             display: "inline-block", padding: "1px 6px", borderRadius: 999,
-                            fontSize: 9, fontWeight: 600, color: expectation.color,
+                            fontSize: 11, fontWeight: 600, color: expectation.color,
                             border: `1px solid ${expectation.color}`,
                           }}>
                             {expectation.label}
@@ -236,14 +239,14 @@ export function EarningsPage() {
                           {e.analyst ? (
                             <span style={{
                               display: "inline-block", padding: "1px 6px", borderRadius: 999,
-                              fontSize: 9, fontWeight: 600,
+                              fontSize: 11, fontWeight: 600,
                               color: e.analyst.buyPct >= 70 ? "var(--positive)" : e.analyst.buyPct >= 40 ? "var(--warning)" : "var(--negative)",
                               border: `1px solid ${e.analyst.buyPct >= 70 ? "var(--positive)" : e.analyst.buyPct >= 40 ? "var(--warning)" : "var(--negative)"}`,
                             }}>
                               {e.analyst.signal} ({e.analyst.buyPct.toFixed(0)}%)
                             </span>
                           ) : (
-                            <span style={{ fontSize: 9, color: "var(--text-muted)" }}>---</span>
+                            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>---</span>
                           )}
                         </td>
                         {/* EPS track record */}
@@ -261,7 +264,7 @@ export function EarningsPage() {
                                     style={{
                                       display: "inline-flex", alignItems: "center", justifyContent: "center",
                                       minWidth: 14, height: 14, borderRadius: 2, padding: "0 2px",
-                                      fontSize: 7, fontWeight: 700, fontFamily: "var(--font-mono)",
+                                      fontSize: 9, fontWeight: 700, fontFamily: "var(--font-mono)",
                                       background: isBeat ? "var(--positive)" : isMiss ? "var(--negative)" : "var(--text-muted)",
                                       color: "#000",
                                       opacity: 0.9,
@@ -274,8 +277,28 @@ export function EarningsPage() {
                               })}
                             </div>
                           ) : (
-                            <span style={{ fontSize: 9, color: "var(--text-muted)" }}>---</span>
+                            <span style={{ fontSize: 11, color: "var(--text-muted)" }}>---</span>
                           )}
+                        </td>
+                        <td style={{ padding: "0 8px" }}>
+                          <button
+                            onClick={() => setSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year })}
+                            style={{
+                              padding: "1px 6px",
+                              borderRadius: 999,
+                              fontFamily: "var(--font-mono)",
+                              fontSize: 11,
+                              fontWeight: 600,
+                              color: "var(--info)",
+                              background: "transparent",
+                              border: "1px solid var(--info)",
+                              cursor: "pointer",
+                              opacity: 0.8,
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            SUMMARIZE
+                          </button>
                         </td>
                       </tr>
                     );
@@ -288,7 +311,7 @@ export function EarningsPage() {
 
         {filtered.length === 0 && !loading && (
           <Panel title="No Earnings">
-            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+            <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
               No major earnings found for the selected filters.
             </div>
           </Panel>
@@ -296,7 +319,7 @@ export function EarningsPage() {
 
         {/* Disclaimer */}
         <div style={{
-          padding: "8px 12px", fontFamily: "var(--font-sans)", fontSize: 10,
+          padding: "8px 12px", fontFamily: "var(--font-sans)", fontSize: 12,
           color: "var(--text-muted)", fontStyle: "italic",
           borderTop: "1px solid var(--border-dim)",
         }}>
@@ -304,6 +327,16 @@ export function EarningsPage() {
           Results and expectations are for informational purposes only and do not constitute investment advice.
         </div>
       </div>
+
+      {/* AI Summary slide-out panel */}
+      {summaryTarget && (
+        <EarningsSummaryPanel
+          symbol={summaryTarget.symbol}
+          quarter={summaryTarget.quarter}
+          year={summaryTarget.year}
+          onClose={() => setSummaryTarget(null)}
+        />
+      )}
     </TerminalShell>
   );
 }
@@ -317,7 +350,7 @@ function FilterChip({ label, count, active, onClick, color }: {
       style={{
         display: "inline-flex", alignItems: "center", gap: 4,
         padding: "3px 10px", borderRadius: 999,
-        fontFamily: "var(--font-mono)", fontSize: 9, fontWeight: 600,
+        fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
         color: active ? "#000" : color,
         background: active ? color : "transparent",
         border: `1px solid ${color}`,
@@ -334,7 +367,7 @@ function FilterChip({ label, count, active, onClick, color }: {
 function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
   return (
     <th style={{
-      padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 9,
+      padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 11,
       color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em",
     }}>
       {children}

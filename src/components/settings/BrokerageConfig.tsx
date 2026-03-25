@@ -15,7 +15,7 @@ export function BrokerageConfig() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
         Brokerage Connection
       </div>
 
@@ -25,7 +25,7 @@ export function BrokerageConfig() {
           <Badge label="SELF-HOSTED" variant="info" />
         </div>
 
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", marginBottom: 16, lineHeight: 1.6 }}>
           SIBT connects to your locally-running IB Gateway and WebSocket relay.
           You maintain full control of your brokerage connection — nothing is hosted by us.
         </div>
@@ -49,7 +49,7 @@ export function BrokerageConfig() {
             border: "none",
             borderRadius: 4,
             fontFamily: "var(--font-mono)",
-            fontSize: 11,
+            fontSize: 13,
             fontWeight: 500,
             color: "var(--accent-text)",
             cursor: "pointer",
@@ -61,8 +61,8 @@ export function BrokerageConfig() {
       </div>
 
       <div style={{ padding: 16, background: "var(--bg-panel-raised)", borderRadius: 4, border: "1px solid var(--border-dim)" }}>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, marginBottom: 8 }}>Setup Guide</div>
-        <ol style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-secondary)", lineHeight: 2, paddingLeft: 20 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, marginBottom: 8 }}>Setup Guide</div>
+        <ol style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 2, paddingLeft: 20 }}>
           <li>Install IB Gateway from <a href="https://www.interactivebrokers.com/en/trading/ibgateway-stable.php" target="_blank" rel="noopener noreferrer" style={{ color: "var(--signal-core)" }}>interactivebrokers.com</a></li>
           <li>Configure IB Gateway for API access on port 4001 (live) or 4002 (paper)</li>
           <li>Start the WebSocket relay server (included in the Radon package)</li>
@@ -77,7 +77,7 @@ export function BrokerageConfig() {
 const labelStyle: React.CSSProperties = {
   display: "block",
   fontFamily: "var(--font-sans)",
-  fontSize: 10,
+  fontSize: 12,
   fontWeight: 500,
   color: "var(--text-secondary)",
   textTransform: "uppercase",
@@ -92,14 +92,14 @@ const inputStyle: React.CSSProperties = {
   border: "1px solid var(--border-dim)",
   borderRadius: 4,
   fontFamily: "var(--font-mono)",
-  fontSize: 12,
+  fontSize: 14,
   color: "var(--text-primary)",
   outline: "none",
 };
 
 const hintStyle: React.CSSProperties = {
   fontFamily: "var(--font-sans)",
-  fontSize: 9,
+  fontSize: 11,
   color: "var(--text-muted)",
   marginTop: 2,
 };

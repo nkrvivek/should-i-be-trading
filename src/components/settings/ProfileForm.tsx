@@ -30,17 +30,17 @@ export function ProfileForm() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
         Profile
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>Plan:</span>
+        <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>Plan:</span>
         <Badge label={(profile?.tier ?? "free").toUpperCase()} variant={tierVariant} />
       </div>
 
       <div>
-        <label style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 10, fontWeight: 500, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
+        <label style={{ display: "block", fontFamily: "var(--font-sans)", fontSize: 12, fontWeight: 500, color: "var(--text-secondary)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>
           Display Name
         </label>
         <input
@@ -53,14 +53,14 @@ export function ProfileForm() {
             border: "1px solid var(--border-dim)",
             borderRadius: 4,
             fontFamily: "var(--font-sans)",
-            fontSize: 12,
+            fontSize: 14,
             color: "var(--text-primary)",
             outline: "none",
           }}
         />
       </div>
 
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
         {user?.email}
       </div>
 
@@ -73,7 +73,7 @@ export function ProfileForm() {
           border: "none",
           borderRadius: 4,
           fontFamily: "var(--font-mono)",
-          fontSize: 11,
+          fontSize: 13,
           fontWeight: 500,
           color: "var(--accent-text)",
           cursor: "pointer",

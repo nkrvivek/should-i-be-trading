@@ -64,7 +64,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
     const code = lines.slice(1, lines[lines.length - 1]?.trim() === "```" ? -1 : undefined).join("\n");
     return (
       <pre key={i} style={{
-        fontFamily: "var(--font-mono)", fontSize: 11, lineHeight: 1.5,
+        fontFamily: "var(--font-mono)", fontSize: 13, lineHeight: 1.5,
         background: "var(--bg-panel-raised)", border: "1px solid var(--border-dim)",
         borderRadius: 4, padding: "10px 12px", margin: "8px 0",
         overflow: "auto", whiteSpace: "pre-wrap", color: "var(--text-primary)",
@@ -88,7 +88,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
   if (block.startsWith("### ")) {
     return (
       <div key={i} style={{
-        fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600,
+        fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600,
         color: "var(--signal-core)", letterSpacing: "0.04em",
         marginTop: i > 0 ? 14 : 0, marginBottom: 6,
       }}>
@@ -101,7 +101,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
   if (block.startsWith("## ")) {
     return (
       <div key={i} style={{
-        fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
+        fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 600,
         color: "var(--signal-core)", textTransform: "uppercase",
         letterSpacing: "0.04em", marginTop: i > 0 ? 16 : 0, marginBottom: 6,
       }}>
@@ -115,7 +115,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
   if (headerMatch) {
     return (
       <div key={i} style={{
-        fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
+        fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
         color: "var(--signal-strong)", textTransform: "uppercase",
         letterSpacing: "0.05em",
         marginTop: i > 0 ? 16 : 0, marginBottom: 6,
@@ -134,7 +134,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
       <div key={i} style={{
         borderLeft: "3px solid var(--signal-core)", paddingLeft: 12,
         margin: "8px 0", fontStyle: "italic", color: "var(--text-secondary)",
-        fontFamily: "var(--font-sans)", fontSize: 12, lineHeight: 1.5,
+        fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.5,
       }}>
         {renderInline(content)}
       </div>
@@ -149,7 +149,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
           <li key={j} style={{ marginBottom: 4, position: "relative", paddingLeft: 12 }}>
             <span style={{
               position: "absolute", left: 0, color: "var(--signal-core)",
-              fontFamily: "var(--font-mono)", fontSize: 10,
+              fontFamily: "var(--font-mono)", fontSize: 12,
             }}>
               {"\u25B8"}
             </span>
@@ -171,7 +171,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
               <div key={j} style={{ paddingLeft: 12, marginBottom: 4, position: "relative" }}>
                 <span style={{
                   position: "absolute", left: 0, color: "var(--signal-core)",
-                  fontFamily: "var(--font-mono)", fontSize: 10,
+                  fontFamily: "var(--font-mono)", fontSize: 12,
                 }}>
                   {"\u25B8"}
                 </span>
@@ -183,7 +183,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
             return (
               <div key={j} style={{
                 borderLeft: "3px solid var(--signal-core)", paddingLeft: 10,
-                fontStyle: "italic", color: "var(--text-secondary)", fontSize: 12, marginBottom: 4,
+                fontStyle: "italic", color: "var(--text-secondary)", fontSize: 14, marginBottom: 4,
               }}>
                 {renderInline(lt.replace(/^>\s?/, ""))}
               </div>
@@ -220,7 +220,7 @@ function renderTable(block: string, key: number): React.ReactNode {
     <div key={key} style={{ overflow: "auto", margin: "8px 0" }}>
       <table style={{
         width: "100%", borderCollapse: "collapse",
-        fontFamily: "var(--font-mono)", fontSize: 11,
+        fontFamily: "var(--font-mono)", fontSize: 13,
         border: "1px solid var(--border-dim)", borderRadius: 4,
       }}>
         <thead>
@@ -228,7 +228,7 @@ function renderTable(block: string, key: number): React.ReactNode {
             {headers.map((h, j) => (
               <th key={j} style={{
                 padding: "6px 10px", textAlign: "left", fontWeight: 600,
-                fontSize: 10, color: "var(--text-secondary)",
+                fontSize: 12, color: "var(--text-secondary)",
                 borderBottom: "1px solid var(--border-dim)",
                 textTransform: "uppercase", letterSpacing: "0.03em",
               }}>
@@ -269,7 +269,7 @@ function renderInline(text: string): React.ReactNode[] {
     if (part.startsWith("`") && part.endsWith("`")) {
       return (
         <code key={i} style={{
-          fontFamily: "var(--font-mono)", fontSize: 11,
+          fontFamily: "var(--font-mono)", fontSize: 13,
           color: "var(--signal-core)", background: "var(--bg-panel-raised)",
           padding: "1px 4px", borderRadius: 2,
         }}>

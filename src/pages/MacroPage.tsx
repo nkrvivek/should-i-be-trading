@@ -29,7 +29,7 @@ export function MacroPage() {
           {yieldCurve ? (
             <YieldCurveChart data={yieldCurve} />
           ) : (
-            <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+            <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
               {ycLoading ? "Loading yield curve..." : "Configure Supabase to enable FRED data"}
             </div>
           )}

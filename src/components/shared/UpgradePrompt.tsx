@@ -39,10 +39,10 @@ export function UpgradePrompt({ feature, children }: Props) {
         }}
       >
         {children}
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 500, color: "var(--text-primary)" }}>
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 500, color: "var(--text-primary)" }}>
           {label} requires {requiredTier.toUpperCase()}
         </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", textAlign: "center", maxWidth: 400 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", textAlign: "center", maxWidth: 400 }}>
           Upgrade your plan to access {label.toLowerCase()}, along with real-time data streaming,
           portfolio analytics, and AI-powered market analysis.
         </div>
@@ -55,7 +55,7 @@ export function UpgradePrompt({ feature, children }: Props) {
               border: "none",
               borderRadius: 4,
               fontFamily: "var(--font-mono)",
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: 500,
               color: "var(--accent-text)",
               cursor: "pointer",
@@ -71,7 +71,7 @@ export function UpgradePrompt({ feature, children }: Props) {
               border: "1px solid var(--border-dim)",
               borderRadius: 4,
               fontFamily: "var(--font-mono)",
-              fontSize: 12,
+              fontSize: 14,
               fontWeight: 500,
               color: "var(--text-secondary)",
               cursor: "pointer",

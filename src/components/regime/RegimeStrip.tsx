@@ -72,7 +72,7 @@ export function RegimeStrip({ cri, prices, connected }: Props) {
         numericValue={cri.cor1m}
         tone={cri.cor1m > 60 ? "negative" : "default"}
         change={
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
             {cri.cor1m_5d_change >= 0 ? "+" : ""}{cri.cor1m_5d_change.toFixed(1)} 5d
           </span>
         }
@@ -115,7 +115,7 @@ function MetricCell({
             <span
               style={{
                 fontFamily: "var(--font-sans)",
-                fontSize: 10,
+                fontSize: 12,
                 fontWeight: 500,
                 color: "var(--text-muted)",
                 textTransform: "uppercase",
@@ -129,7 +129,7 @@ function MetricCell({
           <span
             style={{
               fontFamily: "var(--font-sans)",
-              fontSize: 10,
+              fontSize: 12,
               fontWeight: 500,
               color: "var(--text-muted)",
               textTransform: "uppercase",

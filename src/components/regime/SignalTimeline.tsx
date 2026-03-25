@@ -17,7 +17,7 @@ function signalColor(signal: string): string {
 export function SignalTimeline({ history }: Props) {
   if (history.length === 0) {
     return (
-      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+      <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
         No signal history yet. Verdicts will be recorded as they change.
       </div>
     );
@@ -46,15 +46,15 @@ export function SignalTimeline({ history }: Props) {
           >
             {/* Timestamp */}
             <div style={{ flexShrink: 0, width: 80 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)" }}>{dateStr}</div>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 9, color: "var(--text-muted)" }}>{timeStr}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>{dateStr}</div>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>{timeStr}</div>
             </div>
 
             {/* Signal */}
             <div style={{ flexShrink: 0, width: 80 }}>
               <span style={{
                 fontFamily: "var(--font-mono)",
-                fontSize: 11,
+                fontSize: 13,
                 fontWeight: 600,
                 color: signalColor(entry.signal),
               }}>
@@ -64,10 +64,10 @@ export function SignalTimeline({ history }: Props) {
 
             {/* Context */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-secondary)" }}>
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-secondary)" }}>
                 CRI {fmt(entry.criScore)} | VIX {fmt(entry.vix)} | {entry.vixRegime}
               </div>
-              <div style={{ fontFamily: "var(--font-sans)", fontSize: 10, color: "var(--text-muted)", marginTop: 2 }}>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", marginTop: 2 }}>
                 {entry.reasons[0]}
               </div>
             </div>

@@ -185,13 +185,23 @@ export function LandingPage() {
             tag="FREE"
           />
           <FeatureCard
-            title="Signal Backtester"
-            description="Test what would have happened if you only traded on TRADE days and sat out NO TRADE days. Simulates 3-month history using real market quality scores. Compare your strategy vs buy-and-hold SPY."
+            title="Strategy Simulator"
+            description="Browse 19 curated trading strategies and visualize payoff profiles interactively. Iron condors, covered calls, straddles — see max profit, max loss, breakevens, and explore what-if scenarios with a price slider."
             tag="STARTER"
           />
           <FeatureCard
-            title="Push Notifications"
-            description="Get notified when the market regime flips. Verdict changes, VIX spikes, insider buying surges, or earnings surprises — delivered to your browser. Never miss a signal shift."
+            title="AI Stock Screener"
+            description={"Describe what you're looking for in plain English \u2014 \"show me tech stocks with PE under 20\" \u2014 and let Claude + Finnhub find matching stocks from 70+ major tickers."}
+            tag="PRO"
+          />
+          <FeatureCard
+            title="AI Earnings Summaries"
+            description="One-click TLDR of any earnings call. Exa finds the transcript, Claude distills it into Key Numbers, Guidance, Risks, and Notable Quotes — read it in 30 seconds."
+            tag="PRO"
+          />
+          <FeatureCard
+            title="Signal Backtester"
+            description="Test what would have happened if you only traded on TRADE days and sat out NO TRADE days. Simulates 3-month history using real market quality scores. Compare your strategy vs buy-and-hold SPY."
             tag="STARTER"
           />
           <FeatureCard

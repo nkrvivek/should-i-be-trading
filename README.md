@@ -36,8 +36,10 @@ FSI:                   (HYG/TLT) / (Vol x HY Spread)
 | **Earnings** | Free | Sector-wise earnings calendar, 80+ major stocks, pre/after market timing, EPS/revenue estimates, beat/miss tracking |
 | **Regime** | Free | Market Regime & Fragility Monitor: 3 pillars, 8 signals, FSI, composite score, market state, action stance |
 | **Macro** | Free | FRED yield curves, economic calendar (FRED releases + Finnhub earnings), macro indicators |
+| **Strategies** | Starter | Strategy library (19 strategies) + interactive payoff visualizer with SVG charts, regime-aware highlights |
 | **Terminal** | Pro | Radon integration: dark pool flow, options flow, real-time portfolio, orders, AI daily briefing, Claude chat |
-| **Analysis** | Pro | Deep ticker analysis with Claude AI, Exa web research |
+| **Analysis** | Pro | Deep ticker analysis with Claude AI, Exa web research, AI stock screener (natural language) |
+| **Earnings** | Free | Earnings calendar + AI earnings summaries (Pro) with one-click TLDR via Exa + Claude |
 | **Learn** | Free | Searchable glossary of 35+ trading terms and metrics |
 | **Settings** | Free | API key management (BYOK), theme toggle, profile |
 
@@ -109,8 +111,30 @@ Arc gauge on the dashboard mapping Market Quality Score to sentiment zones: Extr
 
 ### TradingView Charts
 - Full advanced chart embed with candlesticks and MACD
+- Fullscreen expand mode for detailed technical analysis
 - Symbol search, auto-adapts to light/dark theme
 - No API key needed
+
+### Strategy Simulator (Starter+)
+- 19 curated strategies: options (covered call, iron condor, straddles, spreads, butterfly, collar), stocks (momentum, mean reversion, pairs), ETFs (sector rotation, dual momentum), volatility
+- Interactive payoff visualizer with SVG charting
+- Configurable legs: buy/sell calls, puts, stock with custom strikes and premiums
+- Real-time metrics: max profit, max loss, breakevens, risk/reward ratio
+- Regime-aware: highlights strategies matching current SIBT signal + VIX level
+- Price-at-expiry slider for what-if analysis
+- Inspired by *151 Trading Strategies* (Kakushadze & Serur, 2018)
+
+### AI Stock Screener (Pro)
+- Natural language stock screening: "show me tech stocks with PE under 20"
+- Claude interprets queries into structured filters
+- Screens 70+ major tickers with live Finnhub fundamental metrics
+- Dynamic result columns based on query context
+
+### AI Earnings Summaries (Pro)
+- One-click AI summary of any earnings call transcript
+- 3-stage pipeline: Exa search → read transcript → Claude summarize
+- Structured output: TLDR, Key Numbers, Guidance, Risks, Notable Quotes
+- Works for any ticker on the earnings calendar
 
 ## Architecture
 
@@ -233,9 +257,12 @@ npm test        # Tests
 | Macro Dashboard | Yes | Yes | Yes | Yes |
 | Glossary | Yes | Yes | Yes | Yes |
 | Signal Backtester | — | Yes | Yes | Yes |
+| Strategy Simulator | — | Yes | Yes | Yes |
 | Push Notifications | — | Yes | Yes | Yes |
 | Regime Signal Interpretations | — | Yes | Yes | Yes |
 | AI Briefing | 5/day | 15/day | 25/day | 100/day |
+| AI Stock Screener | — | — | Yes | Yes |
+| AI Earnings Summaries | — | — | Yes | Yes |
 | Terminal (Dark Pool) | — | — | Yes | Yes |
 | AI Analysis | — | — | Yes | Yes |
 | Automated Trading | — | — | — | Yes |

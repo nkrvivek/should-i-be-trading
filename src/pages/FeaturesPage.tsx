@@ -156,6 +156,96 @@ const FEATURES: FeatureSection[] = [
 └──────────────────────────────────────────────┘`,
   },
   {
+    title: "Strategy Simulator & Payoff Visualizer",
+    tier: "STARTER",
+    description: "Browse 19 curated trading strategies and visualize their payoff profiles. Interactive diagram builder for options, stocks, ETFs, and volatility strategies.",
+    details: [
+      "Strategy library with options, stocks, ETF, and volatility strategies",
+      "Regime-aware: highlights strategies matching current market signal + VIX",
+      "Interactive payoff diagram with SVG charting",
+      "Configurable legs: buy/sell calls, puts, stock with custom strikes and premiums",
+      "Real-time metrics: max profit, max loss, breakevens, risk/reward ratio",
+      "Price-at-expiry slider for what-if analysis",
+      "One-click Simulate from any library strategy",
+      "Inspired by 151 Trading Strategies (Kakushadze & Serur)",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  STRATEGY SIMULATOR         [LIBRARY] [SIM] │
+│                                              │
+│  CURRENT REGIME  CAUTION  VIX: 22           │
+│  ● Covered Call    ● Iron Condor             │
+│  ● Bull Call Spread  ● Long Straddle         │
+│                                              │
+│  SPY $500.00                                 │
+│  SELL 1 PUT  475  $7.50                      │
+│  BUY  1 PUT  450  $3.00                      │
+│  SELL 1 CALL 525  $7.50                      │
+│  BUY  1 CALL 550  $3.00                      │
+│                                              │
+│  MAX↑ +$900   MAX↓ -$1,600   BE $466/$534  │
+│  ████████████████████████████████████████    │
+│        ╱▔▔▔▔▔▔▔▔▔▔▔▔▔▔▔╲                  │
+│  ─────╱                  ╲─────  $0         │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "AI Stock Screener",
+    tier: "PRO",
+    description: "Describe what you're looking for in plain English and let AI find matching stocks. Natural language queries filtered against live fundamental metrics.",
+    details: [
+      'Natural language queries: "show me tech stocks with PE under 20"',
+      "Claude interprets query into structured filters",
+      "Screens 70+ major tickers with live Finnhub metrics",
+      "Dynamic result columns based on query context",
+      "Example queries for quick exploration",
+      "Powered by Claude + Finnhub fundamentals",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  AI STOCK SCREENER                           │
+│                                              │
+│  > show me undervalued healthcare stocks     │
+│    with strong margins                       │
+│                              [SCREEN]        │
+│                                              │
+│  TICKER  SECTOR       PE    MARGIN  DIV%    │
+│  LLY    Healthcare   32.4   38.2%  0.8%    │
+│  MRK    Healthcare   14.8   42.1%  2.4%    │
+│  BMY    Healthcare    8.2   28.6%  4.2%    │
+│  ABBV   Healthcare   15.1   35.8%  3.6%    │
+│                                              │
+│  4 results from 70+ tickers                  │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "AI Earnings Summaries",
+    tier: "PRO",
+    description: "One-click AI summary of any earnings call. Exa finds the transcript, Claude distills it into a structured breakdown you can read in 30 seconds.",
+    details: [
+      "TLDR, Key Numbers, Guidance, Risks, Notable Quotes",
+      "3-stage pipeline: Exa search → read transcript → Claude summarize",
+      "Works for any ticker on the earnings calendar",
+      "Slide-out panel with loading states per stage",
+      "Powered by Exa + Claude",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  EARNINGS SUMMARY — AAPL Q1 2026            │
+│                                              │
+│  TLDR: Revenue beat estimates by 4%.        │
+│  Services hit record $26B. iPhone revenue   │
+│  flat YoY but ASP up 6%.                    │
+│                                              │
+│  KEY NUMBERS                                 │
+│  Revenue: $124.3B (est $119.5B) ✓           │
+│  EPS: $2.42 (est $2.36) ✓                  │
+│  Services: $26.1B (+14% YoY)               │
+│                                              │
+│  GUIDANCE: Q2 rev $89-93B (above est)       │
+│  RISKS: China tariffs, AI capex ramp        │
+│  QUOTE: "Our installed base has never       │
+│  been larger" — Tim Cook                    │
+└──────────────────────────────────────────────┘`,
+  },
+  {
     title: "AI Market Confidant",
     tier: "PRO",
     description: "Claude analyzes your regime data, insider signals, and market context. Generate daily briefings or ask questions about any ticker.",

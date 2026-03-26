@@ -1,5 +1,5 @@
 import type { BrokerOrder } from "../brokers/types";
-import type { WashSaleViolation } from "./types";
+import type { WashSaleTradeRecord, WashSaleViolation } from "./types";
 
 const WASH_SALE_WINDOW_DAYS = 30;
 
@@ -88,4 +88,80 @@ export function detectWashSales(trades: BrokerOrder[]): WashSaleViolation[] {
   }
 
   return violations.sort((a, b) => new Date(b.lossDate).getTime() - new Date(a.lossDate).getTime());
+}
+
+/** Strip option suffixes to get underlying symbol for substantially identical check */
+function getUnderlying(symbol: string): string {
+  // "AAPL 230120C150" → "AAPL", "BRK.B" → "BRK.B", "SPY241220P580" → "SPY"
+  return symbol.split(/[\s\d]/)[0].replace(/[^A-Za-z.]/g, "").toUpperCase();
+}
+
+/**
+ * Detect wash sale violations from a flat list of historical trade records.
+ * Unlike detectWashSales (which works with BrokerOrder), this accepts
+ * pre-processed trade records with explicit cost basis and proceeds fields,
+ * and cross-checks stock ↔ option wash sales via the underlying symbol.
+ */
+export function detectWashSalesFromHistory(trades: WashSaleTradeRecord[]): WashSaleViolation[] {
+  const violations: WashSaleViolation[] = [];
+
+  // Sort chronologically
+  const sorted = [...trades].sort(
+    (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+  );
+
+  // Group by underlying symbol (catches stock ↔ option wash sales)
+  const byUnderlying: Record<string, WashSaleTradeRecord[]> = {};
+  for (const t of sorted) {
+    const key = getUnderlying(t.symbol);
+    if (!byUnderlying[key]) byUnderlying[key] = [];
+    byUnderlying[key].push(t);
+  }
+
+  for (const [underlying, group] of Object.entries(byUnderlying)) {
+    const sells = group.filter((t) => t.side === "sell");
+    const buys = group.filter((t) => t.side === "buy");
+
+    for (const sell of sells) {
+      const proceeds = sell.proceeds ?? sell.price * sell.qty;
+      const costBasis = sell.costBasis ?? 0;
+      const loss = proceeds - costBasis;
+
+      if (loss >= 0) continue; // Not a loss sale
+
+      const sellDate = new Date(sell.date);
+      let flagged = false;
+
+      // Scan buys within -30 to +30 days of the loss sale
+      for (const buy of buys) {
+        const buyDate = new Date(buy.date);
+        const daysDiff = Math.round(
+          (buyDate.getTime() - sellDate.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        if (Math.abs(daysDiff) <= WASH_SALE_WINDOW_DAYS && daysDiff !== 0) {
+          const disallowedLoss = Math.abs(loss);
+          const buyPrice = buy.price;
+          const adjustedBasis = buyPrice + disallowedLoss / buy.qty;
+
+          violations.push({
+            symbol: sell.symbol,
+            lossDate: sell.date,
+            lossAmount: disallowedLoss,
+            repurchaseDate: buy.date,
+            repurchasePrice: buyPrice,
+            disallowedLoss,
+            adjustedBasis,
+            daysApart: Math.abs(daysDiff),
+          });
+          flagged = true;
+          break; // Only flag once per loss sale
+        }
+      }
+    }
+  }
+
+  return violations.sort(
+    (a, b) => new Date(b.lossDate).getTime() - new Date(a.lossDate).getTime()
+  );
 }

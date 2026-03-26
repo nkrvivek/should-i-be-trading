@@ -1,10 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, lazy, Suspense } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
 import FlowAnalysisPanel from "../components/trading/FlowAnalysisPanel";
 import StrategySuggester from "../components/trading/StrategySuggester";
+import StrategyAnalysisPanel from "../components/portfolio/StrategyAnalysisPanel";
+import WashSalePanel from "../components/portfolio/WashSalePanel";
+import { detectWashSales } from "../lib/strategy/washSaleDetector";
 import type { OrderRequest } from "../lib/brokers/types";
+import type { SimulatorLeg } from "../lib/strategy/payoff";
+
+const CsvUploadPanel = lazy(() => import("../components/portfolio/CsvUploadPanel"));
+const ManualPortfolioTable = lazy(() => import("../components/portfolio/ManualPortfolioTable"));
 
 const panelStyle: React.CSSProperties = {
   background: "var(--bg-panel, #fff)",
@@ -30,7 +37,7 @@ const monoStyle: React.CSSProperties = {
 
 export default function TradingPage() {
   const { account, positions, orders, loading, error, activeBroker, placeOrder, cancelOrder, refresh, reconnect } = useBrokerStore();
-  const [tab, setTab] = useState<"portfolio" | "orders" | "journal" | "strategies" | "flow">("portfolio");
+  const [tab, setTab] = useState<"portfolio" | "orders" | "journal" | "strategies" | "flow" | "import">("portfolio");
 
   // Auto-reconnect when broker slug is saved but instance isn't connected yet (page reload)
   useEffect(() => {
@@ -57,46 +64,65 @@ export default function TradingPage() {
         )}
       </div>
 
-      {!activeBroker ? (
-        <NoBrokerConnected />
-      ) : (
-        <>
-          {/* Account Summary */}
-          {account && <AccountSummary account={account} />}
-          {error && <div style={{ ...panelStyle, background: "#fef2f2", color: "#dc2626", border: "1px solid #fca5a5" }}>{error}</div>}
+      {/* Account Summary (when broker connected) */}
+      {activeBroker && account && <AccountSummary account={account} />}
+      {activeBroker && error && <div style={{ ...panelStyle, background: "#fef2f2", color: "#dc2626", border: "1px solid #fca5a5" }}>{error}</div>}
 
-          {/* Tab Navigation */}
-          <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "1px solid var(--border-dim)" }}>
-            {(["portfolio", "orders", "flow", "journal", "strategies"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTab(t)}
-                style={{
-                  ...monoStyle,
-                  fontSize: 14,
-                  padding: "8px 20px",
-                  border: "none",
-                  borderBottom: tab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
-                  background: "none",
-                  color: tab === t ? "var(--signal-core)" : "var(--text-secondary)",
-                  cursor: "pointer",
-                  fontWeight: tab === t ? 600 : 400,
-                  textTransform: "uppercase",
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
+      {/* Tab Navigation — always visible */}
+      <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "1px solid var(--border-dim)" }}>
+        {(["portfolio", "orders", "flow", "journal", "strategies", "import"] as const).map((t) => {
+          const needsBroker = t !== "import";
+          const disabled = needsBroker && !activeBroker;
+          return (
+            <button
+              key={t}
+              onClick={() => !disabled && setTab(t)}
+              style={{
+                ...monoStyle,
+                fontSize: 14,
+                padding: "8px 20px",
+                border: "none",
+                borderBottom: tab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
+                background: "none",
+                color: disabled ? "var(--text-muted, #94a3b8)" : tab === t ? "var(--signal-core)" : "var(--text-secondary)",
+                cursor: disabled ? "default" : "pointer",
+                fontWeight: tab === t ? 600 : 400,
+                textTransform: "uppercase",
+                opacity: disabled ? 0.5 : 1,
+              }}
+            >
+              {t}
+            </button>
+          );
+        })}
+      </div>
 
-          {loading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
+      {/* Tab content */}
+      {!activeBroker && tab !== "import" && <NoBrokerConnected />}
 
-          {tab === "portfolio" && <PositionsTable positions={positions} />}
-          {tab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
-          {tab === "flow" && <FlowAnalysisPanel />}
-          {tab === "journal" && <JournalPanel />}
-          {tab === "strategies" && <StrategiesPanel positions={positions} />}
-        </>
+      {activeBroker && loading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
+
+      {activeBroker && tab === "portfolio" && <PositionsTable positions={positions} />}
+      {activeBroker && tab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
+      {activeBroker && tab === "flow" && <FlowAnalysisPanel />}
+      {activeBroker && tab === "journal" && <JournalPanel />}
+      {activeBroker && tab === "strategies" && (
+        <StrategiesPanel
+          positions={positions}
+          orders={orders}
+          onSimulate={(_symbol, _price, _legs) => {
+            // TODO: integrate with simulator tab/modal in a future phase
+            // For now, log to console so the wiring is in place
+            console.log("[StrategyAnalyzer] Simulate:", { _symbol, _price, _legs });
+          }}
+        />
+      )}
+
+      {tab === "import" && (
+        <Suspense fallback={<div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}>
+          <CsvUploadPanel />
+          <ManualPortfolioTable />
+        </Suspense>
       )}
     </div>
     </TerminalShell>
@@ -356,13 +382,23 @@ function JournalPanel() {
   );
 }
 
-function StrategiesPanel({ positions }: { positions: import("../lib/brokers/types").BrokerPosition[] }) {
+function StrategiesPanel({ positions, orders, onSimulate }: {
+  positions: import("../lib/brokers/types").BrokerPosition[];
+  orders: import("../lib/brokers/types").BrokerOrder[];
+  onSimulate: (symbol: string, price: number, legs: SimulatorLeg[]) => void;
+}) {
   const ccEligible = positions.filter((p) => p.side === "long" && p.qty >= 100 && p.assetType === "stock");
+
+  // Compute wash sale violations from broker orders
+  const washSaleViolations = useMemo(() => detectWashSales(orders), [orders]);
 
   return (
     <div>
       {/* AI Strategy Suggester */}
       <StrategySuggester context={{ positions: positions.map((p) => ({ symbol: p.symbol, qty: p.qty, side: p.side, currentPrice: p.currentPrice, unrealizedPL: p.unrealizedPL })) }} />
+
+      {/* Strategy Analysis Engine */}
+      <StrategyAnalysisPanel onSimulate={onSimulate} />
 
       {/* Covered Call Opportunities */}
       <div style={panelStyle}>
@@ -414,12 +450,7 @@ function StrategiesPanel({ positions }: { positions: import("../lib/brokers/type
       </div>
 
       {/* Wash Sale Monitor */}
-      <div style={panelStyle}>
-        <div style={headerStyle}>Wash Sale Monitor</div>
-        <div style={{ textAlign: "center", color: "var(--text-secondary)", padding: 24, fontSize: 13 }}>
-          Scans your trade history for wash sale violations (30-day window). Connect a brokerage with trade history to activate.
-        </div>
-      </div>
+      <WashSalePanel violations={washSaleViolations} />
     </div>
   );
 }

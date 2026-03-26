@@ -83,3 +83,51 @@ export interface WashSaleViolation {
   adjustedBasis: number;
   daysApart: number;
 }
+
+/** Column mapping from CSV headers to normalized fields */
+export interface ColumnMapping {
+  symbol: string;
+  qty?: string;
+  side?: string;
+  costBasis?: string;
+  currentPrice?: string;
+  marketValue?: string;
+  pnl?: string;
+  assetType?: string;
+  strike?: string;
+  expiry?: string;
+  optionType?: string;
+  buyDate?: string;
+  sellDate?: string;
+  proceeds?: string;
+}
+
+/** Manual position from CSV import */
+export interface ManualPosition {
+  id: string;
+  symbol: string;
+  qty: number;
+  side: "long" | "short";
+  avgEntryPrice: number;
+  currentPrice: number;
+  marketValue: number;
+  unrealizedPL: number;
+  unrealizedPLPercent: number;
+  assetType: "stock" | "option" | "crypto";
+  strike?: number;
+  expiry?: string;
+  optionType?: "call" | "put";
+  importedAt: string;
+  source: string;
+}
+
+/** Trade record for wash sale detection from CSV */
+export interface WashSaleTradeRecord {
+  symbol: string;
+  side: "buy" | "sell";
+  date: string;
+  price: number;
+  qty: number;
+  costBasis?: number;
+  proceeds?: number;
+}

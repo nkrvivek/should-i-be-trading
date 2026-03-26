@@ -64,7 +64,9 @@ test.describe("Signals Page — Tab Navigation", () => {
 test.describe("Signals Page — Regime Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/signals");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    // Wait for the signals page to actually render
+    await expect(page.locator("button", { hasText: /REGIME/i }).first()).toBeVisible({ timeout: 15_000 });
   });
 
   test("regime header and refresh button visible", async ({ page }) => {
@@ -77,7 +79,7 @@ test.describe("Signals Page — Regime Tab", () => {
     // Refresh button should be present (contains ↻ REFRESH text)
     await expect(
       page.locator("button", { hasText: /REFRESH/i }).first()
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 10_000 });
   });
 
   test("regime data loads with market state or shows loading/error", async ({

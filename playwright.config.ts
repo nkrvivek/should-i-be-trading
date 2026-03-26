@@ -45,10 +45,17 @@ export default defineConfig({
       testMatch: /global-setup\.ts/,
       use: { storageState: undefined }, // No stored state for login
     },
+    // Auth flow tests — no stored state (tests login/logout)
+    {
+      name: "auth",
+      testMatch: /auth-flows\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], storageState: { cookies: [], origins: [] } },
+      dependencies: ["setup"], // still need setup to run first for other projects
+    },
     // Main tests — reuse saved auth session
     {
       name: "chromium",
-      testIgnore: /public-pages\.spec\.ts/,
+      testIgnore: [/public-pages\.spec\.ts/, /auth-flows\.spec\.ts/],
       use: { ...devices["Desktop Chrome"], storageState: "e2e/.auth/user.json" },
       dependencies: ["setup"],
     },

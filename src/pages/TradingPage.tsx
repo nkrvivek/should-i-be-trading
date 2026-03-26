@@ -35,9 +35,16 @@ const monoStyle: React.CSSProperties = {
   fontFamily: "'IBM Plex Mono', monospace",
 };
 
+type TabId = "import" | "strategies" | "portfolio" | "orders" | "flow" | "journal";
+
+const ALWAYS_TABS: TabId[] = ["import", "strategies"];
+const BROKER_TABS: TabId[] = ["portfolio", "orders", "flow", "journal"];
+
 export default function TradingPage() {
   const { account, positions, orders, loading, error, activeBroker, placeOrder, cancelOrder, refresh, reconnect } = useBrokerStore();
-  const [tab, setTab] = useState<"portfolio" | "orders" | "journal" | "strategies" | "flow" | "import">("portfolio");
+  const [tab, setTab] = useState<TabId>("import");
+
+  const brokerReady = !!(activeBroker && account);
 
   // Auto-reconnect when broker slug is saved but instance isn't connected yet (page reload)
   useEffect(() => {
@@ -46,73 +53,96 @@ export default function TradingPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // If user is on a broker tab and broker disconnects, reset to import
+  useEffect(() => {
+    if (!brokerReady && BROKER_TABS.includes(tab)) {
+      setTab("import");
+    }
+  }, [brokerReady, tab]);
+
+  const visibleTabs: TabId[] = brokerReady
+    ? [...ALWAYS_TABS, ...BROKER_TABS]
+    : ALWAYS_TABS;
+
   return (
     <TerminalShell>
     <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h1 style={{ ...monoStyle, fontSize: 24, fontWeight: 700 }}>TRADING</h1>
-        {activeBroker && (
-          <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-            <span style={{ ...monoStyle, fontSize: 13, color: "var(--signal-core, #05AD98)" }}>
-              {activeBroker.toUpperCase()} CONNECTED
-              {account?.isPaperTrading && " (PAPER)"}
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          {brokerReady ? (
+            <>
+              <span style={{ ...monoStyle, fontSize: 13, color: "var(--signal-core, #05AD98)" }}>
+                {activeBroker!.toUpperCase()} CONNECTED
+                {account?.isPaperTrading && " (PAPER)"}
+              </span>
+              <button onClick={refresh} style={{ ...monoStyle, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+                REFRESH
+              </button>
+            </>
+          ) : activeBroker && loading ? (
+            <span style={{ ...monoStyle, fontSize: 13, color: "var(--warning, #f59e0b)", animation: "pulse 1.4s ease-in-out infinite" }}>
+              CONNECTING TO {activeBroker.toUpperCase()}...
             </span>
-            <button onClick={refresh} style={{ ...monoStyle, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
-              REFRESH
-            </button>
-          </div>
-        )}
+          ) : activeBroker && error ? (
+            <span style={{ ...monoStyle, fontSize: 13, color: "var(--text-muted, #94a3b8)" }}>
+              {activeBroker.toUpperCase()} OFFLINE
+            </span>
+          ) : null}
+        </div>
       </div>
 
       {/* Account Summary (when broker connected) */}
-      {activeBroker && account && <AccountSummary account={account} />}
-      {activeBroker && error && <div style={{ ...panelStyle, background: "#fef2f2", color: "#dc2626", border: "1px solid #fca5a5" }}>{error}</div>}
+      {brokerReady && <AccountSummary account={account} />}
+      {activeBroker && error && !brokerReady && (
+        <div style={{ ...panelStyle, background: "var(--bg-panel-raised, #f8fafc)", color: "var(--text-secondary)", border: "1px solid var(--border-dim)", display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontFamily: "var(--font-mono, 'IBM Plex Mono', monospace)" }}>
+          <span style={{ fontSize: 18 }}>⚠</span>
+          <div>
+            <strong>Broker connection unavailable</strong> — {error.includes("502") || error.includes("Gateway") ? "IB Gateway is not running or still starting up. Start it and approve 2FA, then refresh." : error}
+            <div style={{ marginTop: 4 }}>
+              <button onClick={refresh} style={{ ...monoStyle, fontSize: 12, padding: "2px 10px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer", marginRight: 8 }}>RETRY</button>
+              <span style={{ color: "var(--text-muted)" }}>Portfolio import and strategy analysis are available below without a broker.</span>
+            </div>
+          </div>
+        </div>
+      )}
 
-      {/* Tab Navigation — always visible */}
+      {/* Tab Navigation */}
       <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "1px solid var(--border-dim)" }}>
-        {(["portfolio", "orders", "flow", "journal", "strategies", "import"] as const).map((t) => {
-          const needsBroker = t !== "import";
-          const disabled = needsBroker && !activeBroker;
-          return (
-            <button
-              key={t}
-              onClick={() => !disabled && setTab(t)}
-              style={{
-                ...monoStyle,
-                fontSize: 14,
-                padding: "8px 20px",
-                border: "none",
-                borderBottom: tab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
-                background: "none",
-                color: disabled ? "var(--text-muted, #94a3b8)" : tab === t ? "var(--signal-core)" : "var(--text-secondary)",
-                cursor: disabled ? "default" : "pointer",
-                fontWeight: tab === t ? 600 : 400,
-                textTransform: "uppercase",
-                opacity: disabled ? 0.5 : 1,
-              }}
-            >
-              {t}
-            </button>
-          );
-        })}
+        {visibleTabs.map((t) => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            style={{
+              ...monoStyle,
+              fontSize: 14,
+              padding: "8px 20px",
+              border: "none",
+              borderBottom: tab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
+              background: "none",
+              color: tab === t ? "var(--signal-core)" : "var(--text-secondary)",
+              cursor: "pointer",
+              fontWeight: tab === t ? 600 : 400,
+              textTransform: "uppercase",
+            }}
+          >
+            {t === "import" ? "IMPORT PORTFOLIO" : t}
+          </button>
+        ))}
       </div>
 
       {/* Tab content */}
-      {!activeBroker && tab !== "import" && <NoBrokerConnected />}
+      {brokerReady && loading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
 
-      {activeBroker && loading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
-
-      {activeBroker && tab === "portfolio" && <PositionsTable positions={positions} />}
-      {activeBroker && tab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
-      {activeBroker && tab === "flow" && <FlowAnalysisPanel />}
-      {activeBroker && tab === "journal" && <JournalPanel />}
-      {activeBroker && tab === "strategies" && (
+      {brokerReady && tab === "portfolio" && <PositionsTable positions={positions} />}
+      {brokerReady && tab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
+      {brokerReady && tab === "flow" && <FlowAnalysisPanel />}
+      {brokerReady && tab === "journal" && <JournalPanel />}
+      {tab === "strategies" && (
         <StrategiesPanel
           positions={positions}
           orders={orders}
           onSimulate={(_symbol, _price, _legs) => {
-            // TODO: integrate with simulator tab/modal in a future phase
-            // For now, log to console so the wiring is in place
             console.log("[StrategyAnalyzer] Simulate:", { _symbol, _price, _legs });
           }}
         />
@@ -122,6 +152,13 @@ export default function TradingPage() {
         <Suspense fallback={<div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}>
           <CsvUploadPanel />
           <ManualPortfolioTable />
+          {!brokerReady && (
+            <div style={{ ...panelStyle, textAlign: "center", padding: 24, marginTop: 8 }}>
+              <span style={{ ...monoStyle, fontSize: 13, color: "var(--text-muted)" }}>
+                Want live portfolio sync? <a href="/settings" style={{ color: "var(--signal-core)", textDecoration: "none" }}>Connect a broker in Settings →</a>
+              </span>
+            </div>
+          )}
         </Suspense>
       )}
     </div>
@@ -129,27 +166,6 @@ export default function TradingPage() {
   );
 }
 
-function NoBrokerConnected() {
-  return (
-    <div style={{ ...panelStyle, textAlign: "center", padding: 64 }}>
-      <div style={{ fontSize: 48, marginBottom: 16 }}>🔗</div>
-      <h2 style={{ ...headerStyle, fontSize: 16 }}>Connect a Brokerage</h2>
-      <p style={{ color: "var(--text-secondary)", marginBottom: 24, maxWidth: 400, margin: "0 auto 24px" }}>
-        Connect your brokerage account in Settings to view your portfolio, place orders, and get personalized strategy recommendations.
-      </p>
-      <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-        {["Alpaca", "Interactive Brokers", "Schwab", "Robinhood"].map((b) => (
-          <span key={b} style={{ ...monoStyle, fontSize: 13, padding: "6px 14px", border: "1px solid var(--border-dim)", borderRadius: 999, color: "var(--text-secondary)" }}>
-            {b}
-          </span>
-        ))}
-      </div>
-      <a href="/settings" style={{ display: "inline-block", marginTop: 24, ...monoStyle, fontSize: 14, color: "var(--signal-core)", textDecoration: "none" }}>
-        Go to Settings →
-      </a>
-    </div>
-  );
-}
 
 function AccountSummary({ account }: { account: import("../lib/brokers/types").BrokerAccount }) {
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });

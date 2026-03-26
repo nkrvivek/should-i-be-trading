@@ -59,24 +59,9 @@ export function AuthGate({ onSuccess }: Props) {
           throw new Error("An account with this email already exists. Try signing in instead.");
         }
 
-        // Fire welcome email (best-effort, don't block on failure)
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        if (supabaseUrl && supabaseKey && data.user) {
-          fetch(`${supabaseUrl}/functions/v1/send-welcome-email`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "apikey": supabaseKey,
-              "Authorization": `Bearer ${supabaseKey}`,
-            },
-            body: JSON.stringify({
-              user_id: data.user.id,
-              email,
-              display_name: displayName || email.split("@")[0],
-            }),
-          }).catch(() => { /* best-effort */ });
-        }
+        // Welcome email is handled server-side by a DB webhook
+        // (INSERT on auth.users → calls send-welcome-email with service role key).
+        // Set up the webhook in Supabase Dashboard → Database → Webhooks.
 
         // If email confirmation is required, user won't have a session yet
         if (data.user && !data.session) {

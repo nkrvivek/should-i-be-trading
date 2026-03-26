@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "email:preview": "npx tsx scripts/sync-email-templates.ts --preview",
-    "email:sync": "curl -s -X POST https://twyzyvgqzzuvlvsftcjj.supabase.co/functions/v1/sync-email-templates -H 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR3eXp5dmdxenp1dmx2c2Z0Y2pqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNjc2MjMsImV4cCI6MjA4OTc0MzYyM30.h-x8LSsI9xTq5BEwIxScr2OrpxRKm9ANnYdyOKL2-2I' -H 'Content-Type: application/json' -d '{}'"
+    "email:sync": "sh -c 'curl -s -X POST ${VITE_SUPABASE_URL}/functions/v1/sync-email-templates -H \"x-admin-secret: ${ADMIN_SECRET}\" -H \"Content-Type: application/json\" -d \"{}\"'"
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",

@@ -32,6 +32,9 @@ Deno.serve(async (req) => {
         const searchRes = await fetch(`${EDGAR_BASE}/search-index?q=${encodeURIComponent(ticker)}&forms=4&dateRange=custom&startdt=${getDateDaysAgo(30)}&enddt=${getTodayStr()}`, {
           headers: { "User-Agent": "SIBT/1.0 (contact@sibt.app)" },
         });
+        if (!searchRes.ok) {
+          return errorResponse(`SEC EDGAR search failed (${searchRes.status})`, searchRes.status, req);
+        }
         const searchData = await searchRes.json();
         return jsonResponse(searchData, 200, req);
       }
@@ -46,6 +49,9 @@ Deno.serve(async (req) => {
       const searchRes = await fetch(`${EDGAR_BASE}/search-index?q=${encodeURIComponent(query)}&forms=${encodeURIComponent(forms)}`, {
         headers: { "User-Agent": "SIBT/1.0 (contact@sibt.app)" },
       });
+      if (!searchRes.ok) {
+        return errorResponse(`SEC EDGAR search failed (${searchRes.status})`, searchRes.status, req);
+      }
       const data = await searchRes.json();
       return jsonResponse(data, 200, req);
     }

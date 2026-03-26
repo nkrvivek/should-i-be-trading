@@ -27,7 +27,12 @@ supabase/.temp/
 *.sw?
 
 # Claude Code
-.claude/hooks/
-.claude/worktrees/
+.claude/
+
+# Launch strategy & marketing (private)
+LAUNCH_PLAYBOOK.md
+LAUNCH_ASSETS.md
+promo/
+
 __pycache__/
 *.pyc

@@ -42,7 +42,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { user_id, email, display_name } = await req.json();
+    const body = await req.json();
+
+    // DB webhook sends { type, table, record, ... } — extract from record if present
+    const record = body.record ?? body;
+    const user_id = record.user_id ?? record.id ?? body.user_id;
+    const email = record.email ?? body.email;
+    const display_name = record.display_name ?? body.display_name;
 
     // If called via webhook, get user details from the database
     let userEmail = email;

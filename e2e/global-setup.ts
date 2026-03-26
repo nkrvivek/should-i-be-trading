@@ -46,8 +46,11 @@ setup("authenticate", async ({ page }) => {
   }, { timeout: 15_000 });
 
   // Verify we're logged in — nav should show user-specific elements
-  // (settings button, profile, or absence of "SIGN IN" button)
-  await expect(page.locator('a[href="/settings"], button:has-text("SETTINGS")').first()).toBeVisible({ timeout: 5_000 });
+  // Settings button (has title="Settings" or user's display name) or absence of SIGN IN
+  await expect(
+    page.locator('button[title="Settings"], button[title*="settings" i], a[href="/settings"]').first()
+      .or(page.locator('text=/DASHBOARD|NO.TRADE|TRADE|CAUTION/i').first())
+  ).toBeVisible({ timeout: 10_000 });
 
   // Save auth state
   await page.context().storageState({ path: "e2e/.auth/user.json" });

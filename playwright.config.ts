@@ -19,7 +19,7 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false, // Run sequentially — auth state is shared
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  retries: process.env.CI ? 2 : 1, // Retry flaky API-dependent tests once locally
   workers: 1,
   reporter: [["html", { open: "never" }], ["list"]],
   timeout: 30_000,

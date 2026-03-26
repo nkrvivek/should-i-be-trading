@@ -1,4 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
+import { config } from "dotenv";
+
+// Load .env.test for test credentials
+config({ path: ".env.test" });
 
 /**
  * E2E test configuration for SIBT.
@@ -23,7 +27,6 @@ export default defineConfig({
 
   use: {
     baseURL: process.env.TEST_BASE_URL || "http://localhost:5173",
-    storageState: "e2e/.auth/user.json",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -39,7 +42,7 @@ export default defineConfig({
     // Main tests — reuse saved auth session
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: { ...devices["Desktop Chrome"], storageState: "e2e/.auth/user.json" },
       dependencies: ["setup"],
     },
   ],

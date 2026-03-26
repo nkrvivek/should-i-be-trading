@@ -205,8 +205,29 @@ VITE_FINNHUB_API_KEY=...       # Free at https://finnhub.io/register
 ```bash
 npm run dev     # http://localhost:5173
 npm run build   # Production build
-npm test        # Tests
+npm test        # Unit tests (Vitest)
 ```
+
+### E2E Testing (Playwright)
+
+Full end-to-end tests that run in a real browser behind auth:
+
+```bash
+# 1. Create a test user in Supabase (Dashboard → Auth → Add User)
+#    Then set their tier:
+#    UPDATE profiles SET tier = 'pro' WHERE id = '<user-id>';
+
+# 2. Configure credentials
+cp .env.test.example .env.test
+# Edit .env.test with TEST_USER_EMAIL and TEST_USER_PASSWORD
+
+# 3. Run tests
+npm run test:e2e          # Headless
+npm run test:e2e:ui       # Interactive Playwright UI
+npm run test:e2e:headed   # Watch the browser
+```
+
+Tests cover: navigation, CSV upload (multi-broker auto-detect, security sanitization), AI usage tracking, strategy analysis, wash sale monitoring, auth gates, trial badge, and responsive layout.
 
 ## Data Sources
 
@@ -258,6 +279,9 @@ npm test        # Tests
 | Glossary | Yes | Yes | Yes | Yes |
 | Signal Backtester | — | Yes | Yes | Yes |
 | Strategy Simulator | — | Yes | Yes | Yes |
+| CSV Portfolio Import | — | Yes | Yes | Yes |
+| Strategy Analyzer | — | Yes | Yes | Yes |
+| Wash Sale Monitor | — | Yes | Yes | Yes |
 | Push Notifications | — | Yes | Yes | Yes |
 | Regime Signal Interpretations | — | Yes | Yes | Yes |
 | AI Briefing | 5/day | 15/day | 25/day | 100/day |

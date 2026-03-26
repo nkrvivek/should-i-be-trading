@@ -37,6 +37,28 @@ async function getServiceClient() {
 async function getUserTier(userId: string): Promise<string> {
   try {
     const supabase = await getServiceClient();
+
+    // Check subscription status first
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("plan_tier, status, current_period_end")
+      .eq("user_id", userId)
+      .single();
+
+    if (sub && sub.plan_tier !== "free") {
+      // Active or trialing — full access
+      if (sub.status === "active" || sub.status === "trialing") return sub.plan_tier;
+      // Past due — 3-day grace period from period end
+      if (sub.status === "past_due" && sub.current_period_end) {
+        const gracePeriodEnd = new Date(sub.current_period_end);
+        gracePeriodEnd.setDate(gracePeriodEnd.getDate() + 3);
+        if (new Date() < gracePeriodEnd) return sub.plan_tier;
+        // Grace period expired — downgrade
+        return "free";
+      }
+    }
+
+    // Check free trial
     const { data } = await supabase
       .from("profiles")
       .select("tier, trial_ends_at")
@@ -158,7 +180,33 @@ Deno.serve(async (req) => {
     });
 
     const data = await response.json();
-    return jsonResponse(data, response.status);
+
+    // Return usage stats in response headers so frontend can display remaining quota
+    const usageHeaders: Record<string, string> = { ...corsHeaders };
+    if (usingServerKey) {
+      const tier = await getUserTier(ctx.userId);
+      const limit = DAILY_LIMITS[tier] ?? DAILY_LIMITS.free;
+      const today = new Date().toISOString().split("T")[0];
+      try {
+        const supabase = await getServiceClient();
+        const { data: usage } = await supabase
+          .from("ai_usage")
+          .select("request_count")
+          .eq("user_id", ctx.userId)
+          .eq("usage_date", today)
+          .single();
+        usageHeaders["x-ai-used"] = String(usage?.request_count ?? 0);
+        usageHeaders["x-ai-limit"] = String(limit);
+      } catch { /* non-critical */ }
+    } else {
+      usageHeaders["x-ai-used"] = "own-key";
+      usageHeaders["x-ai-limit"] = "unlimited";
+    }
+
+    return new Response(JSON.stringify(data), {
+      status: response.status,
+      headers: { "Content-Type": "application/json", ...usageHeaders },
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Proxy error";
     return errorResponse(msg, 500);

@@ -1,7 +1,7 @@
 /**
  * Claude API client.
  * In dev, Vite proxies /anthropic/* to https://api.anthropic.com
- * In prod, goes through Supabase Edge Function.
+ * In prod, goes through Supabase Edge Function with rate limiting.
  */
 
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
@@ -16,6 +16,20 @@ export type ChatResponse = {
   model: string;
   usage: { input_tokens: number; output_tokens: number };
 };
+
+/** AI usage tracking — updated after each proxy-anthropic call */
+export type AiUsageInfo = {
+  used: number;
+  limit: number;
+  isOwnKey: boolean;
+};
+
+let _lastUsage: AiUsageInfo = { used: 0, limit: 5, isOwnKey: false };
+
+/** Get last known AI usage (updated after each chatWithClaude call) */
+export function getAiUsage(): AiUsageInfo {
+  return _lastUsage;
+}
 
 export async function chatWithClaude(
   messages: ChatMessage[],
@@ -37,6 +51,8 @@ export async function chatWithClaude(
 
   if (apiKey) {
     // Direct API call (local dev with Vite proxy)
+    _lastUsage = { used: 0, limit: Infinity, isOwnKey: true };
+
     const response = await fetch("/anthropic/v1/messages", {
       method: "POST",
       headers: {
@@ -75,6 +91,15 @@ export async function chatWithClaude(
       },
       body: JSON.stringify(body),
     });
+
+    // Parse usage headers from proxy-anthropic
+    const aiUsed = response.headers.get("x-ai-used");
+    const aiLimit = response.headers.get("x-ai-limit");
+    if (aiUsed === "own-key") {
+      _lastUsage = { used: 0, limit: Infinity, isOwnKey: true };
+    } else if (aiUsed && aiLimit) {
+      _lastUsage = { used: parseInt(aiUsed, 10), limit: parseInt(aiLimit, 10), isOwnKey: false };
+    }
 
     if (!response.ok) {
       const text = await response.text();

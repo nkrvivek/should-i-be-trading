@@ -62,7 +62,7 @@ function getCacheTTL(endpoint: string): number {
   if (["analyst-estimates", "price-target", "price-target-summary"].includes(endpoint)) return 12 * 3600 * 1000; // 12 hours
   if (["earnings", "earnings-calendar"].includes(endpoint)) return 6 * 3600 * 1000; // 6 hours
   if (["historical-price"].includes(endpoint)) return 3600 * 1000; // 1 hour
-  if (["quote"].includes(endpoint)) return 60 * 1000; // 1 minute
+  if (["quote"].includes(endpoint)) return 5 * 60 * 1000; // 5 minutes
   return 3600 * 1000; // 1 hour default
 }
 

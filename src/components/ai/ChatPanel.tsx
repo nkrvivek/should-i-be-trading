@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { chatWithClaude, type ChatMessage } from "../../api/anthropicClient";
+import { chatWithClaude, getAiUsage, type ChatMessage } from "../../api/anthropicClient";
+import { AiUsageBadge } from "./AiUsageBadge";
 import { renderMarkdown } from "../../lib/renderMarkdown";
 import type { CriData, PortfolioData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
@@ -200,45 +201,50 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-        <input
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(e); } }}
-          placeholder="Ask about the market..."
-          disabled={loading}
-          style={{
-            flex: 1,
-            padding: "6px 12px",
-            background: "var(--bg-panel-raised)",
-            border: "1px solid var(--border-dim)",
-            borderRadius: 4,
-            fontFamily: "var(--font-sans)",
-            fontSize: 14,
-            color: "var(--text-primary)",
-            outline: "none",
-          }}
-        />
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={loading || !input.trim()}
-          style={{
-            padding: "6px 16px",
-            background: "var(--accent-bg)",
-            border: "none",
-            borderRadius: 4,
-            fontFamily: "var(--font-mono)",
-            fontSize: 13,
-            fontWeight: 500,
-            color: "var(--accent-text)",
-            cursor: loading ? "default" : "pointer",
-            opacity: loading || !input.trim() ? 0.5 : 1,
-          }}
-        >
-          SEND
-        </button>
+      {/* Input + usage badge */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(e); } }}
+            placeholder={getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? "Daily limit reached — add your API key in Settings" : "Ask about the market..."}
+            disabled={loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            style={{
+              flex: 1,
+              padding: "6px 12px",
+              background: "var(--bg-panel-raised)",
+              border: "1px solid var(--border-dim)",
+              borderRadius: 4,
+              fontFamily: "var(--font-sans)",
+              fontSize: 14,
+              color: "var(--text-primary)",
+              outline: "none",
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading || !input.trim() || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            style={{
+              padding: "6px 16px",
+              background: "var(--accent-bg)",
+              border: "none",
+              borderRadius: 4,
+              fontFamily: "var(--font-mono)",
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--accent-text)",
+              cursor: loading ? "default" : "pointer",
+              opacity: loading || !input.trim() ? 0.5 : 1,
+            }}
+          >
+            SEND
+          </button>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <AiUsageBadge />
+        </div>
       </div>
     </div>
   );

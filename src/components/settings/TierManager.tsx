@@ -72,7 +72,18 @@ export function TierManager() {
         return;
       }
 
-      // No active trial (either never had one, or it expired) — start a new 14-day trial
+      // No active trial (either never had one, or it expired)
+      // Check if user already had a trial (prevent unlimited resets)
+      const store = useAuthStore.getState();
+      const hadTrialBefore = store.profile?.trial_ends_at != null;
+
+      if (hadTrialBefore) {
+        // Trial expired — redirect to checkout instead of resetting
+        await redirectToCheckout(tier, "year");
+        return;
+      }
+
+      // First-time trial — start a 14-day trial
       const trialEnd = new Date();
       trialEnd.setDate(trialEnd.getDate() + 14);
       const { error: dbError } = await supabase
@@ -85,7 +96,6 @@ export function TierManager() {
 
       if (dbError) throw new Error(dbError.message);
 
-      const store = useAuthStore.getState();
       if (store.profile) {
         store.setProfile({
           ...store.profile,
@@ -257,7 +267,7 @@ export function TierManager() {
                 label="Upgrade to Starter"
                 price="$12/mo or $99/yr"
                 description="AI chat + interpretations + backtester"
-                trial="14-day free trial"
+                trial={isTrialActive() ? "Switch trial tier" : !useAuthStore.getState().profile?.trial_ends_at ? "14-day free trial" : false}
                 onUpgrade={() => handleUpgrade("starter")}
                 loading={loading}
               />
@@ -267,7 +277,7 @@ export function TierManager() {
                 label="Upgrade to Pro"
                 price="$29/mo or $249/yr"
                 description="Full terminal + AI + scanners"
-                trial="14-day free trial"
+                trial={isTrialActive() ? "Switch trial tier" : !useAuthStore.getState().profile?.trial_ends_at ? "14-day free trial" : false}
                 onUpgrade={() => handleUpgrade("pro")}
                 loading={loading}
               />
@@ -276,7 +286,7 @@ export function TierManager() {
               label="Upgrade to Enterprise"
               price="$79/mo or $699/yr"
               description="Automation + backtester + cloud Radon"
-              trial="14-day free trial"
+              trial={isTrialActive() ? "Switch trial tier" : !useAuthStore.getState().profile?.trial_ends_at ? "14-day free trial" : false}
               onUpgrade={() => handleUpgrade("enterprise")}
               loading={loading}
             />
@@ -310,7 +320,7 @@ export function TierManager() {
 }
 
 function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
-  label: string; price: string; description: string; trial: string; onUpgrade: () => void; loading: boolean;
+  label: string; price: string; description: string; trial: string | false; onUpgrade: () => void; loading: boolean;
 }) {
   return (
     <div style={{
@@ -327,7 +337,7 @@ function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 500 }}>{label}</div>
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 600, color: "var(--signal-core)" }}>{price}</div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)" }}>{description}</div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--signal-core)" }}>{trial}</div>
+      {trial && <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--signal-core)" }}>{trial}</div>}
       <button
         onClick={onUpgrade}
         disabled={loading}
@@ -346,7 +356,7 @@ function UpgradeCard({ label, price, description, trial, onUpgrade, loading }: {
           width: "100%",
         }}
       >
-        {loading ? "..." : "START FREE TRIAL"}
+        {loading ? "..." : trial ? "SWITCH TRIAL" : "START FREE TRIAL"}
       </button>
     </div>
   );

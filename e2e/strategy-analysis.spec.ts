@@ -64,7 +64,9 @@ test.describe("Strategy Analysis", () => {
     await fileInput.setInputFiles(path.join(__dirname, "fixtures/schwab-positions.csv"));
 
     const importBtn = page.getByRole("button", { name: /IMPORT \d+ POSITIONS/i });
-    if (await importBtn.isVisible()) await importBtn.click();
+    await expect(importBtn).toBeVisible({ timeout: 5_000 });
+    await importBtn.click();
+    await page.waitForTimeout(500);
 
     await page.locator("button", { hasText: /STRATEGIES/i }).click();
 

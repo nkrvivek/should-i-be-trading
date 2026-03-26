@@ -1,4 +1,4 @@
-import { corsHeaders } from "../_shared/auth.ts";
+import { getCorsHeaders } from "../_shared/auth.ts";
 import {
   BRAND,
   emailLayout,
@@ -102,11 +102,36 @@ const templates: TemplateConfig[] = [
   },
 ];
 
+// ── Auth ─────────────────────────────────────────────────────────
+
+const ADMIN_SECRET = Deno.env.get("ADMIN_SECRET") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+function isAdminOrServiceRole(req: Request): boolean {
+  const secret = req.headers.get("x-admin-secret");
+  if (ADMIN_SECRET && secret === ADMIN_SECRET) return true;
+
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) return true;
+
+  return false;
+}
+
 // ── Handler ──────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
+  const cors = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: cors });
+  }
+
+  // Admin-only endpoint
+  if (!isAdminOrServiceRole(req)) {
+    return new Response(
+      JSON.stringify({ error: "Unauthorized. This endpoint requires admin credentials." }),
+      { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
+    );
   }
 
   try {
@@ -117,7 +142,7 @@ Deno.serve(async (req) => {
         JSON.stringify({
           error: "SB_MGMT_TOKEN not set. Add it via: supabase secrets set SB_MGMT_TOKEN=sbp_xxx",
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -127,7 +152,7 @@ Deno.serve(async (req) => {
     if (!refMatch) {
       return new Response(
         JSON.stringify({ error: "Could not extract project ref from SUPABASE_URL" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
     const projectRef = refMatch[1];
@@ -157,7 +182,7 @@ Deno.serve(async (req) => {
       const body = await res.text();
       return new Response(
         JSON.stringify({ error: `Management API error (${res.status})`, details: body }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { status: 502, headers: { ...cors, "Content-Type": "application/json" } },
       );
     }
 
@@ -168,12 +193,12 @@ Deno.serve(async (req) => {
         project: projectRef,
         count: templates.length,
       }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 200, headers: { ...cors, "Content-Type": "application/json" } },
     );
   } catch (err) {
     return new Response(
       JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
     );
   }
 });

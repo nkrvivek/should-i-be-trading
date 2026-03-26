@@ -85,7 +85,7 @@ function isAuthorized(req: Request): boolean {
 
   // Check service role key in Authorization header (for cron jobs)
   const authHeader = req.headers.get("Authorization");
-  if (authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) return true;
+  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) return true;
 
   return false;
 }

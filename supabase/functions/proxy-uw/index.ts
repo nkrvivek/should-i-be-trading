@@ -41,8 +41,13 @@ Deno.serve(async (req) => {
       body: req.method !== "GET" ? await req.text() : undefined,
     });
 
+    if (!response.ok) {
+      console.error(`Unusual Whales API error (${response.status})`);
+      return errorResponse(`Upstream API error: ${response.status}`, response.status >= 500 ? 502 : response.status, req);
+    }
+
     const data = await response.json();
-    return jsonResponse(data, response.status, req);
+    return jsonResponse(data, 200, req);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Proxy error";
     return errorResponse(msg, msg.includes("credential") ? 403 : 500, req);

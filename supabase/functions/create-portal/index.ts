@@ -1,10 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 import { getStripe } from "../_shared/stripe.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -24,7 +24,7 @@ Deno.serve(async (req) => {
       .single();
 
     if (!sub?.stripe_customer_id) {
-      return errorResponse("No active subscription found. Subscribe first.", 404);
+      return errorResponse("No active subscription found. Subscribe first.", 404, req);
     }
 
     const session = await stripe.billingPortal.sessions.create({
@@ -32,9 +32,9 @@ Deno.serve(async (req) => {
       return_url: `${req.headers.get("origin") ?? "https://sibt.ai"}/settings`,
     });
 
-    return jsonResponse({ url: session.url });
+    return jsonResponse({ url: session.url }, 200, req);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Portal creation failed";
-    return errorResponse(message, 500);
+    return errorResponse(message, 500, req);
   }
 });

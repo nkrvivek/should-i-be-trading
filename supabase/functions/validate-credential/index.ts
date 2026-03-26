@@ -1,4 +1,4 @@
-import { authenticateRequest, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 
 const VALIDATORS: Record<string, (key: string) => Promise<boolean>> = {
   unusual_whales: async (key) => {
@@ -44,7 +44,7 @@ const VALIDATORS: Record<string, (key: string) => Promise<boolean>> = {
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -52,12 +52,12 @@ Deno.serve(async (req) => {
     const { provider, credential_data } = await req.json();
 
     if (!provider || !credential_data) {
-      return errorResponse("Missing provider or credential_data");
+      return errorResponse("Missing provider or credential_data", 400, req);
     }
 
     const validator = VALIDATORS[provider];
     if (!validator) {
-      return errorResponse(`No validator for provider: ${provider}`);
+      return errorResponse(`No validator for provider: ${provider}`, 400, req);
     }
 
     const isValid = await validator(credential_data);
@@ -72,9 +72,9 @@ Deno.serve(async (req) => {
       .eq("user_id", ctx.userId)
       .eq("provider", provider);
 
-    return jsonResponse({ valid: isValid, provider });
+    return jsonResponse({ valid: isValid, provider }, 200, req);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Validation error";
-    return errorResponse(msg, 500);
+    return errorResponse(msg, 500, req);
   }
 });

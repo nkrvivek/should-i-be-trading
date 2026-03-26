@@ -174,10 +174,11 @@ export class AlpacaBroker implements BrokerConnection {
   }
 
   async cancelOrder(orderId: string): Promise<void> {
-    await fetch(`${this.baseUrl}/v2/orders/${orderId}`, {
+    const res = await fetch(`${this.baseUrl}/v2/orders/${orderId}`, {
       method: "DELETE",
       headers: this.headers,
     });
+    if (!res.ok) throw new Error(`Cancel failed: ${res.status}`);
   }
 
   async getTradeHistory(startDate: string, endDate: string): Promise<BrokerOrder[]> {

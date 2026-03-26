@@ -1,4 +1,4 @@
-import { authenticateRequest, getUserCredential, getCorsHeaders, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getUserCredential, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
@@ -150,6 +150,7 @@ Deno.serve(async (req) => {
       return errorResponse(
         `Authentication failed: ${authErr instanceof Error ? authErr.message : "Invalid token"}. Please sign out and sign back in.`,
         401,
+        req,
       );
     }
 
@@ -166,6 +167,7 @@ Deno.serve(async (req) => {
         return errorResponse(
           "No Anthropic API key available. Add your key in Settings > API Keys.",
           403,
+          req,
         );
       }
       usingServerKey = true;
@@ -183,6 +185,7 @@ Deno.serve(async (req) => {
         return errorResponse(
           `Daily AI limit reached (${usage.used}/${usage.limit}). Add your own Anthropic API key in Settings for unlimited access.`,
           429,
+          req,
         );
       }
 
@@ -211,6 +214,21 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
 
+    // Sanitize error responses to avoid leaking the server API key
+    if (!response.ok) {
+      const sanitized = JSON.parse(JSON.stringify(data), (_key, value) => {
+        if (typeof value === "string") {
+          return value.replace(/x-api-key[^\s,}]*/gi, "x-api-key=[REDACTED]")
+                      .replace(/sk-ant-[a-zA-Z0-9_-]+/g, "[REDACTED]");
+        }
+        return value;
+      });
+      return new Response(JSON.stringify(sanitized), {
+        status: response.status,
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },
+      });
+    }
+
     // Return usage stats in response headers so frontend can display remaining quota
     const usageHeaders: Record<string, string> = { ...getCorsHeaders(req) };
     if (usingServerKey && resolvedTier) {
@@ -238,6 +256,6 @@ Deno.serve(async (req) => {
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Proxy error";
-    return errorResponse(msg, 500);
+    return errorResponse(msg, 500, req);
   }
 });

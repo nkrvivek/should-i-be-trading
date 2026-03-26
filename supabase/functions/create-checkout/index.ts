@@ -1,10 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 import { getStripe, getPriceId } from "../_shared/stripe.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -12,10 +12,10 @@ Deno.serve(async (req) => {
     const { tier, interval } = await req.json();
 
     if (!["starter", "pro", "enterprise"].includes(tier)) {
-      return errorResponse("Invalid tier. Must be 'starter', 'pro', or 'enterprise'.");
+      return errorResponse("Invalid tier. Must be 'starter', 'pro', or 'enterprise'.", 400, req);
     }
     if (!["month", "year"].includes(interval)) {
-      return errorResponse("Invalid interval. Must be 'month' or 'year'.");
+      return errorResponse("Invalid interval. Must be 'month' or 'year'.", 400, req);
     }
 
     const stripe = getStripe();
@@ -69,9 +69,9 @@ Deno.serve(async (req) => {
       client_reference_id: ctx.userId,
     });
 
-    return jsonResponse({ url: session.url });
+    return jsonResponse({ url: session.url }, 200, req);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Checkout failed";
-    return errorResponse(message, 500);
+    return errorResponse(message, 500, req);
   }
 });

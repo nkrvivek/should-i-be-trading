@@ -1,6 +1,7 @@
 import { useEffect, type ReactNode } from "react";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useAuthStore } from "../../stores/authStore";
+import { clearTokenCache } from "../../api/edgeHeaders";
 
 type Props = { children: ReactNode };
 
@@ -34,6 +35,7 @@ export function AuthProvider({ children }: Props) {
         fetchCredentials(session.user.id);
         fetchSubscription(session.user.id);
       } else {
+        clearTokenCache();
         setProfile(null);
         setCredentials([]);
         setSubscription(null);
@@ -44,28 +46,31 @@ export function AuthProvider({ children }: Props) {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchProfile(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("profiles")
       .select("id, display_name, tier, trial_tier, trial_ends_at")
       .eq("id", userId)
       .single();
+    if (error) console.warn("Failed to fetch profile:", error.message);
     if (data) setProfile(data);
   }
 
   async function fetchCredentials(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("user_credentials")
       .select("provider, is_valid, last_validated_at")
       .eq("user_id", userId);
+    if (error) console.warn("Failed to fetch credentials:", error.message);
     if (data) setCredentials(data);
   }
 
   async function fetchSubscription(userId: string) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("subscriptions")
       .select("plan_tier, status, billing_interval, cancel_at_period_end, current_period_end")
       .eq("user_id", userId)
       .single();
+    if (error) console.warn("Failed to fetch subscription:", error.message);
     if (data) setSubscription(data);
   }
 

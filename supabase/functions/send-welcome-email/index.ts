@@ -21,7 +21,7 @@ function isAdminOrWebhook(req: Request): boolean {
   if (ADMIN_SECRET && secret === ADMIN_SECRET) return true;
 
   const authHeader = req.headers.get("Authorization");
-  if (authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) return true;
+  if (authHeader === `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`) return true;
 
   return false;
 }

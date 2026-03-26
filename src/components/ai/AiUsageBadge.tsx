@@ -1,13 +1,20 @@
-import { useSyncExternalStore } from "react";
-import { getAiUsage, onAiUsageChange } from "../../api/anthropicClient";
+import { useEffect, useSyncExternalStore } from "react";
+import { getAiUsage, onAiUsageChange, fetchCurrentAiUsage } from "../../api/anthropicClient";
 
 /** Reactive hook for AI usage — re-renders when usage changes */
 export function useAiUsage() {
-  return useSyncExternalStore(
+  const usage = useSyncExternalStore(
     onAiUsageChange,
     getAiUsage,
     getAiUsage,
   );
+
+  // Fetch actual usage from DB on first mount
+  useEffect(() => {
+    fetchCurrentAiUsage();
+  }, []);
+
+  return usage;
 }
 
 /**
@@ -16,6 +23,19 @@ export function useAiUsage() {
  */
 export function AiUsageBadge() {
   const usage = useAiUsage();
+
+  if (!usage.loaded) {
+    return (
+      <span style={{
+        fontFamily: "var(--font-mono)",
+        fontSize: 10,
+        color: "var(--text-muted)",
+        padding: "2px 6px",
+      }}>
+        ...
+      </span>
+    );
+  }
 
   if (usage.isOwnKey) {
     return (

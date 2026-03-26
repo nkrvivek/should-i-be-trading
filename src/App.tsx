@@ -102,7 +102,7 @@ function GatedPage({ feature, children }: { feature: Feature; children: React.Re
 
 /** Exported for use in TerminalShell header — now 5 items instead of 12 */
 export function AppNav() {
-  const { user, profile, effectiveTier, isTrialActive, trialDaysLeft } = useAuthStore();
+  const { user, profile, effectiveTier, isTrialActive, trialDaysLeft, hasActiveSubscription } = useAuthStore();
   const navigate = useNavigate();
   const { toggleTheme, theme } = useAppStore();
 
@@ -144,16 +144,16 @@ export function AppNav() {
         </NavLink>
       ))}
 
-      {/* Trial badge */}
-      {isTrialActive() && (
+      {/* Trial badge — only show for card-free trial, not paid subscriptions */}
+      {isTrialActive() && !hasActiveSubscription() && trialDaysLeft() > 0 && (
         <span style={{
           padding: "3px 8px",
           fontFamily: "var(--font-mono)",
           fontSize: 10,
           fontWeight: 600,
-          color: "var(--signal-core)",
-          background: "rgba(5, 173, 152, 0.1)",
-          border: "1px solid var(--signal-core)",
+          color: trialDaysLeft() <= 3 ? "var(--warning)" : "var(--signal-core)",
+          background: trialDaysLeft() <= 3 ? "rgba(239, 175, 68, 0.1)" : "rgba(5, 173, 152, 0.1)",
+          border: `1px solid ${trialDaysLeft() <= 3 ? "var(--warning)" : "var(--signal-core)"}`,
           borderRadius: 999,
           letterSpacing: "0.03em",
           whiteSpace: "nowrap",

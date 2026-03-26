@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { chatWithClaude } from "../../api/anthropicClient";
+import { chatWithClaude, getAiUsage } from "../../api/anthropicClient";
+import { AiUsageBadge } from "./AiUsageBadge";
 import { useStockMetrics, type StockMetrics } from "../../hooks/useStockMetrics";
 import {
   SCREENER_SYSTEM_PROMPT,
@@ -227,45 +228,50 @@ export function ScreenerPanel() {
         )}
       </div>
 
-      {/* Input */}
-      <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(e); } }}
-          placeholder="e.g. stocks with P/E under 15 and dividend yield above 3%"
-          disabled={loading}
-          style={{
-            flex: 1,
-            padding: "6px 12px",
-            background: "var(--bg-panel-raised)",
-            border: "1px solid var(--border-dim)",
-            borderRadius: 4,
-            fontFamily: "var(--font-sans)",
-            fontSize: 14,
-            color: "var(--text-primary)",
-            outline: "none",
-          }}
-        />
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={loading || !query.trim() || metricsLoading}
-          style={{
-            padding: "6px 16px",
-            background: "var(--accent-bg)",
-            border: "none",
-            borderRadius: 4,
-            fontFamily: "var(--font-mono)",
-            fontSize: 13,
-            fontWeight: 500,
-            color: "var(--accent-text)",
-            cursor: loading ? "default" : "pointer",
-            opacity: loading || !query.trim() || metricsLoading ? 0.5 : 1,
-          }}
-        >
-          SCREEN
-        </button>
+      {/* Input + usage */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, flexShrink: 0 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(e); } }}
+            placeholder={getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? "AI limit reached — add key in Settings" : "e.g. stocks with P/E under 15 and dividend yield above 3%"}
+            disabled={loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            style={{
+              flex: 1,
+              padding: "6px 12px",
+              background: "var(--bg-panel-raised)",
+              border: "1px solid var(--border-dim)",
+              borderRadius: 4,
+              fontFamily: "var(--font-sans)",
+              fontSize: 14,
+              color: "var(--text-primary)",
+              outline: "none",
+            }}
+          />
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={loading || !query.trim() || metricsLoading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            style={{
+              padding: "6px 16px",
+              background: "var(--accent-bg)",
+              border: "none",
+              borderRadius: 4,
+              fontFamily: "var(--font-mono)",
+              fontSize: 13,
+              fontWeight: 500,
+              color: "var(--accent-text)",
+              cursor: loading ? "default" : "pointer",
+              opacity: loading || !query.trim() || metricsLoading ? 0.5 : 1,
+            }}
+          >
+            SCREEN
+          </button>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+          <AiUsageBadge />
+        </div>
       </div>
     </div>
   );

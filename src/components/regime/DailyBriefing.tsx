@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
-import { chatWithClaude } from "../../api/anthropicClient";
+import { chatWithClaude, getAiUsage } from "../../api/anthropicClient";
+import { AiUsageBadge } from "../ai/AiUsageBadge";
 import { renderMarkdown } from "../../lib/renderMarkdown";
 import type { CriData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
@@ -100,23 +101,26 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
         }}>
           Daily Briefing
         </div>
-        <button
-          onClick={generateBriefing}
-          disabled={loading}
-          style={{
-            background: "none",
-            border: "1px solid var(--signal-core)",
-            borderRadius: 4,
-            padding: "3px 10px",
-            fontFamily: "var(--font-mono)",
-            fontSize: 11,
-            color: "var(--signal-core)",
-            cursor: loading ? "default" : "pointer",
-            opacity: loading ? 0.5 : 1,
-          }}
-        >
-          {loading ? "GENERATING..." : briefing ? "REFRESH" : "GENERATE"}
-        </button>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <AiUsageBadge />
+          <button
+            onClick={generateBriefing}
+            disabled={loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            style={{
+              background: "none",
+              border: "1px solid var(--signal-core)",
+              borderRadius: 4,
+              padding: "3px 10px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 11,
+              color: "var(--signal-core)",
+              cursor: loading ? "default" : "pointer",
+              opacity: loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey) ? 0.5 : 1,
+            }}
+          >
+            {loading ? "GENERATING..." : briefing ? "REFRESH" : "GENERATE"}
+          </button>
+        </div>
       </div>
 
       {!briefing && !loading && !error && (

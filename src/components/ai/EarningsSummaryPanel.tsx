@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { chatWithClaude } from "../../api/anthropicClient";
+import { chatWithClaude, getAiUsage } from "../../api/anthropicClient";
+import { AiUsageBadge } from "./AiUsageBadge";
 import { exaSearch } from "../../api/exaClient";
 import { EARNINGS_SUMMARY_PROMPT } from "../../api/earningsPrompts";
 import { renderMarkdown } from "../../lib/renderMarkdown";
@@ -102,8 +103,11 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
             {symbol} — Q{quarter} {year}
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
-            AI Earnings Summary
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+              AI Earnings Summary
+            </span>
+            <AiUsageBadge />
           </div>
         </div>
         <button
@@ -132,6 +136,7 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
             </div>
             <button
               onClick={handleSummarize}
+              disabled={getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey}
               style={{
                 padding: "8px 24px",
                 background: "var(--accent-bg)",
@@ -142,9 +147,10 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
                 fontWeight: 600,
                 color: "var(--accent-text)",
                 cursor: "pointer",
+                opacity: getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? 0.4 : 1,
               }}
             >
-              SUMMARIZE EARNINGS
+              {getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? "AI LIMIT REACHED" : "SUMMARIZE EARNINGS"}
             </button>
           </div>
         )}

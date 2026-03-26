@@ -13,6 +13,7 @@ import { TickerChart } from "../components/market/TickerChart";
 import { WatchlistManager } from "../components/watchlist/WatchlistManager";
 import { Panel } from "../components/layout/Panel";
 import { FearGreedGauge } from "../components/dashboard/FearGreedGauge";
+import { useAlertEvaluator } from "../hooks/useAlertEvaluator";
 
 export function DashboardPage() {
   const { status } = useMarketHours();
@@ -28,6 +29,9 @@ export function DashboardPage() {
       }),
     [status, marketScore],
   );
+
+  // Evaluate user-defined alert rules against live data
+  useAlertEvaluator(marketScore, verdict);
 
   // Record verdict changes to signal history
   useEffect(() => {

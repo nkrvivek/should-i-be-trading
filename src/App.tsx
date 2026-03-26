@@ -18,6 +18,7 @@ import { useAuthStore } from "./stores/authStore";
 import { isSupabaseConfigured } from "./lib/supabase";
 import { hasFeature } from "./lib/featureGates";
 import type { Feature } from "./lib/featureGates";
+import { AlertBell } from "./components/alerts/AlertBell";
 
 // Lazy imports for hub pages
 import ResearchPage from "./pages/ResearchPage";
@@ -179,6 +180,9 @@ export function AppNav() {
       >
         {theme === "dark" ? "LIGHT" : "DARK"}
       </button>
+
+      {/* Alert bell */}
+      <AlertBell />
 
       {/* Auth buttons */}
       {user ? (

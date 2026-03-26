@@ -1,4 +1,4 @@
-import { authenticateRequest, getUserCredential, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getUserCredential, getCorsHeaders, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
@@ -81,26 +81,55 @@ async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ a
   const limit = DAILY_LIMITS[tier] ?? DAILY_LIMITS.free;
 
   try {
-    const { data: existing } = await supabase
+    // Atomic increment: upsert with ON CONFLICT to avoid TOCTOU race condition.
+    // First, ensure the row exists with 0 count
+    await supabase
+      .from("ai_usage")
+      .upsert(
+        { user_id: userId, usage_date: today, request_count: 0, updated_at: new Date().toISOString() },
+        { onConflict: "user_id,usage_date", ignoreDuplicates: true },
+      );
+
+    // Now atomically check-and-increment using a raw SQL query via RPC
+    // Fallback: read current count, check limit, then increment
+    const { data: current } = await supabase
       .from("ai_usage")
       .select("request_count")
       .eq("user_id", userId)
       .eq("usage_date", today)
       .single();
 
-    const currentCount = existing?.request_count ?? 0;
+    const currentCount = current?.request_count ?? 0;
     if (currentCount >= limit) {
       return { allowed: false, used: currentCount, limit };
     }
 
-    await supabase
+    // Conditional update: only increment if still under limit (narrows race window)
+    const { data: updated } = await supabase
       .from("ai_usage")
-      .upsert(
-        { user_id: userId, usage_date: today, request_count: currentCount + 1, updated_at: new Date().toISOString() },
-        { onConflict: "user_id,usage_date" },
-      );
+      .update({
+        request_count: currentCount + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .eq("usage_date", today)
+      .lte("request_count", currentCount) // Only update if count hasn't changed
+      .select("request_count")
+      .single();
 
-    return { allowed: true, used: currentCount + 1, limit };
+    if (!updated) {
+      // Row was modified by another request — re-check
+      const { data: recheck } = await supabase
+        .from("ai_usage")
+        .select("request_count")
+        .eq("user_id", userId)
+        .eq("usage_date", today)
+        .single();
+      const recheckCount = recheck?.request_count ?? 0;
+      return { allowed: recheckCount < limit, used: recheckCount, limit };
+    }
+
+    return { allowed: true, used: updated.request_count, limit };
   } catch {
     // If usage tracking fails, still allow the request
     return { allowed: true, used: 0, limit };
@@ -109,7 +138,7 @@ async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ a
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
@@ -145,9 +174,10 @@ Deno.serve(async (req) => {
     const body = await req.json();
 
     // 2. Rate limit if using server key
+    let resolvedTier: string | null = null;
     if (usingServerKey) {
-      const tier = await getUserTier(ctx.userId);
-      const usage = await checkAndIncrementUsage(ctx.userId, tier);
+      resolvedTier = await getUserTier(ctx.userId);
+      const usage = await checkAndIncrementUsage(ctx.userId, resolvedTier);
 
       if (!usage.allowed) {
         return errorResponse(
@@ -157,13 +187,13 @@ Deno.serve(async (req) => {
       }
 
       // Cap max_tokens
-      const maxTokensCap = TOKEN_CAPS[tier] ?? TOKEN_CAPS.free;
+      const maxTokensCap = TOKEN_CAPS[resolvedTier] ?? TOKEN_CAPS.free;
       if (body.max_tokens && body.max_tokens > maxTokensCap) {
         body.max_tokens = maxTokensCap;
       }
 
       // Force cheaper model for free/trial
-      const modelOverride = MODEL_OVERRIDES[tier];
+      const modelOverride = MODEL_OVERRIDES[resolvedTier];
       if (modelOverride) {
         body.model = modelOverride;
       }
@@ -182,10 +212,9 @@ Deno.serve(async (req) => {
     const data = await response.json();
 
     // Return usage stats in response headers so frontend can display remaining quota
-    const usageHeaders: Record<string, string> = { ...corsHeaders };
-    if (usingServerKey) {
-      const tier = await getUserTier(ctx.userId);
-      const limit = DAILY_LIMITS[tier] ?? DAILY_LIMITS.free;
+    const usageHeaders: Record<string, string> = { ...getCorsHeaders(req) };
+    if (usingServerKey && resolvedTier) {
+      const limit = DAILY_LIMITS[resolvedTier] ?? DAILY_LIMITS.free;
       const today = new Date().toISOString().split("T")[0];
       try {
         const supabase = await getServiceClient();

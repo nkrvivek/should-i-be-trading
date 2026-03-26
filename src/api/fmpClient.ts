@@ -6,20 +6,20 @@
  */
 
 import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "./edgeHeaders";
 
 async function fmpCall<T>(params: Record<string, unknown>): Promise<T> {
   if (!isSupabaseConfigured()) {
     throw new Error("FMP requires Supabase. Configure VITE_SUPABASE_URL.");
   }
 
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fmp`;
+  const headers = await getEdgeHeaders();
 
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${anonKey}`,
-      apikey: anonKey,
+      ...headers,
       "Content-Type": "application/json",
     },
     body: JSON.stringify(params),

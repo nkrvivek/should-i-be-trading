@@ -1,4 +1,4 @@
-import { corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 
 /**
  * SEC EDGAR 13F proxy edge function.
@@ -62,10 +62,13 @@ const TOP_FILERS = [
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Authenticate user
+    await authenticateRequest(req);
+
     const body = await req.json();
     const { endpoint, cik, ticker, query } = body as {
       endpoint: string;

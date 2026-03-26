@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
-import { supabase, isSupabaseConfigured } from "../../lib/supabase";
+import { isSupabaseConfigured } from "../../lib/supabase";
+import { getEdgeHeaders } from "../../api/edgeHeaders";
 
 interface CFTCContract {
   name: string;
@@ -48,12 +49,7 @@ export default function CTAPanel() {
     try {
       if (isSupabaseConfigured()) {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-        const session = await supabase.auth.getSession();
-        const token = session.data?.session?.access_token;
-
-        const headers: Record<string, string> = { "apikey": anonKey };
-        if (token) headers["x-user-token"] = token;
+        const headers = await getEdgeHeaders();
 
         const res = await fetch(`${supabaseUrl}/functions/v1/cftc?weeks=8`, { headers });
         if (!res.ok) throw new Error(`CFTC ${res.status}`);

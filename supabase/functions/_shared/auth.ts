@@ -66,21 +66,40 @@ export async function getUserCredential(
   return data.credential_data;
 }
 
-/** Standard CORS headers for edge functions */
+/** Allowed origins for CORS */
+const ALLOWED_ORIGINS = [
+  "https://sibt.ai",
+  "https://www.sibt.ai",
+  "https://should-i-be-trading.vercel.app",
+];
+
+/** Build CORS headers with origin check. Falls back to first allowed origin. */
+export function getCorsHeaders(req?: Request): Record<string, string> {
+  const origin = req?.headers.get("Origin") ?? "";
+  const isLocalhost = origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+  const allowed = ALLOWED_ORIGINS.includes(origin) || isLocalhost;
+  return {
+    "Access-Control-Allow-Origin": allowed ? origin : ALLOWED_ORIGINS[0],
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
+  };
+}
+
+/** Standard CORS headers (legacy — use getCorsHeaders(req) for origin-checked headers) */
 export const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://sibt.ai",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
 };
 
 /** Create a JSON response with CORS headers */
-export function jsonResponse(data: unknown, status = 200): Response {
+export function jsonResponse(data: unknown, status = 200, req?: Request): Response {
+  const cors = req ? getCorsHeaders(req) : corsHeaders;
   return new Response(JSON.stringify(data), {
     status,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    headers: { ...cors, "Content-Type": "application/json" },
   });
 }
 
 /** Create an error response */
-export function errorResponse(message: string, status = 400): Response {
-  return jsonResponse({ error: message }, status);
+export function errorResponse(message: string, status = 400, req?: Request): Response {
+  return jsonResponse({ error: message }, status, req);
 }

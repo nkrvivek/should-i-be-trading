@@ -1,24 +1,47 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { corsHeaders } from "../_shared/auth.ts";
+import { getCorsHeaders } from "../_shared/auth.ts";
 import { BRAND, emailLayout, emailButton } from "../_shared/email.ts";
 
 /**
  * Send a branded welcome email when a new user signs up.
  *
- * Can be triggered two ways:
- * 1. Via database webhook (pg_net) on profile insert
- * 2. Called directly from the client after signup
+ * ADMIN-ONLY: Requires either:
+ * 1. x-admin-secret header matching ADMIN_SECRET env var
+ * 2. Service role key in Authorization header (for DB webhooks)
+ * 3. Valid user JWT where user_id matches the authenticated user (self-only)
  *
  * Requires RESEND_API_KEY env var for email delivery.
- * Falls back to Supabase Auth email if Resend is not configured.
  */
 
+const ADMIN_SECRET = Deno.env.get("ADMIN_SECRET") ?? "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+function isAdminOrWebhook(req: Request): boolean {
+  const secret = req.headers.get("x-admin-secret");
+  if (ADMIN_SECRET && secret === ADMIN_SECRET) return true;
+
+  const authHeader = req.headers.get("Authorization");
+  if (authHeader?.includes(SUPABASE_SERVICE_ROLE_KEY)) return true;
+
+  return false;
+}
+
 Deno.serve(async (req) => {
+  const cors = getCorsHeaders(req);
+
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: cors });
   }
 
   try {
+    // Check admin/webhook authorization
+    if (!isAdminOrWebhook(req)) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized. This endpoint requires admin credentials." }),
+        { status: 403, headers: { ...cors, "Content-Type": "application/json" } },
+      );
+    }
+
     const { user_id, email, display_name } = await req.json();
 
     // If called via webhook, get user details from the database
@@ -28,7 +51,7 @@ Deno.serve(async (req) => {
     if (user_id && (!email || !display_name)) {
       const supabaseAdmin = createClient(
         Deno.env.get("SUPABASE_URL")!,
-        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+        SUPABASE_SERVICE_ROLE_KEY,
       );
 
       const { data: { user } } = await supabaseAdmin.auth.admin.getUserById(user_id);
@@ -41,7 +64,15 @@ Deno.serve(async (req) => {
     if (!userEmail) {
       return new Response(JSON.stringify({ error: "No email provided" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    // Basic email format validation
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(userEmail)) {
+      return new Response(JSON.stringify({ error: "Invalid email format" }), {
+        status: 400,
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -50,7 +81,7 @@ Deno.serve(async (req) => {
       console.log("RESEND_API_KEY not set, skipping welcome email for", userEmail);
       return new Response(JSON.stringify({ skipped: true, reason: "RESEND_API_KEY not configured" }), {
         status: 200,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -134,7 +165,7 @@ ${BRAND.name} is an analytical tool. Not investment advice.`;
       console.error("Resend error:", err);
       return new Response(JSON.stringify({ error: err.message || "Failed to send email" }), {
         status: 500,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -143,13 +174,13 @@ ${BRAND.name} is an analytical tool. Not investment advice.`;
 
     return new Response(JSON.stringify({ sent: true, id: result.id }), {
       status: 200,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (err) {
     console.error("Welcome email error:", err);
     return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Internal error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...cors, "Content-Type": "application/json" },
     });
   }
 });

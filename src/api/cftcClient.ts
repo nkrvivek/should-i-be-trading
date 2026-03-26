@@ -6,6 +6,7 @@
  */
 
 import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "./edgeHeaders";
 
 /* ─── Types ─────────────────────────────────────────── */
 
@@ -46,15 +47,10 @@ export async function getCotData(weeks = 12): Promise<CftcResponse> {
     throw new Error("CFTC requires Supabase. Configure VITE_SUPABASE_URL.");
   }
 
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cftc?weeks=${weeks}`;
+  const headers = await getEdgeHeaders();
 
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${anonKey}`,
-      apikey: anonKey,
-    },
-  });
+  const response = await fetch(url, { headers });
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

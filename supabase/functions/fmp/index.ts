@@ -1,36 +1,17 @@
-import { corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 
 /**
  * FMP (Financial Modeling Prep) proxy edge function.
  *
  * Proxies requests to the FMP stable API with server-side API key.
  * Includes response caching to stay within 250 calls/day free tier.
- *
- * Usage:
- *   POST /functions/v1/fmp
- *   Body: { "endpoint": "profile", "symbol": "AAPL" }
- *
- * Supported endpoints:
- *   - profile          — Company overview (price, sector, market cap, description)
- *   - income-statement — Income statement (annual or quarterly)
- *   - balance-sheet    — Balance sheet (annual or quarterly)
- *   - cash-flow        — Cash flow statement
- *   - ratios-ttm       — Key financial ratios (trailing twelve months)
- *   - key-metrics-ttm  — Key metrics snapshot
- *   - analyst-estimates — Forward EPS/revenue estimates
- *   - price-target      — Analyst price target consensus
- *   - earnings          — Historical earnings for a symbol
- *   - screener          — Stock screener with filters
- *   - search            — Symbol/company name search
- *
- * Requires secret: FMP_API_KEY
+ * Requires authentication.
  */
 
 const FMP_BASE = "https://financialmodelingprep.com/stable";
 const FMP_V3_BASE = "https://financialmodelingprep.com/api/v3";
 
 // ── Endpoint whitelist with allowed params ──────────────────────
-// Most use the stable API; some (historical-price) are v3-only with symbol-in-path.
 const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean; v3?: boolean; symbolInPath?: boolean }> = {
   "profile":            { path: "/profile",               requiresSymbol: true },
   "income-statement":   { path: "/income-statement",      requiresSymbol: true },
@@ -55,28 +36,30 @@ const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean; v3?: bo
 const cache = new Map<string, { data: unknown; expires: number }>();
 
 function getCacheTTL(endpoint: string): number {
-  // Financial statements change quarterly — cache longer
-  if (["income-statement", "balance-sheet", "cash-flow"].includes(endpoint)) return 7 * 24 * 3600 * 1000; // 7 days
-  if (["ratios", "ratios-ttm", "key-metrics", "key-metrics-ttm"].includes(endpoint)) return 24 * 3600 * 1000; // 1 day
-  if (["profile"].includes(endpoint)) return 6 * 3600 * 1000; // 6 hours
-  if (["analyst-estimates", "price-target", "price-target-summary"].includes(endpoint)) return 12 * 3600 * 1000; // 12 hours
-  if (["earnings", "earnings-calendar"].includes(endpoint)) return 6 * 3600 * 1000; // 6 hours
-  if (["historical-price"].includes(endpoint)) return 3600 * 1000; // 1 hour
-  if (["quote"].includes(endpoint)) return 5 * 60 * 1000; // 5 minutes
-  return 3600 * 1000; // 1 hour default
+  if (["income-statement", "balance-sheet", "cash-flow"].includes(endpoint)) return 7 * 24 * 3600 * 1000;
+  if (["ratios", "ratios-ttm", "key-metrics", "key-metrics-ttm"].includes(endpoint)) return 24 * 3600 * 1000;
+  if (["profile"].includes(endpoint)) return 6 * 3600 * 1000;
+  if (["analyst-estimates", "price-target", "price-target-summary"].includes(endpoint)) return 12 * 3600 * 1000;
+  if (["earnings", "earnings-calendar"].includes(endpoint)) return 6 * 3600 * 1000;
+  if (["historical-price"].includes(endpoint)) return 3600 * 1000;
+  if (["quote"].includes(endpoint)) return 5 * 60 * 1000;
+  return 3600 * 1000;
 }
 
 // ── Handler ─────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Authenticate user
+    await authenticateRequest(req);
+
     const apiKey = Deno.env.get("FMP_API_KEY");
     if (!apiKey) {
-      return errorResponse("FMP_API_KEY not configured. Add it via: supabase secrets set FMP_API_KEY=your_key", 500);
+      return errorResponse("FMP_API_KEY not configured", 500, req);
     }
 
     const body = await req.json();
@@ -91,14 +74,14 @@ Deno.serve(async (req) => {
     // Validate endpoint
     const config = ENDPOINTS[endpoint];
     if (!config) {
-      return errorResponse(`Unknown endpoint: ${endpoint}. Valid: ${Object.keys(ENDPOINTS).join(", ")}`, 400);
+      return errorResponse(`Unknown endpoint: ${endpoint}. Valid: ${Object.keys(ENDPOINTS).join(", ")}`, 400, req);
     }
 
     if (config.requiresSymbol && !symbol) {
-      return errorResponse(`Endpoint "${endpoint}" requires a symbol parameter`, 400);
+      return errorResponse(`Endpoint "${endpoint}" requires a symbol parameter`, 400, req);
     }
 
-    // Build URL — some endpoints use v3 base + symbol in path
+    // Build URL
     const base = config.v3 ? FMP_V3_BASE : FMP_BASE;
     const path = config.symbolInPath && symbol
       ? `${config.path}/${symbol.toUpperCase()}`
@@ -132,7 +115,7 @@ Deno.serve(async (req) => {
       url.searchParams.set("query", String(extraParams.query));
     }
 
-    // Date range params (earnings calendar + historical prices)
+    // Date range params
     if (endpoint === "earnings-calendar" || endpoint === "historical-price") {
       if (extraParams.from) url.searchParams.set("from", String(extraParams.from));
       if (extraParams.to) url.searchParams.set("to", String(extraParams.to));
@@ -142,20 +125,20 @@ Deno.serve(async (req) => {
     const cacheKey = url.toString();
     const cached = cache.get(cacheKey);
     if (cached && cached.expires > Date.now()) {
-      return jsonResponse({ data: cached.data, cached: true });
+      return jsonResponse({ data: cached.data, cached: true }, 200, req);
     }
 
     // Fetch from FMP
     const res = await fetch(url.toString());
 
     if (res.status === 429) {
-      return errorResponse("FMP daily rate limit reached (250 calls/day). Try again tomorrow.", 429);
+      return errorResponse("FMP daily rate limit reached (250 calls/day). Try again tomorrow.", 429, req);
     }
 
     if (!res.ok) {
       const text = await res.text();
       console.error(`FMP error (${res.status}):`, text);
-      return errorResponse(`FMP API error: ${res.status}`, 502);
+      return errorResponse(`FMP API error: ${res.status}`, 502, req);
     }
 
     const data = await res.json();
@@ -163,7 +146,7 @@ Deno.serve(async (req) => {
     // Cache the response
     cache.set(cacheKey, { data, expires: Date.now() + getCacheTTL(endpoint) });
 
-    // Prune old cache entries (keep under 500)
+    // Prune old cache entries
     if (cache.size > 500) {
       const now = Date.now();
       for (const [key, val] of cache) {
@@ -171,9 +154,13 @@ Deno.serve(async (req) => {
       }
     }
 
-    return jsonResponse({ data, cached: false });
+    return jsonResponse({ data, cached: false }, 200, req);
   } catch (err) {
+    const msg = err instanceof Error ? err.message : "Internal error";
+    if (msg.includes("authentication") || msg.includes("token") || msg.includes("Missing")) {
+      return errorResponse(msg, 401, req);
+    }
     console.error("FMP proxy error:", err);
-    return errorResponse(err instanceof Error ? err.message : "Internal error", 500);
+    return errorResponse(msg, 500, req);
   }
 });

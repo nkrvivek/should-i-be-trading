@@ -1,52 +1,62 @@
-import { corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 
 const EDGAR_BASE = "https://efts.sec.gov/LATEST";
 const EDGAR_DATA = "https://data.sec.gov";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Authenticate user
+    await authenticateRequest(req);
+
     const url = new URL(req.url);
     const action = url.searchParams.get("action");
 
     if (action === "insider") {
-      // Recent Form 4 filings for a ticker
       const ticker = url.searchParams.get("ticker");
-      if (!ticker) return errorResponse("Missing ticker");
+      if (!ticker) return errorResponse("Missing ticker", 400, req);
+
+      // Validate ticker format
+      if (!/^[A-Za-z]{1,6}$/.test(ticker)) {
+        return errorResponse("Invalid ticker format", 400, req);
+      }
 
       const cikRes = await fetch(`${EDGAR_DATA}/submissions/CIK${ticker.padStart(10, "0")}.json`, {
         headers: { "User-Agent": "SIBT/1.0 (contact@sibt.app)" },
       });
 
       if (!cikRes.ok) {
-        // Try full-text search as fallback
-        const searchRes = await fetch(`${EDGAR_BASE}/search-index?q=${ticker}&forms=4&dateRange=custom&startdt=${getDateDaysAgo(30)}&enddt=${getTodayStr()}`, {
+        const searchRes = await fetch(`${EDGAR_BASE}/search-index?q=${encodeURIComponent(ticker)}&forms=4&dateRange=custom&startdt=${getDateDaysAgo(30)}&enddt=${getTodayStr()}`, {
           headers: { "User-Agent": "SIBT/1.0 (contact@sibt.app)" },
         });
         const searchData = await searchRes.json();
-        return jsonResponse(searchData);
+        return jsonResponse(searchData, 200, req);
       }
 
       const data = await cikRes.json();
-      return jsonResponse(data);
+      return jsonResponse(data, 200, req);
     }
 
     if (action === "filings_search") {
       const query = url.searchParams.get("q") ?? "";
       const forms = url.searchParams.get("forms") ?? "4,13F-HR";
-      const searchRes = await fetch(`${EDGAR_BASE}/search-index?q=${query}&forms=${forms}`, {
+      const searchRes = await fetch(`${EDGAR_BASE}/search-index?q=${encodeURIComponent(query)}&forms=${encodeURIComponent(forms)}`, {
         headers: { "User-Agent": "SIBT/1.0 (contact@sibt.app)" },
       });
       const data = await searchRes.json();
-      return jsonResponse(data);
+      return jsonResponse(data, 200, req);
     }
 
-    return errorResponse("Invalid action. Use 'insider' or 'filings_search'");
+    return errorResponse("Invalid action. Use 'insider' or 'filings_search'", 400, req);
   } catch (e) {
-    return errorResponse(e instanceof Error ? e.message : "SEC EDGAR error", 500);
+    const msg = e instanceof Error ? e.message : "SEC EDGAR error";
+    if (msg.includes("authentication") || msg.includes("token") || msg.includes("Missing")) {
+      return errorResponse(msg, 401, req);
+    }
+    return errorResponse(msg, 500, req);
   }
 });
 

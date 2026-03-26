@@ -1,9 +1,9 @@
-import { corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 
 /**
  * CFTC Commitments of Traders — Free public API.
  * No API key needed. Published weekly (Tuesday data, released Friday).
- * Tracks institutional futures positioning across key contracts.
+ * Requires authentication to prevent abuse.
  */
 
 const CFTC_BASE = "https://publicreporting.cftc.gov/resource/jun7-fc8e.json";
@@ -24,12 +24,16 @@ const CONTRACTS: Record<string, { code: string; name: string; category: string }
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
+    return new Response("ok", { headers: getCorsHeaders(req) });
   }
 
   try {
+    // Authenticate user
+    await authenticateRequest(req);
+
     const url = new URL(req.url);
-    const weeks = parseInt(url.searchParams.get("weeks") ?? "8");
+    const weeksRaw = parseInt(url.searchParams.get("weeks") ?? "8");
+    const weeks = isNaN(weeksRaw) || weeksRaw < 1 ? 8 : Math.min(weeksRaw, 52);
     const contractCodes = Object.values(CONTRACTS).map((c) => `'${c.code}'`).join(",");
 
     const query = new URLSearchParams({
@@ -54,7 +58,7 @@ Deno.serve(async (req) => {
 
     const response = await fetch(`${CFTC_BASE}?${query}`);
     if (!response.ok) {
-      return errorResponse(`CFTC API error: ${response.status}`, response.status);
+      return errorResponse(`CFTC API error: ${response.status}`, response.status, req);
     }
 
     const raw = await response.json();
@@ -109,12 +113,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Sort history by date ascending for each contract
     for (const contract of Object.values(byContract)) {
       contract.history.sort((a, b) => a.date.localeCompare(b.date));
     }
 
-    // Compute posture for each contract
     const positioning = Object.values(byContract).map((c) => {
       const latest = c.history[c.history.length - 1];
       const prev = c.history.length > 1 ? c.history[c.history.length - 2] : null;
@@ -144,8 +146,12 @@ Deno.serve(async (req) => {
       source: "CFTC Commitments of Traders",
       lastReport: raw[0]?.report_date_as_yyyy_mm_dd?.slice(0, 10) || "unknown",
       contracts: positioning,
-    });
+    }, 200, req);
   } catch (e) {
-    return errorResponse(e instanceof Error ? e.message : "CFTC error", 500);
+    const msg = e instanceof Error ? e.message : "CFTC error";
+    if (msg.includes("authentication") || msg.includes("token") || msg.includes("Missing")) {
+      return errorResponse(msg, 401, req);
+    }
+    return errorResponse(msg, 500, req);
   }
 });

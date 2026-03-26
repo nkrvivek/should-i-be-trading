@@ -6,6 +6,7 @@
  */
 
 import { useState, useCallback } from "react";
+import { getEdgeHeaders } from "../api/edgeHeaders";
 
 export type DailyReturn = {
   date: string;
@@ -37,17 +38,9 @@ async function fetchFredSeries(seriesId: string, limit: number): Promise<{ date:
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   if (!supabaseUrl) throw new Error("Supabase not configured");
 
-  // Get auth token for edge function
-  const { createClient } = await import("@supabase/supabase-js");
-  const sb = createClient(supabaseUrl, import.meta.env.VITE_SUPABASE_ANON_KEY || "");
-  const { data: { session } } = await sb.auth.getSession();
-  const token = session?.access_token || "";
-
+  const headers = await getEdgeHeaders();
   const res = await fetch(`${supabaseUrl}/functions/v1/fred?series_id=${seriesId}&limit=${limit + 20}&sort_order=desc`, {
-    headers: {
-      apikey: import.meta.env.VITE_SUPABASE_ANON_KEY || "",
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
   });
 
   if (!res.ok) throw new Error(`FRED fetch failed: ${res.status}`);

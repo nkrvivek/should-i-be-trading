@@ -3,6 +3,7 @@ import { Panel } from "../layout/Panel";
 import { useInsiderTrading } from "../../hooks/useInsiderTrading";
 import { getCredential } from "../../lib/credentials";
 import { isSupabaseConfigured } from "../../lib/supabase";
+import { getEdgeHeaders } from "../../api/edgeHeaders";
 import type { InsiderActivitySummary, InsiderSignal, InsiderTransaction } from "../../api/types";
 
 // Simple company name lookup cache
@@ -20,11 +21,9 @@ async function fetchCompanyInfo(symbol: string): Promise<{ name: string; sector:
       res = await fetch(`/finnhub-api/api/v1/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`);
     } else if (isSupabaseConfigured()) {
       const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finnhub?endpoint=stock/profile2&symbol=${encodeURIComponent(symbol)}`;
+      const edgeHeaders = await getEdgeHeaders();
       res = await fetch(edgeUrl, {
-        headers: {
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-          apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-        },
+        headers: edgeHeaders,
       });
     } else {
       return null;

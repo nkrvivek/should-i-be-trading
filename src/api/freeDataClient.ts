@@ -1,26 +1,21 @@
 import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "./edgeHeaders";
 
 /**
  * Call a Supabase Edge Function for free data APIs (FRED, Finnhub, SEC EDGAR).
  * These use server-side keys, not per-user credentials.
+ * Sends user JWT via x-user-token for authentication.
  */
 async function callEdgeFunction<T>(functionName: string, params: Record<string, string>): Promise<T> {
   if (!isSupabaseConfigured()) {
     throw new Error(`${functionName} requires Supabase. Configure VITE_SUPABASE_URL.`);
   }
 
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const searchParams = new URLSearchParams(params);
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}?${searchParams}`;
 
-  // Always use anon key (HS256) for non-auth edge functions like finnhub/fred.
-  // User ES256 tokens get rejected by the Supabase gateway on these functions.
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${anonKey}`,
-      apikey: anonKey,
-    },
-  });
+  const headers = await getEdgeHeaders();
+  const response = await fetch(url, { headers });
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));

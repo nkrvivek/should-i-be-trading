@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Panel } from "../layout/Panel";
 import { hasUWToken, fetchUWCongressTrades, type UWCongressTrade } from "../../api/uwClient";
 import { isSupabaseConfigured } from "../../lib/supabase";
+import { getEdgeHeaders } from "../../api/edgeHeaders";
 
 type NormalizedTrade = {
   name: string;
@@ -127,11 +128,9 @@ export function CongressTradingPanel() {
     if (isSupabaseConfigured()) {
       try {
         const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-congress`;
+        const edgeHeaders = await getEdgeHeaders();
         const res = await fetch(edgeUrl, {
-          headers: {
-            Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
+          headers: edgeHeaders,
         });
         if (res.ok) {
           const data: RapidAPITrade[] = await res.json();

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "../api/edgeHeaders";
 
 export type AnalystConsensus = {
   strongBuy: number;
@@ -69,19 +70,14 @@ export function useEarningsCalendar(weeksAhead = 4) {
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
       const today = new Date().toISOString().split("T")[0];
       const end = new Date(Date.now() + weeksAhead * 7 * 86400000).toISOString().split("T")[0];
 
+      const headers = await getEdgeHeaders();
       const res = await fetch(
         `${supabaseUrl}/functions/v1/finnhub?endpoint=calendar/earnings&from=${today}&to=${end}`,
-        {
-          headers: {
-            Authorization: `Bearer ${supabaseKey}`,
-            apikey: supabaseKey,
-          },
-        },
+        { headers },
       );
 
       if (!res.ok) throw new Error(`Finnhub ${res.status}`);
@@ -107,7 +103,7 @@ export function useEarningsCalendar(weeksAhead = 4) {
 
       // Phase 2: Fetch analyst data for each unique ticker (batched, delayed)
       const uniqueSymbols = [...new Set(filtered.map((e) => e.symbol))];
-      enrichWithAnalystData(uniqueSymbols, supabaseUrl, supabaseKey, filtered, setEarnings);
+      enrichWithAnalystData(uniqueSymbols, supabaseUrl, headers, filtered, setEarnings);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to fetch earnings");
     } finally {
@@ -138,11 +134,10 @@ function classifyConsensus(recs: { strongBuy: number; buy: number; hold: number;
 async function enrichWithAnalystData(
   symbols: string[],
   supabaseUrl: string,
-  supabaseKey: string,
+  headers: Record<string, string>,
   entries: EarningsEntry[],
   setEarnings: (e: EarningsEntry[]) => void,
 ) {
-  const headers = { Authorization: `Bearer ${supabaseKey}`, apikey: supabaseKey };
   const analystMap = new Map<string, AnalystConsensus>();
   const surpriseMap = new Map<string, EpsSurprise[]>();
 

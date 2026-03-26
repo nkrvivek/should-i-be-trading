@@ -8,6 +8,7 @@
 import { useState, useCallback } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getCredential } from "../lib/credentials";
+import { getEdgeHeaders } from "../api/edgeHeaders";
 
 /* ─── Types ─────────────────────────────────────────── */
 
@@ -43,7 +44,6 @@ export interface SentimentData {
 
 async function finnhubFetch<T>(endpoint: string, params: Record<string, string>): Promise<T> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const apiKey = getCredential("finnhub");
 
   const useEdge = !apiKey && isSupabaseConfigured();
@@ -58,11 +58,7 @@ async function finnhubFetch<T>(endpoint: string, params: Record<string, string>)
     url = `https://finnhub.io/api/v1/${endpoint}?${qs}`;
   }
 
-  const headers: Record<string, string> = {};
-  if (useEdge) {
-    headers["Authorization"] = `Bearer ${supabaseKey}`;
-    headers["apikey"] = supabaseKey;
-  }
+  const headers: Record<string, string> = useEdge ? await getEdgeHeaders() : {};
 
   const response = await fetch(url, { headers });
   if (!response.ok) throw new Error(`Finnhub ${endpoint} failed: ${response.status}`);

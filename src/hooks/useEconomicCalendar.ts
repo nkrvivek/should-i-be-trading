@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "../api/edgeHeaders";
 
 export type EconomicEvent = {
   date: string;
@@ -46,11 +47,7 @@ export function useEconomicCalendar() {
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-      const headers = {
-        Authorization: `Bearer ${supabaseKey}`,
-        apikey: supabaseKey,
-      };
+      const headers = await getEdgeHeaders();
 
       const allEvents: EconomicEvent[] = [];
 

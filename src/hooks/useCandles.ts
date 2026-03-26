@@ -12,6 +12,7 @@
 
 import { useState, useCallback, useRef } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "../api/edgeHeaders";
 import type { OHLCV } from "../lib/technicalIndicators";
 
 export type Resolution = "1" | "5" | "15" | "30" | "60" | "D" | "W" | "M";
@@ -38,17 +39,16 @@ interface FmpHistoricalItem {
 async function fetchFromFMP(symbol: string, days: number): Promise<OHLCV[]> {
   if (!isSupabaseConfigured()) throw new Error("FMP requires Supabase");
 
-  const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fmp`;
 
   const from = new Date(Date.now() - days * 86400000).toISOString().split("T")[0];
   const to = new Date().toISOString().split("T")[0];
 
+  const headers = await getEdgeHeaders();
   const response = await fetch(url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${anonKey}`,
-      apikey: anonKey,
+      ...headers,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
@@ -123,7 +123,6 @@ async function fetchFromYahoo(symbol: string, resolution: Resolution): Promise<O
   // Use edge function proxy to avoid CORS
   if (isSupabaseConfigured()) {
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
     const qs = new URLSearchParams({
       endpoint: `v8/finance/chart/${sym}`,
@@ -132,11 +131,9 @@ async function fetchFromYahoo(symbol: string, resolution: Resolution): Promise<O
       includePrePost: "false",
     });
 
+    const headers = await getEdgeHeaders();
     const res = await fetch(`${supabaseUrl}/functions/v1/yahoo-chart?${qs}`, {
-      headers: {
-        Authorization: `Bearer ${supabaseKey}`,
-        apikey: supabaseKey,
-      },
+      headers,
     });
 
     if (!res.ok) throw new Error(`Yahoo Finance failed: ${res.status}`);

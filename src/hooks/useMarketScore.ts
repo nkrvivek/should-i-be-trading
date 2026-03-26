@@ -1,72 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { computeMarketScore, computeRSI, computeSMA, type MarketScore, type MarketInputs } from "../lib/marketScoring";
 import { getCredential } from "../lib/credentials";
-import { isSupabaseConfigured } from "../lib/supabase";
 import { useMarketHours } from "./useMarketHours";
+import { finnhubFetch, fredFetchSeries, fredFetchLatest } from "../api/dataFetchers";
 
 const CACHE_KEY = "sibt_market_score";
 const CACHE_TTL = 60_000; // 1 min during market hours
 const CLOSED_CACHE_TTL = 15 * 60_000; // 15 min when closed
 
 type FinnhubQuote = { c: number; dp: number; pc: number; o: number; h: number; l: number };
-
-
-async function finnhubFetch<T>(endpoint: string, params: Record<string, string>, apiKey?: string): Promise<T> {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  const useEdge = !apiKey && isSupabaseConfigured();
-
-  if (!apiKey && !useEdge) throw new Error("No Finnhub API key");
-
-  let url: string;
-  if (useEdge) {
-    const qs = new URLSearchParams({ endpoint, ...params });
-    url = `${supabaseUrl}/functions/v1/finnhub?${qs}`;
-  } else {
-    const qs = new URLSearchParams({ ...params, token: apiKey! });
-    url = `/finnhub-api/api/v1/${endpoint}?${qs}`;
-  }
-
-  const headers: Record<string, string> = {};
-  if (useEdge) {
-    headers["Authorization"] = `Bearer ${supabaseKey}`;
-    headers["apikey"] = supabaseKey;
-  }
-
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`Finnhub ${res.status}`);
-  return res.json();
-}
-
-async function fredFetch(seriesId: string, limit = 2): Promise<number | undefined> {
-  const vals = await fredFetchSeries(seriesId, limit);
-  return vals.length > 0 ? vals[0] : undefined;
-}
-
-async function fredFetchSeries(seriesId: string, limit = 250): Promise<number[]> {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-  if (!isSupabaseConfigured()) return [];
-
-  try {
-    const url = `${supabaseUrl}/functions/v1/fred?series_id=${seriesId}&limit=${limit}&sort_order=desc`;
-    const res = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${supabaseKey}`,
-        apikey: supabaseKey,
-      },
-    });
-    if (!res.ok) return [];
-    const data = await res.json();
-    const obs = data?.observations;
-    if (!obs) return [];
-    return obs
-      .filter((o: { value: string }) => o.value !== ".")
-      .map((o: { value: string }) => parseFloat(o.value));
-  } catch {
-    return [];
-  }
-}
 
 export function useMarketScore() {
   const [score, setScore] = useState<MarketScore | null>(null);
@@ -91,8 +33,8 @@ export function useMarketScore() {
       const [vixSeries, sp500Series, tenYearYield, dxy, spyQuote] = await Promise.all([
         fredFetchSeries("VIXCLS", 5),                   // VIX: last 5 days
         fredFetchSeries("SP500", 250),                   // SP500: ~1 year of daily closes
-        fredFetch("DGS10"),                              // 10-Year Treasury
-        fredFetch("DTWEXBGS").catch(() => undefined),    // DXY
+        fredFetchLatest("DGS10"),                              // 10-Year Treasury
+        fredFetchLatest("DTWEXBGS").catch(() => undefined),    // DXY
         finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch(() => null),
       ]);
 

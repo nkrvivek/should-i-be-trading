@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "../api/edgeHeaders";
 
 export type StockMetrics = {
   symbol: string;
@@ -68,8 +69,7 @@ export function useStockMetrics() {
     }
 
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    const headers = { Authorization: `Bearer ${supabaseKey}`, apikey: supabaseKey };
+    const headers = await getEdgeHeaders();
 
     setLoading(true);
     setError(null);

@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from "react";
 import { Panel } from "../layout/Panel";
 import { getCredential } from "../../lib/credentials";
 import { isSupabaseConfigured } from "../../lib/supabase";
+import { getEdgeHeaders } from "../../api/edgeHeaders";
 
 type SectorData = {
   symbol: string;
@@ -45,6 +46,7 @@ export function SectorHeatMap() {
     setError(null);
     try {
       const results: SectorData[] = [];
+      const edgeHeaders = useEdge ? await getEdgeHeaders() : null;
 
       // Fetch in batches of 4 to respect rate limits
       for (let i = 0; i < SECTORS.length; i += 4) {
@@ -55,10 +57,7 @@ export function SectorHeatMap() {
             if (useEdge) {
               const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finnhub?endpoint=quote&symbol=${s.symbol}`;
               res = await fetch(edgeUrl, {
-                headers: {
-                  Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-                  apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-                },
+                headers: edgeHeaders!,
               });
             } else {
               res = await fetch(`/finnhub-api/api/v1/quote?symbol=${s.symbol}&token=${apiKey}`);

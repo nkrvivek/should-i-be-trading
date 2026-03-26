@@ -10,6 +10,9 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui",
+    "test:e2e:headed": "npx playwright test --headed",
     "email:preview": "npx tsx scripts/sync-email-templates.ts --preview",
     "email:sync": "sh -c 'curl -s -X POST ${VITE_SUPABASE_URL}/functions/v1/sync-email-templates -H \"x-admin-secret: ${ADMIN_SECRET}\" -H \"Content-Type: application/json\" -d \"{}\"'"
   },
@@ -25,6 +28,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.58.2",
     "@tailwindcss/vite": "^4.2.2",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^6.9.1",

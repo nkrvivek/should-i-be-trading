@@ -1,0 +1,6 @@
+Symbol,Quantity,Cost Basis
+=CMD("calc"),100,5000
+AAPL,200,36400
++HYPERLINK("http://evil.com"),50,2500
+-1+1,@SUM(A1:A2),javascript:alert(1)
+<script>alert('xss')</script>,100,5000

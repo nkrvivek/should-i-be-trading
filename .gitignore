@@ -36,3 +36,9 @@ promo/
 
 __pycache__/
 *.pyc
+
+# Playwright
+e2e/.auth/
+playwright-report/
+test-results/
+.env.test

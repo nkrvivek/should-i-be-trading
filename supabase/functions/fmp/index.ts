@@ -48,6 +48,7 @@ const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean; v3?: bo
   "screener":           { path: "/company-screener",       requiresSymbol: false },
   "search":             { path: "/search",                 requiresSymbol: false },
   "historical-price":   { path: "/historical-price-full",  requiresSymbol: true, v3: true, symbolInPath: true },
+  "quote":              { path: "/quote",                  requiresSymbol: true, v3: true, symbolInPath: true },
 };
 
 // ── Simple in-memory cache (per Deno isolate) ───────────────────
@@ -61,6 +62,7 @@ function getCacheTTL(endpoint: string): number {
   if (["analyst-estimates", "price-target", "price-target-summary"].includes(endpoint)) return 12 * 3600 * 1000; // 12 hours
   if (["earnings", "earnings-calendar"].includes(endpoint)) return 6 * 3600 * 1000; // 6 hours
   if (["historical-price"].includes(endpoint)) return 3600 * 1000; // 1 hour
+  if (["quote"].includes(endpoint)) return 60 * 1000; // 1 minute
   return 3600 * 1000; // 1 hour default
 }
 

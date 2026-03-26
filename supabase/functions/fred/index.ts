@@ -34,8 +34,13 @@ Deno.serve(async (req) => {
     }
 
     const response = await fetch(`${FRED_BASE}/${endpoint}?${params}`);
+    if (!response.ok) {
+      const text = await response.text();
+      console.error(`FRED error (${response.status}):`, text);
+      return errorResponse(`FRED API error: ${response.status}`, 502);
+    }
     const data = await response.json();
-    return jsonResponse(data, response.status);
+    return jsonResponse(data);
   } catch (e) {
     return errorResponse(e instanceof Error ? e.message : "FRED error", 500);
   }

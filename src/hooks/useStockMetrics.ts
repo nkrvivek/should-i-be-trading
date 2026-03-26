@@ -107,7 +107,7 @@ export function useStockMetrics() {
               beta: m.beta ?? null,
               fiftyTwoWeekHigh: m["52WeekHigh"] ?? null,
               fiftyTwoWeekLow: m["52WeekLow"] ?? null,
-              currentPrice: m["52WeekHighDate"] ? null : null, // price comes from quote, not metric
+              currentPrice: null, // populated below via quote endpoint
             });
           } catch {
             // Skip failed symbols
@@ -125,6 +125,33 @@ export function useStockMetrics() {
         await new Promise((r) => setTimeout(r, 1500));
       }
     }
+
+    // Batch-fetch current prices via FMP quote endpoint (single call per symbol batch)
+    try {
+      for (let i = 0; i < results.length; i += 5) {
+        if (abortRef.current) break;
+        const batch = results.slice(i, i + 5);
+        await Promise.all(
+          batch.map(async (stock) => {
+            try {
+              const qRes = await fetch(
+                `${supabaseUrl}/functions/v1/fmp`,
+                {
+                  method: "POST",
+                  headers: { ...headers, "Content-Type": "application/json" },
+                  body: JSON.stringify({ endpoint: "quote", symbol: stock.symbol }),
+                },
+              );
+              if (!qRes.ok) return;
+              const qData = await qRes.json();
+              const quote = Array.isArray(qData.data) ? qData.data[0] : qData.data;
+              if (quote?.price) stock.currentPrice = quote.price;
+            } catch { /* skip price fetch failures */ }
+          }),
+        );
+        if (i + 5 < results.length) await new Promise((r) => setTimeout(r, 500));
+      }
+    } catch { /* price fetch pass failed, prices remain null — non-critical */ }
 
     cachedMetrics = results;
     cacheTimestamp = Date.now();

@@ -161,8 +161,8 @@ export function LandingPage() {
             tag="STARTER"
           />
           <FeatureCard
-            title="SIBT Score (1-10)"
-            description="Composite per-stock rating combining Technical (30%), Fundamental (35%), Sentiment (20%), and Options (15%) signals. Each signal shows its contribution, value, and plain-English description. Auto-computes when you view any stock."
+            title="SIBT Score (Proprietary)"
+            description="Our proprietary 1-10 composite stock rating — like a credit score for any ticker. Synthesizes 15+ real-time signals across Technical, Fundamental, Sentiment, and Options into one actionable number with full signal-level transparency. Institutional-grade analysis, simplified."
             tag="STARTER"
           />
           <FeatureCard

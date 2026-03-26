@@ -219,17 +219,19 @@ const FEATURES: FeatureSection[] = [
 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
   },
   {
-    title: "SIBT Score (Per-Stock Rating)",
+    title: "SIBT Score (Proprietary Rating)",
     tier: "STARTER",
-    description: "Composite 1-10 stock rating combining Technical, Fundamental, Sentiment, and Options signals. Each signal shows its contribution and plain-English description.",
+    description: "Our proprietary 1-10 composite stock rating — like a credit score for any ticker. Synthesizes 15+ real-time signals into one actionable number with full transparency into what drives the score. Institutional-grade analysis, simplified for retail traders.",
     details: [
+      "Proprietary multi-factor model with weighted signal aggregation",
       "Technical (30%): momentum, relative volume, beta, analyst target upside",
-      "Fundamental (35%): P/E, net margin, ROE, revenue/EPS growth, D/E",
-      "Sentiment (20%): insider buy/sell counts, net insider shares",
-      "Options (15%): IV percentile, put/call ratio",
-      "Conic gradient gauge with score visualization",
-      "Expandable category details with per-signal breakdowns",
-      "Auto-computes on Fundamentals tab, cached 10 minutes",
+      "Fundamental (35%): P/E, net margin, ROE, revenue/EPS growth, D/E, current ratio",
+      "Sentiment (20%): insider buy/sell activity, net insider share accumulation",
+      "Options (15%): IV percentile vs 52-week range, put/call ratio (contrarian)",
+      "Full signal-level transparency — see exactly what drives each score",
+      "Expandable category drilldown with contribution values (+/- per signal)",
+      "Built-in methodology explainer — no black box",
+      "Auto-computes on Fundamentals tab, cached 10 minutes for API efficiency",
     ],
     mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
 \u2502  SIBT SCORE                NVDA         \u2502

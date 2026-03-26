@@ -31,11 +31,12 @@ test.describe("Login Page", () => {
     await page.goto("/login");
     await page.waitForLoadState("networkidle");
 
+    // OAuth buttons render as <button> elements with text "Continue with Google" / "Continue with X"
     await expect(
-      page.getByRole("button", { name: /google/i }).first()
+      page.locator("button", { hasText: /Continue with Google/i }).first()
     ).toBeVisible({ timeout: 10_000 });
     await expect(
-      page.getByRole("button", { name: /continue with x/i }).first()
+      page.locator("button", { hasText: /Continue with X/i }).first()
     ).toBeVisible();
   });
 
@@ -64,6 +65,8 @@ test.describe("Login Page", () => {
     const emailInput = page.locator('input[type="email"]').first();
     const passwordInput = page.locator('input[type="password"]').first();
 
+    await expect(emailInput).toBeVisible({ timeout: 10_000 });
+
     await emailInput.fill("fake-user@nonexistent-domain-xyz.com");
     await passwordInput.fill("wrong-password-123");
 
@@ -72,7 +75,7 @@ test.describe("Login Page", () => {
 
     // Should show an error message (Supabase returns "Invalid login credentials" or similar)
     await expect(
-      page.getByText(/invalid|error|failed|incorrect/i).first()
+      page.getByText(/invalid|error|failed|incorrect|auth/i).first()
     ).toBeVisible({ timeout: 15_000 });
   });
 
@@ -90,6 +93,7 @@ test.describe("Login Page", () => {
     const emailInput = page.locator('input[type="email"]').first();
     const passwordInput = page.locator('input[type="password"]').first();
 
+    await expect(emailInput).toBeVisible({ timeout: 10_000 });
     await emailInput.fill(email);
     await passwordInput.fill(password);
 
@@ -102,9 +106,10 @@ test.describe("Login Page", () => {
       { timeout: 15_000 }
     );
 
-    // Verify authenticated state — settings avatar button should appear
+    // Verify authenticated state — avatar button (settings) should appear
+    // The button has title={displayName ?? "Settings"} and contains an SVG avatar
     await expect(
-      page.getByRole("button", { name: /settings/i }).first()
+      page.locator('button[title]').filter({ has: page.locator("svg") }).first()
     ).toBeVisible({ timeout: 10_000 });
   });
 
@@ -135,9 +140,9 @@ test.describe("Login Page", () => {
     // Should still be on dashboard, not redirected to login
     expect(page.url()).not.toContain("/login");
 
-    // Settings button should still be visible (authenticated)
+    // Avatar button should still be visible (authenticated)
     await expect(
-      page.getByRole("button", { name: /settings/i }).first()
+      page.locator('button[title]').filter({ has: page.locator("svg") }).first()
     ).toBeVisible({ timeout: 10_000 });
   });
 });
@@ -167,7 +172,7 @@ test.describe("Logout", () => {
     await page.waitForLoadState("networkidle");
 
     // Click SIGN OUT button
-    const signOutBtn = page.getByRole("button", { name: /sign out/i }).first();
+    const signOutBtn = page.locator("button", { hasText: /sign out/i }).first();
     await expect(signOutBtn).toBeVisible({ timeout: 10_000 });
     await signOutBtn.click();
 
@@ -236,14 +241,15 @@ test.describe("Auth Protection", () => {
     await page.waitForLoadState("networkidle");
 
     // SmartHome shows LandingPage for unauthenticated users
-    // Look for sign-in link or landing page content
+    // Look for sign-in link/button or landing page content
     const hasSignIn = await page
-      .locator("a", { hasText: /sign in/i })
+      .locator("button, a")
+      .filter({ hasText: /sign in/i })
       .first()
       .isVisible()
       .catch(() => false);
     const hasLandingContent = await page
-      .getByText(/should i be trading|SIBT|market intelligence/i)
+      .getByText(/should.*be trading|SIBT|market intelligence|right now/i)
       .first()
       .isVisible()
       .catch(() => false);

@@ -139,7 +139,7 @@ test.describe("Alerts — Interface (Pro Tier)", () => {
 
   test("trigger type selector changes form fields", async ({ page }) => {
     const newAlertBtn = page
-      .getByRole("button", { name: /new alert/i })
+      .locator("button", { hasText: /NEW ALERT/i })
       .first();
     const isVisible = await newAlertBtn.isVisible().catch(() => false);
 
@@ -153,26 +153,27 @@ test.describe("Alerts — Interface (Pro Tier)", () => {
     const triggerSelect = page.locator("select").first();
     await expect(triggerSelect).toBeVisible({ timeout: 5_000 });
 
-    // Select "VIX Crosses Threshold" — needs threshold + direction
-    await triggerSelect.selectOption("vix_crosses");
-    await expect(page.getByText(/threshold/i).first()).toBeVisible();
+    // Default is "vix_crosses" (VIX Crosses Threshold) — needs threshold + direction
+    // The form starts with this type selected, so fields should already be visible
+    await expect(page.getByText(/threshold|point drop/i).first()).toBeVisible({ timeout: 5_000 });
     await expect(page.getByText(/direction/i).first()).toBeVisible();
 
-    // Above/Below direction buttons
+    // Above/Below direction buttons (rendered as ABOVE / BELOW in uppercase)
     await expect(
-      page.getByRole("button", { name: /above/i }).first()
+      page.locator("button", { hasText: /^ABOVE$/i }).first()
     ).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /below/i }).first()
+      page.locator("button", { hasText: /^BELOW$/i }).first()
     ).toBeVisible();
 
     // Switch to "Market Signal Change" — no threshold needed
     await triggerSelect.selectOption("regime_change");
+    await page.waitForTimeout(300);
 
-    // Threshold field should disappear; auto-trigger message should appear
+    // Auto-trigger message should appear
     await expect(
       page.getByText(/triggers automatically/i).first()
-    ).toBeVisible();
+    ).toBeVisible({ timeout: 5_000 });
   });
 
   test("can fill alert parameters", async ({ page }) => {

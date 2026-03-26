@@ -33,6 +33,12 @@ export default defineConfig({
   },
 
   projects: [
+    // Public pages — no auth required, can run independently
+    {
+      name: "public",
+      testMatch: /public-pages\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], storageState: { cookies: [], origins: [] } },
+    },
     // Auth setup — runs first, saves session to e2e/.auth/user.json
     {
       name: "setup",
@@ -42,6 +48,7 @@ export default defineConfig({
     // Main tests — reuse saved auth session
     {
       name: "chromium",
+      testIgnore: /public-pages\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], storageState: "e2e/.auth/user.json" },
       dependencies: ["setup"],
     },

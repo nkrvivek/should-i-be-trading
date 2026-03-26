@@ -39,19 +39,21 @@ test.describe("Strategy Analysis", () => {
     const fileInput = page.locator('input[type="file"]');
     await fileInput.setInputFiles(path.join(__dirname, "fixtures/schwab-positions.csv"));
 
+    // Wait for and click the import action button
     const importBtn = page.getByRole("button", { name: /IMPORT \d+ POSITIONS/i });
-    if (await importBtn.isVisible()) await importBtn.click();
+    await expect(importBtn).toBeVisible({ timeout: 5_000 });
+    await importBtn.click();
+    await page.waitForTimeout(500);
 
     // Go to strategies
     await page.locator("button", { hasText: /STRATEGIES/i }).click();
 
     // AAPL (200), MSFT (150), GOOGL (100) should have covered call suggestions
-    // NVDA (50) should NOT (< 100 shares)
     const analysisPanel = page.locator("text=/STRATEGY ANALYSIS/i").first();
     await expect(analysisPanel).toBeVisible({ timeout: 5_000 });
 
-    // Look for risk badges
-    await expect(page.getByText(/conservative/i).first()).toBeVisible({ timeout: 5_000 });
+    // Look for strategy suggestions (covered call, protective put, etc.)
+    await expect(page.getByText(/covered call/i).first()).toBeVisible({ timeout: 5_000 });
   });
 
   test("simulate button exists on suggestions", async ({ page }) => {

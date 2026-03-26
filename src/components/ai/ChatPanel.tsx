@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
-import { chatWithClaude, getAiUsage, type ChatMessage } from "../../api/anthropicClient";
-import { AiUsageBadge } from "./AiUsageBadge";
+import { chatWithClaude, type ChatMessage } from "../../api/anthropicClient";
+import { AiUsageBadge, useAiUsage } from "./AiUsageBadge";
 import { renderMarkdown } from "../../lib/renderMarkdown";
 import type { CriData, PortfolioData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
@@ -101,6 +101,8 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const aiUsage = useAiUsage();
+  const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -208,8 +210,8 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(e); } }}
-            placeholder={getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? "Daily limit reached — add your API key in Settings" : "Ask about the market..."}
-            disabled={loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            placeholder={limitReached ? "Daily limit reached — add your API key in Settings" : "Ask about the market..."}
+            disabled={loading || limitReached}
             style={{
               flex: 1,
               padding: "6px 12px",
@@ -225,7 +227,7 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={loading || !input.trim() || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            disabled={loading || !input.trim() || limitReached}
             style={{
               padding: "6px 16px",
               background: "var(--accent-bg)",

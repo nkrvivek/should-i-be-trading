@@ -81,6 +81,8 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
   return {
     "Access-Control-Allow-Origin": allowed ? origin : ALLOWED_ORIGINS[0],
     "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Expose-Headers": "x-ai-used, x-ai-limit",
   };
 }
 
@@ -88,6 +90,8 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "https://sibt.ai",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Expose-Headers": "x-ai-used, x-ai-limit",
 };
 
 /** Create a JSON response with CORS headers */

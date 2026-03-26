@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { chatWithClaude, getAiUsage } from "../../api/anthropicClient";
-import { AiUsageBadge } from "../ai/AiUsageBadge";
+import { chatWithClaude } from "../../api/anthropicClient";
+import { AiUsageBadge, useAiUsage } from "../ai/AiUsageBadge";
 import { renderMarkdown } from "../../lib/renderMarkdown";
 import type { CriData } from "../../api/types";
 import type { TrafficLightVerdict } from "../../lib/trafficLight";
@@ -16,6 +16,8 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
   const [briefing, setBriefing] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const aiUsage = useAiUsage();
+  const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
 
   const generateBriefing = useCallback(async () => {
     setLoading(true);
@@ -105,7 +107,7 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
           <AiUsageBadge />
           <button
             onClick={generateBriefing}
-            disabled={loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            disabled={loading || limitReached}
             style={{
               background: "none",
               border: "1px solid var(--signal-core)",
@@ -115,7 +117,7 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
               fontSize: 11,
               color: "var(--signal-core)",
               cursor: loading ? "default" : "pointer",
-              opacity: loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey) ? 0.5 : 1,
+              opacity: loading || limitReached ? 0.5 : 1,
             }}
           >
             {loading ? "GENERATING..." : briefing ? "REFRESH" : "GENERATE"}

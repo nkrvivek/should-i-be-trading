@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { chatWithClaude, getAiUsage } from "../../api/anthropicClient";
-import { AiUsageBadge } from "./AiUsageBadge";
+import { chatWithClaude } from "../../api/anthropicClient";
+import { AiUsageBadge, useAiUsage } from "./AiUsageBadge";
 import { useStockMetrics, type StockMetrics } from "../../hooks/useStockMetrics";
 import {
   SCREENER_SYSTEM_PROMPT,
@@ -69,6 +69,8 @@ export function ScreenerPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<StockMetrics[] | null>(null);
+  const aiUsage = useAiUsage();
+  const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
   const [columns, setColumns] = useState<string[]>([]);
   const [filterDescription, setFilterDescription] = useState("");
 
@@ -235,8 +237,8 @@ export function ScreenerPanel() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSubmit(e); } }}
-            placeholder={getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? "AI limit reached — add key in Settings" : "e.g. stocks with P/E under 15 and dividend yield above 3%"}
-            disabled={loading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            placeholder={limitReached ? "AI limit reached — add key in Settings" : "e.g. stocks with P/E under 15 and dividend yield above 3%"}
+            disabled={loading || limitReached}
             style={{
               flex: 1,
               padding: "6px 12px",
@@ -252,7 +254,7 @@ export function ScreenerPanel() {
           <button
             type="button"
             onClick={handleSubmit}
-            disabled={loading || !query.trim() || metricsLoading || (getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey)}
+            disabled={loading || !query.trim() || metricsLoading || limitReached}
             style={{
               padding: "6px 16px",
               background: "var(--accent-bg)",

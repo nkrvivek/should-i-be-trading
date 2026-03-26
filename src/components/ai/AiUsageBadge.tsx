@@ -1,11 +1,21 @@
-import { getAiUsage } from "../../api/anthropicClient";
+import { useSyncExternalStore } from "react";
+import { getAiUsage, onAiUsageChange } from "../../api/anthropicClient";
+
+/** Reactive hook for AI usage — re-renders when usage changes */
+export function useAiUsage() {
+  return useSyncExternalStore(
+    onAiUsageChange,
+    getAiUsage,
+    getAiUsage,
+  );
+}
 
 /**
  * Displays current AI usage quota.
  * Shows remaining calls and warns when approaching limit.
  */
 export function AiUsageBadge() {
-  const usage = getAiUsage();
+  const usage = useAiUsage();
 
   if (usage.isOwnKey) {
     return (

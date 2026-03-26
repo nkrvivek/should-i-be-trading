@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { chatWithClaude, getAiUsage } from "../../api/anthropicClient";
-import { AiUsageBadge } from "./AiUsageBadge";
+import { chatWithClaude } from "../../api/anthropicClient";
+import { AiUsageBadge, useAiUsage } from "./AiUsageBadge";
 import { exaSearch } from "../../api/exaClient";
 import { EARNINGS_SUMMARY_PROMPT } from "../../api/earningsPrompts";
 import { renderMarkdown } from "../../lib/renderMarkdown";
@@ -19,6 +19,8 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
   const [summary, setSummary] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [sourceUrl, setSourceUrl] = useState<string | null>(null);
+  const aiUsage = useAiUsage();
+  const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
 
   const handleSummarize = async () => {
     setStage("searching");
@@ -136,7 +138,7 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
             </div>
             <button
               onClick={handleSummarize}
-              disabled={getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey}
+              disabled={limitReached}
               style={{
                 padding: "8px 24px",
                 background: "var(--accent-bg)",
@@ -147,10 +149,10 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
                 fontWeight: 600,
                 color: "var(--accent-text)",
                 cursor: "pointer",
-                opacity: getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? 0.4 : 1,
+                opacity: limitReached ? 0.4 : 1,
               }}
             >
-              {getAiUsage().used >= getAiUsage().limit && !getAiUsage().isOwnKey ? "AI LIMIT REACHED" : "SUMMARIZE EARNINGS"}
+              {limitReached ? "AI LIMIT REACHED" : "SUMMARIZE EARNINGS"}
             </button>
           </div>
         )}

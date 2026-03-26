@@ -25,10 +25,21 @@ export type AiUsageInfo = {
 };
 
 let _lastUsage: AiUsageInfo = { used: 0, limit: 5, isOwnKey: false };
+const _listeners = new Set<() => void>();
 
 /** Get last known AI usage (updated after each chatWithClaude call) */
 export function getAiUsage(): AiUsageInfo {
   return _lastUsage;
+}
+
+/** Subscribe to usage changes — returns unsubscribe function */
+export function onAiUsageChange(cb: () => void): () => void {
+  _listeners.add(cb);
+  return () => _listeners.delete(cb);
+}
+
+function _notifyUsageChange() {
+  _listeners.forEach((cb) => cb());
 }
 
 export async function chatWithClaude(
@@ -52,6 +63,7 @@ export async function chatWithClaude(
   if (apiKey) {
     // Direct API call (local dev with Vite proxy)
     _lastUsage = { used: 0, limit: Infinity, isOwnKey: true };
+    _notifyUsageChange();
 
     const response = await fetch("/anthropic/v1/messages", {
       method: "POST",
@@ -97,8 +109,10 @@ export async function chatWithClaude(
     const aiLimit = response.headers.get("x-ai-limit");
     if (aiUsed === "own-key") {
       _lastUsage = { used: 0, limit: Infinity, isOwnKey: true };
+      _notifyUsageChange();
     } else if (aiUsed && aiLimit) {
       _lastUsage = { used: parseInt(aiUsed, 10), limit: parseInt(aiLimit, 10), isOwnKey: false };
+      _notifyUsageChange();
     }
 
     if (!response.ok) {

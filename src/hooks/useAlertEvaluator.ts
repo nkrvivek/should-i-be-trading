@@ -213,5 +213,5 @@ export function useAlertEvaluator(
       // Store current context for next comparison
       prevCtxRef.current = ctx;
     });
-  }, [vix, marketScore?.total, verdict?.signal]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [marketScore?.total, verdict?.signal]); // eslint-disable-line react-hooks/exhaustive-deps
 }

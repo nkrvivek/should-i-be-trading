@@ -13,11 +13,6 @@ interface Props {
   score: StockScore;
 }
 
-const METHODOLOGY_TOOLTIP =
-  "The SIBT Score combines 15+ weighted signals across four categories " +
-  "into a single 1-10 composite rating. Each signal is scored relative to " +
-  "market-wide benchmarks. Updated in real-time with every lookup.";
-
 export function StockScoreCard({ score }: Props) {
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [showMethodology, setShowMethodology] = useState(false);

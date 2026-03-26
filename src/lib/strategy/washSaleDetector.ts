@@ -118,7 +118,7 @@ export function detectWashSalesFromHistory(trades: WashSaleTradeRecord[]): WashS
     byUnderlying[key].push(t);
   }
 
-  for (const [underlying, group] of Object.entries(byUnderlying)) {
+  for (const [, group] of Object.entries(byUnderlying)) {
     const sells = group.filter((t) => t.side === "sell");
     const buys = group.filter((t) => t.side === "buy");
 
@@ -130,8 +130,6 @@ export function detectWashSalesFromHistory(trades: WashSaleTradeRecord[]): WashS
       if (loss >= 0) continue; // Not a loss sale
 
       const sellDate = new Date(sell.date);
-      let flagged = false;
-
       // Scan buys within -30 to +30 days of the loss sale
       for (const buy of buys) {
         const buyDate = new Date(buy.date);
@@ -154,7 +152,6 @@ export function detectWashSalesFromHistory(trades: WashSaleTradeRecord[]): WashS
             adjustedBasis,
             daysApart: Math.abs(daysDiff),
           });
-          flagged = true;
           break; // Only flag once per loss sale
         }
       }

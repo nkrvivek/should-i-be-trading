@@ -5,6 +5,13 @@ const FRED_BASE = "https://api.stlouisfed.org/fred";
 // Allowed FRED endpoints
 const ALLOWED_ENDPOINTS = new Set(["series/observations", "series", "releases"]);
 
+// Allowed query params (excludes api_key, file_type, endpoint, series_id which are handled separately)
+const ALLOWED_PARAMS = new Set([
+  "observation_start", "observation_end", "frequency",
+  "units", "sort_order", "limit", "offset",
+  "realtime_start", "realtime_end", "order_by",
+]);
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
@@ -30,19 +37,22 @@ Deno.serve(async (req) => {
       return errorResponse("Missing series_id parameter", 400, req);
     }
 
-    const params = new URLSearchParams({
-      api_key: apiKey,
-      file_type: "json",
-    });
+    const params = new URLSearchParams();
 
     if (seriesId) params.set("series_id", seriesId);
 
-    // Forward additional params
+    // Forward only whitelisted params
     for (const [key, value] of url.searchParams.entries()) {
-      if (key !== "series_id" && key !== "endpoint") {
+      if (key !== "series_id" && key !== "endpoint" && ALLOWED_PARAMS.has(key)) {
         params.set(key, value);
       }
     }
+
+    // Set controlled params AFTER user params to prevent override
+    params.delete("api_key"); // Prevent user override
+    params.delete("file_type"); // Always use JSON
+    params.set("api_key", apiKey);
+    params.set("file_type", "json");
 
     const response = await fetch(`${FRED_BASE}/${endpoint}?${params}`);
     if (!response.ok) {

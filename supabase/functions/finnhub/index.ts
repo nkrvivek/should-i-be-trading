@@ -12,6 +12,12 @@ const ALLOWED_ENDPOINTS = new Set([
   "news", "forex/rates",
 ]);
 
+// ── Allowed query params whitelist ──────────────────────────────
+const ALLOWED_PARAMS = new Set([
+  "symbol", "from", "to", "resolution", "category",
+  "exchange", "metric", "count",
+]);
+
 // ── In-memory cache (per Deno isolate) ──────────────────────────
 const cache = new Map<string, { data: unknown; expires: number }>();
 const MAX_CACHE_ENTRIES = 500;
@@ -46,13 +52,17 @@ Deno.serve(async (req) => {
       return errorResponse(`Endpoint not allowed: ${endpoint}`, 403, req);
     }
 
-    const params = new URLSearchParams({ token: apiKey });
+    const params = new URLSearchParams();
     for (const [key, value] of url.searchParams.entries()) {
-      if (key !== "endpoint") params.set(key, value);
+      if (key !== "endpoint" && ALLOWED_PARAMS.has(key)) params.set(key, value);
     }
 
-    // ── Check cache ─────────────────────────────────────────────
+    // ── Build cache key BEFORE adding secret token ──────────────
     const cacheKey = `${endpoint}?${params.toString()}`;
+
+    // Now add the API token (after cache key is built)
+    params.delete("token"); // Prevent user from overriding API token
+    params.set("token", apiKey);
     const cached = cache.get(cacheKey);
     if (cached && cached.expires > Date.now()) {
       return jsonResponse(cached.data, 200, req);

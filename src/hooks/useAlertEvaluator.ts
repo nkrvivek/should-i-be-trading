@@ -180,7 +180,8 @@ export function useAlertEvaluator(
     await supabase
       .from("alert_rules")
       .update({ last_triggered_at: new Date().toISOString() })
-      .eq("id", rule.id);
+      .eq("id", rule.id)
+      .eq("user_id", user.id);
 
     // Update local cache
     const idx = rulesRef.current.findIndex((r) => r.id === rule.id);

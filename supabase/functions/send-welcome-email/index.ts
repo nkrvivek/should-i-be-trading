@@ -13,6 +13,10 @@ import { BRAND, emailLayout, emailButton } from "../_shared/email.ts";
  * Requires RESEND_API_KEY env var for email delivery.
  */
 
+function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+}
+
 const ADMIN_SECRET = Deno.env.get("ADMIN_SECRET") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
@@ -93,8 +97,10 @@ Deno.serve(async (req) => {
 
     const fromEmail = Deno.env.get("WELCOME_FROM_EMAIL") || `${BRAND.name} <welcome@sibt.ai>`;
 
+    const safeUserName = userName ? escapeHtml(userName) : "";
+
     const htmlBody = emailLayout(`
-    <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">Welcome${userName ? `, ${userName}` : ""}!</h1>
+    <h1 style="font-size: 22px; font-weight: 600; margin: 0 0 16px;">Welcome${safeUserName ? `, ${safeUserName}` : ""}!</h1>
 
     <p style="font-size: 15px; line-height: 1.6; color: ${BRAND.colors.muted}; margin: 0 0 16px;">
       Your account is ready. You have a <span style="color: ${BRAND.colors.accent}; font-weight: 600;">14-day Pro trial</span> — no credit card required.

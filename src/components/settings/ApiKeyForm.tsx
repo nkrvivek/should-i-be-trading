@@ -47,7 +47,7 @@ export function ApiKeyForm() {
         API Keys & Integrations
       </div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", marginBottom: 8 }}>
-        Add your own API keys to unlock features. Keys are encrypted and stored securely.
+        Add your own API keys to unlock features. Keys are stored locally in your browser and sent securely over HTTPS.
       </div>
 
       {error && (

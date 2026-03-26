@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse, getValidatedOrigin } from "../_shared/auth.ts";
 import { getStripe, getPriceId } from "../_shared/stripe.ts";
 
 Deno.serve(async (req) => {
@@ -64,8 +64,8 @@ Deno.serve(async (req) => {
         // Users get 14-day Pro access on signup, then subscribe here when ready
         metadata: { supabase_user_id: ctx.userId, tier },
       },
-      success_url: `${req.headers.get("origin") ?? "https://sibt.ai"}/settings?checkout=success`,
-      cancel_url: `${req.headers.get("origin") ?? "https://sibt.ai"}/pricing?checkout=canceled`,
+      success_url: `${getValidatedOrigin(req)}/settings?checkout=success`,
+      cancel_url: `${getValidatedOrigin(req)}/pricing?checkout=canceled`,
       client_reference_id: ctx.userId,
     });
 

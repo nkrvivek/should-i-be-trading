@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse, getValidatedOrigin } from "../_shared/auth.ts";
 import { getStripe } from "../_shared/stripe.ts";
 
 Deno.serve(async (req) => {
@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
 
     const session = await stripe.billingPortal.sessions.create({
       customer: sub.stripe_customer_id,
-      return_url: `${req.headers.get("origin") ?? "https://sibt.ai"}/settings`,
+      return_url: `${getValidatedOrigin(req)}/settings`,
     });
 
     return jsonResponse({ url: session.url }, 200, req);

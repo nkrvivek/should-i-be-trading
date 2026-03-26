@@ -121,8 +121,8 @@ Deno.serve(async (req) => {
       if (extraParams.to) url.searchParams.set("to", String(extraParams.to));
     }
 
-    // Check cache
-    const cacheKey = url.toString();
+    // Build cache key WITHOUT the API key
+    const cacheKey = `${endpoint}:${symbol || ""}:${period || ""}:${limit || ""}:${JSON.stringify(extraParams)}`;
     const cached = cache.get(cacheKey);
     if (cached && cached.expires > Date.now()) {
       return jsonResponse({ data: cached.data, cached: true }, 200, req);

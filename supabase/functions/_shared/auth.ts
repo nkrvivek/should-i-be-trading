@@ -86,6 +86,16 @@ export function getCorsHeaders(req?: Request): Record<string, string> {
   };
 }
 
+/** Validate origin against allowed list. Returns a safe origin for redirect URLs. */
+export function getValidatedOrigin(req: Request): string {
+  const origin = req.headers.get("origin") ?? "";
+  const isLocalhost = origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
+  if (ALLOWED_ORIGINS.includes(origin) || isLocalhost) {
+    return origin;
+  }
+  return ALLOWED_ORIGINS[0]; // default to "https://sibt.ai"
+}
+
 /** Standard CORS headers (legacy — use getCorsHeaders(req) for origin-checked headers) */
 export const corsHeaders = {
   "Access-Control-Allow-Origin": "https://sibt.ai",

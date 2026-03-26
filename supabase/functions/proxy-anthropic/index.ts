@@ -78,11 +78,10 @@ async function getUserTier(userId: string): Promise<string> {
 async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ allowed: boolean; used: number; limit: number }> {
   const supabase = await getServiceClient();
   const today = new Date().toISOString().split("T")[0];
-  const limit = DAILY_LIMITS[tier] ?? DAILY_LIMITS.free;
+  const dailyLimit = DAILY_LIMITS[tier] ?? DAILY_LIMITS.free;
 
   try {
-    // Atomic increment: upsert with ON CONFLICT to avoid TOCTOU race condition.
-    // First, ensure the row exists with 0 count
+    // Ensure the row exists (no-op if already present)
     await supabase
       .from("ai_usage")
       .upsert(
@@ -90,8 +89,14 @@ async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ a
         { onConflict: "user_id,usage_date", ignoreDuplicates: true },
       );
 
-    // Now atomically check-and-increment using a raw SQL query via RPC
-    // Fallback: read current count, check limit, then increment
+    // Supabase JS client doesn't support `SET col = col + 1` directly,
+    // so we use a CAS (compare-and-swap) approach:
+    // 1. Read current count
+    // 2. UPDATE ... SET request_count = currentCount + 1
+    //    WHERE request_count = currentCount AND request_count < limit
+    // If step 2 returns 0 rows, another request slipped in — retry once.
+
+    // Read current value
     const { data: current } = await supabase
       .from("ai_usage")
       .select("request_count")
@@ -100,12 +105,12 @@ async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ a
       .single();
 
     const currentCount = current?.request_count ?? 0;
-    if (currentCount >= limit) {
-      return { allowed: false, used: currentCount, limit };
+    if (currentCount >= dailyLimit) {
+      return { allowed: false, used: currentCount, limit: dailyLimit };
     }
 
-    // Conditional update: only increment if still under limit (narrows race window)
-    const { data: updated } = await supabase
+    // Atomic conditional increment: only succeeds if count hasn't changed AND is under limit
+    const { data: incremented } = await supabase
       .from("ai_usage")
       .update({
         request_count: currentCount + 1,
@@ -113,26 +118,65 @@ async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ a
       })
       .eq("user_id", userId)
       .eq("usage_date", today)
-      .lte("request_count", currentCount) // Only update if count hasn't changed
+      .eq("request_count", currentCount) // Optimistic lock: must match exactly
+      .lt("request_count", dailyLimit)   // Must still be under limit
       .select("request_count")
       .single();
 
-    if (!updated) {
-      // Row was modified by another request — re-check
-      const { data: recheck } = await supabase
-        .from("ai_usage")
-        .select("request_count")
-        .eq("user_id", userId)
-        .eq("usage_date", today)
-        .single();
-      const recheckCount = recheck?.request_count ?? 0;
-      return { allowed: recheckCount < limit, used: recheckCount, limit };
+    if (incremented) {
+      return { allowed: true, used: incremented.request_count, limit: dailyLimit };
     }
 
-    return { allowed: true, used: updated.request_count, limit };
+    // CAS failed — another concurrent request modified the row. Retry once.
+    const { data: retry } = await supabase
+      .from("ai_usage")
+      .select("request_count")
+      .eq("user_id", userId)
+      .eq("usage_date", today)
+      .single();
+
+    const retryCount = retry?.request_count ?? 0;
+    if (retryCount >= dailyLimit) {
+      return { allowed: false, used: retryCount, limit: dailyLimit };
+    }
+
+    // Second attempt at atomic increment
+    const { data: retryIncrement } = await supabase
+      .from("ai_usage")
+      .update({
+        request_count: retryCount + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("user_id", userId)
+      .eq("usage_date", today)
+      .eq("request_count", retryCount)
+      .lt("request_count", dailyLimit)
+      .select("request_count")
+      .single();
+
+    if (retryIncrement) {
+      return { allowed: true, used: retryIncrement.request_count, limit: dailyLimit };
+    }
+
+    // Both CAS attempts failed — concurrent contention is high.
+    // Re-read final state and deny if at or over limit (safe default).
+    const { data: finalCheck } = await supabase
+      .from("ai_usage")
+      .select("request_count")
+      .eq("user_id", userId)
+      .eq("usage_date", today)
+      .single();
+
+    const finalCount = finalCheck?.request_count ?? 0;
+    if (finalCount >= dailyLimit) {
+      return { allowed: false, used: finalCount, limit: dailyLimit };
+    }
+
+    // Under limit but CAS keeps failing — allow this one to avoid blocking the user
+    return { allowed: true, used: finalCount, limit: dailyLimit };
   } catch {
     // If usage tracking fails, still allow the request
-    return { allowed: true, used: 0, limit };
+    return { allowed: true, used: 0, limit: dailyLimit };
   }
 }
 

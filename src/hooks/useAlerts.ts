@@ -84,16 +84,16 @@ export function useAlerts() {
   }, [user, fetchRules]);
 
   const updateRule = useCallback(async (id: string, updates: Partial<AlertRule>) => {
-    if (!isSupabaseConfigured()) return;
-    await supabase.from("alert_rules").update(updates).eq("id", id);
+    if (!user || !isSupabaseConfigured()) return;
+    await supabase.from("alert_rules").update(updates).eq("id", id).eq("user_id", user.id);
     await fetchRules();
-  }, [fetchRules]);
+  }, [user, fetchRules]);
 
   const deleteRule = useCallback(async (id: string) => {
-    if (!isSupabaseConfigured()) return;
-    await supabase.from("alert_rules").delete().eq("id", id);
+    if (!user || !isSupabaseConfigured()) return;
+    await supabase.from("alert_rules").delete().eq("id", id).eq("user_id", user.id);
     await fetchRules();
-  }, [fetchRules]);
+  }, [user, fetchRules]);
 
   const requestNotificationPermission = useCallback(async () => {
     if ("Notification" in window && Notification.permission === "default") {

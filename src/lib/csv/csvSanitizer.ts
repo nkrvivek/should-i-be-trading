@@ -15,7 +15,7 @@ const ALLOWED_MIMES = [
 
 const FORMULA_PREFIXES = ["=", "+", "-", "@", "|", "\t"];
 const DANGEROUS_URI_RE = /^\s*(javascript|data|vbscript)\s*:/i;
-const HTML_TAG_RE = /<\/?[a-z][^>]*>/gi;
+
 
 export interface SanitizeResult {
   valid: boolean;

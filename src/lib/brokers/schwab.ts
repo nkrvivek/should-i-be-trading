@@ -33,6 +33,19 @@ export class SchwabBroker implements BrokerConnection {
         orderBody,
       }),
     });
+    if (res.status === 401 && this.refreshToken) {
+      await this.refreshAccessToken();
+      // Retry with new token
+      const retryRes = await fetch(`${SUPABASE_URL}/functions/v1/broker-schwab`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint, accountHash: this.accountHash, accessToken: this.accessToken, params, method, orderBody,
+        }),
+      });
+      if (!retryRes.ok) throw new Error(`Schwab ${retryRes.status}: ${await retryRes.text()}`);
+      return retryRes.json();
+    }
     if (!res.ok) throw new Error(`Schwab ${res.status}: ${await res.text()}`);
     return res.json();
   }

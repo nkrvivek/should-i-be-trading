@@ -3,9 +3,12 @@
  *
  * Sub-tabs: REGIME | MACRO | COT | BACKTEST | SIMULATOR
  * Consolidates: RegimePage + MacroPage + BacktestPage + StrategiesPage + COT Dashboard
+ *
+ * Uses visited-tabs pattern: tabs mount on first visit and stay mounted (display:none)
+ * to prevent full remount/re-fetch on every tab switch.
  */
 
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { TabBar, useActiveTab, type TabDef } from "../components/layout/TabBar";
 import { useRegime } from "../hooks/useRegime";
@@ -35,19 +38,47 @@ export default function SignalsPage() {
   const activeTab = useActiveTab(TABS);
   const { data: cri } = useRegime(true);
 
+  // Track which tabs have been visited so we mount on first visit and keep mounted
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([activeTab]));
+
+  useEffect(() => {
+    setVisitedTabs((prev) => {
+      if (prev.has(activeTab)) return prev;
+      return new Set([...prev, activeTab]);
+    });
+  }, [activeTab]);
+
   return (
     <TerminalShell cri={cri}>
       <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: 0, height: "calc(100vh - 96px)" }}>
         <TabBar tabs={TABS} />
 
         <div style={{ flex: 1, overflow: "auto", padding: "12px 0" }}>
-          <Suspense fallback={loading}>
-            {activeTab === "regime" && <RegimeContent />}
-            {activeTab === "macro" && <MacroContent />}
-            {activeTab === "cot" && <CotContent />}
-            {activeTab === "backtest" && <BacktestContent />}
-            {activeTab === "simulator" && <SimulatorContent />}
-          </Suspense>
+          {visitedTabs.has("regime") && (
+            <div style={{ display: activeTab === "regime" ? "block" : "none" }}>
+              <Suspense fallback={loading}><RegimeContent /></Suspense>
+            </div>
+          )}
+          {visitedTabs.has("macro") && (
+            <div style={{ display: activeTab === "macro" ? "block" : "none" }}>
+              <Suspense fallback={loading}><MacroContent /></Suspense>
+            </div>
+          )}
+          {visitedTabs.has("cot") && (
+            <div style={{ display: activeTab === "cot" ? "block" : "none" }}>
+              <Suspense fallback={loading}><CotContent /></Suspense>
+            </div>
+          )}
+          {visitedTabs.has("backtest") && (
+            <div style={{ display: activeTab === "backtest" ? "block" : "none" }}>
+              <Suspense fallback={loading}><BacktestContent /></Suspense>
+            </div>
+          )}
+          {visitedTabs.has("simulator") && (
+            <div style={{ display: activeTab === "simulator" ? "block" : "none" }}>
+              <Suspense fallback={loading}><SimulatorContent /></Suspense>
+            </div>
+          )}
         </div>
       </div>
     </TerminalShell>

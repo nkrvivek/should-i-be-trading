@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "../api/edgeHeaders";
 
@@ -40,14 +40,23 @@ export function useEconomicCalendar() {
   const [events, setEvents] = useState<EconomicEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchCalendar = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
+
+    // Abort any previous in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
 
     try {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
       const headers = await getEdgeHeaders();
+
+      if (controller.signal.aborted) return;
 
       const allEvents: EconomicEvent[] = [];
 
@@ -59,6 +68,7 @@ export function useEconomicCalendar() {
           `${supabaseUrl}/functions/v1/fred?endpoint=releases/dates&limit=100&sort_order=asc&include_release_dates_with_no_data=true&realtime_start=${today}&realtime_end=${nextMonth}`,
           { headers },
         );
+        if (controller.signal.aborted) return;
         if (res.ok) {
           const data = await res.json();
           const releases = data.release_dates ?? [];
@@ -77,6 +87,8 @@ export function useEconomicCalendar() {
         }
       } catch { /* ignore */ }
 
+      if (controller.signal.aborted) return;
+
       // Source 2: Finnhub earnings calendar (works on free tier)
       try {
         const today = new Date().toISOString().split("T")[0];
@@ -85,6 +97,7 @@ export function useEconomicCalendar() {
           `${supabaseUrl}/functions/v1/finnhub?endpoint=calendar/earnings&from=${today}&to=${nextWeek}`,
           { headers },
         );
+        if (controller.signal.aborted) return;
         if (res.ok) {
           const data = await res.json();
           const earnings = data.earningsCalendar ?? [];
@@ -109,17 +122,30 @@ export function useEconomicCalendar() {
         }
       } catch { /* ignore */ }
 
+      if (controller.signal.aborted) return;
+
       // Sort by date
       allEvents.sort((a, b) => a.date.localeCompare(b.date));
       setEvents(allEvents);
       setError(null);
     } catch (e) {
+      if (controller.signal.aborted) return;
       setError(e instanceof Error ? e.message : "Failed to fetch calendar");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => { fetchCalendar(); }, [fetchCalendar]);
+
+  // Abort on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
   return { events, loading, error, refresh: fetchCalendar };
 }

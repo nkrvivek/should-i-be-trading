@@ -16,9 +16,16 @@ export function useMarketScore() {
   const [error, setError] = useState<string | null>(null);
   const { status } = useMarketHours();
   const fetchingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchScore = useCallback(async () => {
     if (fetchingRef.current) return;
+
+    // Abort any previous in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     fetchingRef.current = true;
     setLoading(true);
     setError(null);
@@ -28,21 +35,21 @@ export function useMarketScore() {
       const sectors = ["XLK", "XLF", "XLV", "XLY", "XLP", "XLE", "XLI", "XLB", "XLRE", "XLC", "XLU"];
 
       // Phase 1: FRED data (free, unlimited, no rate limit issues)
-      // VIX via FRED (VIXCLS) — Finnhub ^VIX requires paid subscription
-      // SP500 via FRED — Finnhub stock/candle requires paid subscription
       const [vixSeries, sp500Series, tenYearYield, dxy, spyQuote] = await Promise.all([
-        fredFetchSeries("VIXCLS", 5),                   // VIX: last 5 days
-        fredFetchSeries("SP500", 250),                   // SP500: ~1 year of daily closes
-        fredFetchLatest("DGS10"),                              // 10-Year Treasury
-        fredFetchLatest("DTWEXBGS").catch(() => undefined),    // DXY
+        fredFetchSeries("VIXCLS", 5),
+        fredFetchSeries("SP500", 250),
+        fredFetchLatest("DGS10"),
+        fredFetchLatest("DTWEXBGS").catch(() => undefined),
         finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch(() => null),
       ]);
+
+      if (controller.signal.aborted) return;
 
       // VIX from FRED
       const vix = vixSeries.length > 0 ? vixSeries[0] : undefined;
       const vixPrev = vixSeries.length > 1 ? vixSeries[1] : undefined;
 
-      // SP500 MAs and RSI from FRED daily closes (most recent first, reverse for SMA/RSI)
+      // SP500 MAs and RSI from FRED daily closes
       let spySma20: number | undefined;
       let spySma50: number | undefined;
       let spySma200: number | undefined;
@@ -50,8 +57,7 @@ export function useMarketScore() {
       let spyPrice: number | undefined;
 
       if (sp500Series.length > 0) {
-        spyPrice = sp500Series[0]; // Most recent SP500 close
-        // Reverse to chronological order for SMA/RSI computation
+        spyPrice = sp500Series[0];
         const chronological = [...sp500Series].reverse();
         spySma20 = computeSMA(chronological, 20);
         spySma50 = computeSMA(chronological, 50);
@@ -59,12 +65,13 @@ export function useMarketScore() {
         spyRsi14 = computeRSI(chronological, 14);
       }
 
-      // Override with live SPY quote if available (more current than FRED EOD)
+      // Override with live SPY quote if available
       if (spyQuote?.c) spyPrice = spyQuote.c;
 
-      // Phase 2: Sector quotes from Finnhub (only needs quote endpoint, free tier OK)
+      // Phase 2: Sector quotes from Finnhub
       const sectorChanges: { symbol: string; change: number }[] = [];
       for (let i = 0; i < sectors.length; i += 4) {
+        if (controller.signal.aborted) return;
         const batch = sectors.slice(i, i + 4);
         const results = await Promise.all(
           batch.map(async (sym) => {
@@ -77,8 +84,13 @@ export function useMarketScore() {
           })
         );
         for (const r of results) if (r) sectorChanges.push(r);
-        if (i + 4 < sectors.length) await new Promise((r) => setTimeout(r, 500));
+        if (i + 4 < sectors.length) {
+          await new Promise((r) => setTimeout(r, 500));
+          if (controller.signal.aborted) return;
+        }
       }
+
+      if (controller.signal.aborted) return;
 
       const marketOpen = status === "OPEN" || status === "PRE_MARKET" || status === "AFTER_HOURS";
 
@@ -98,6 +110,8 @@ export function useMarketScore() {
       };
 
       const result = computeMarketScore(inputs);
+
+      if (controller.signal.aborted) return;
       setScore(result);
 
       // Cache
@@ -105,9 +119,12 @@ export function useMarketScore() {
         localStorage.setItem(CACHE_KEY, JSON.stringify({ score: result, ts: Date.now() }));
       } catch { /* ignore */ }
     } catch (e) {
+      if (controller.signal.aborted) return;
       setError(e instanceof Error ? e.message : "Failed to compute market score");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
       fetchingRef.current = false;
     }
   }, [status]);
@@ -128,12 +145,22 @@ export function useMarketScore() {
     fetchScore();
   }, [fetchScore]);
 
-  // Auto-refresh during market hours
+  // Auto-refresh during market hours — use ref to avoid interval recreation
+  const fetchScoreRef = useRef(fetchScore);
+  fetchScoreRef.current = fetchScore;
+
   useEffect(() => {
     if (status !== "OPEN") return;
-    const interval = setInterval(fetchScore, 60_000); // every 60s
+    const interval = setInterval(() => fetchScoreRef.current(), 60_000);
     return () => clearInterval(interval);
-  }, [status, fetchScore]);
+  }, [status]);
+
+  // Abort on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   return { score, loading, error, refresh: fetchScore };
 }

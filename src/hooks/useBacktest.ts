@@ -5,7 +5,7 @@
  * Market scores are computed from VIX + SPY momentum (real FRED data).
  */
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { getEdgeHeaders } from "../api/edgeHeaders";
 
 export type DailyReturn = {
@@ -88,10 +88,16 @@ export function useBacktest(period: "3M" | "6M" | "1Y" = "3M") {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dataAvailable, setDataAvailable] = useState(true);
+  const abortRef = useRef<AbortController | null>(null);
 
   const periodDays = period === "3M" ? 63 : period === "6M" ? 126 : 252;
 
   const fetchBacktest = useCallback(async () => {
+    // Abort any previous in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
 
@@ -101,6 +107,8 @@ export function useBacktest(period: "3M" | "6M" | "1Y" = "3M") {
         fetchFredSeries("SP500", periodDays + 25),
         fetchFredSeries("VIXCLS", periodDays + 25),
       ]);
+
+      if (controller.signal.aborted) return;
 
       if (spyData.length < 20 || vixData.length < 20) {
         setDataAvailable(false);
@@ -144,6 +152,8 @@ export function useBacktest(period: "3M" | "6M" | "1Y" = "3M") {
 
       // Limit to requested period
       const trimmed = dailyReturns.slice(-periodDays);
+
+      if (controller.signal.aborted) return;
 
       if (trimmed.length < 10) {
         setDataAvailable(false);
@@ -191,6 +201,8 @@ export function useBacktest(period: "3M" | "6M" | "1Y" = "3M") {
       const buyHoldReturn = ((buyHoldCumulative - 100) / 100) * 100;
       const totalTradeDays = tradeWins + tradeLosses;
 
+      if (controller.signal.aborted) return;
+
       setResult({
         period,
         totalDays: trimmed.length,
@@ -209,11 +221,21 @@ export function useBacktest(period: "3M" | "6M" | "1Y" = "3M") {
       });
       setDataAvailable(true);
     } catch (e) {
+      if (controller.signal.aborted) return;
       setError(e instanceof Error ? e.message : "Backtest failed");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [period, periodDays]);
+
+  // Abort on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   return { result, loading, error, dataAvailable, refresh: fetchBacktest };
 }

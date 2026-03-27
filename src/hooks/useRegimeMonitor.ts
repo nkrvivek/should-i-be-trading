@@ -26,9 +26,16 @@ export function useRegimeMonitor() {
   const [error, setError] = useState<string | null>(null);
   const { status } = useMarketHours();
   const fetchingRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
 
   const fetchRegime = useCallback(async () => {
     if (fetchingRef.current) return;
+
+    // Abort any previous in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     fetchingRef.current = true;
     setLoading(true);
     setError(null);
@@ -53,6 +60,8 @@ export function useRegimeMonitor() {
         fredFetchSeries("DGS10", 5),
         fredFetchSeries("VXVCLS", 5),
       ]);
+
+      if (controller.signal.aborted) return;
 
       // Parse FRED values (most recent first)
       const vix = vixSeries[0];
@@ -79,14 +88,20 @@ export function useRegimeMonitor() {
         finnhubFetch<FinnhubQuote>("quote", { symbol: "RSP" }, apiKey).catch(() => null),
       ]);
 
+      if (controller.signal.aborted) return;
+
       // Small delay to avoid Finnhub rate limits
       await new Promise((r) => setTimeout(r, 500));
+
+      if (controller.signal.aborted) return;
 
       // Batch 2: HYG + TLT
       const [hygQuote, tltQuote] = await Promise.all([
         finnhubFetch<FinnhubQuote>("quote", { symbol: "HYG" }, apiKey).catch(() => null),
         finnhubFetch<FinnhubQuote>("quote", { symbol: "TLT" }, apiKey).catch(() => null),
       ]);
+
+      if (controller.signal.aborted) return;
 
       // Override SPX price with live SPY if available
       if (spyQuote?.c) spxPrice = spyQuote.c;
@@ -96,7 +111,9 @@ export function useRegimeMonitor() {
       const sectorChanges: { symbol: string; change: number }[] = [];
 
       for (let i = 0; i < sectors.length; i += 4) {
+        if (controller.signal.aborted) return;
         if (i > 0) await new Promise((r) => setTimeout(r, 500));
+        if (controller.signal.aborted) return;
         const batch = sectors.slice(i, i + 4);
         const results = await Promise.all(
           batch.map(async (sym) => {
@@ -112,6 +129,8 @@ export function useRegimeMonitor() {
           if (r) sectorChanges.push(r);
         }
       }
+
+      if (controller.signal.aborted) return;
 
       // ── Build inputs and compute ─────────────────────────────────
 
@@ -142,11 +161,15 @@ export function useRegimeMonitor() {
         JSON.stringify({ data: result, ts: Date.now() }),
       );
 
+      if (controller.signal.aborted) return;
       setRegime(result);
     } catch (e) {
+      if (controller.signal.aborted) return;
       setError(e instanceof Error ? e.message : "Failed to load regime data");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
       fetchingRef.current = false;
     }
   }, []);
@@ -170,12 +193,22 @@ export function useRegimeMonitor() {
     fetchRegime();
   }, [fetchRegime, status]);
 
-  // Auto-refresh during market hours
+  // Auto-refresh during market hours — use ref to avoid interval recreation
+  const fetchRegimeRef = useRef(fetchRegime);
+  fetchRegimeRef.current = fetchRegime;
+
   useEffect(() => {
     if (status !== "OPEN") return;
-    const interval = setInterval(fetchRegime, CACHE_TTL);
+    const interval = setInterval(() => fetchRegimeRef.current(), CACHE_TTL);
     return () => clearInterval(interval);
-  }, [status, fetchRegime]);
+  }, [status]);
+
+  // Abort on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
 
   return { regime, loading, error, refresh: fetchRegime };
 }

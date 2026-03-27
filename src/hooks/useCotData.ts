@@ -2,7 +2,7 @@
  * Hook to fetch and cache CFTC Commitments of Traders data.
  */
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getCotData, type CftcResponse } from "../api/cftcClient";
 import { isSupabaseConfigured } from "../lib/supabase";
 
@@ -13,8 +13,9 @@ export function useCotData(weeks = 12) {
   const [data, setData] = useState<CftcResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const fetch = useCallback(async (force = false) => {
+  const fetchCot = useCallback(async (force = false) => {
     if (!isSupabaseConfigured()) return;
 
     // Check cache
@@ -31,26 +32,42 @@ export function useCotData(weeks = 12) {
       } catch { /* ignore */ }
     }
 
+    // Abort any previous in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
 
     try {
       const result = await getCotData(weeks);
+      if (controller.signal.aborted) return;
       setData(result);
       localStorage.setItem(CACHE_KEY, JSON.stringify({
         data: result,
         expires: Date.now() + CACHE_TTL,
       }));
     } catch (err) {
+      if (controller.signal.aborted) return;
       setError(err instanceof Error ? err.message : "Failed to fetch COT data");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [weeks]);
 
   useEffect(() => {
-    fetch();
-  }, [fetch]);
+    fetchCot();
+  }, [fetchCot]);
 
-  return { data, loading, error, refresh: () => fetch(true) };
+  // Abort on unmount
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort();
+    };
+  }, []);
+
+  return { data, loading, error, refresh: () => fetchCot(true) };
 }

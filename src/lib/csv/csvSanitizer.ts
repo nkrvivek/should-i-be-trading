@@ -15,7 +15,7 @@ const ALLOWED_MIMES = [
 
 const FORMULA_PREFIXES = ["=", "+", "-", "@", "|", "\t"];
 const DANGEROUS_URI_RE = /^\s*(javascript|data|vbscript)\s*:/i;
-const HTML_TAG_RE = /<\/?[a-z][^>]*>/i;
+const HTML_TAG_RE = /<\/?[a-z][^>]*>/gi;
 
 export interface SanitizeResult {
   valid: boolean;
@@ -94,9 +94,10 @@ export function sanitizeContent(raw: string): SanitizeResult {
         warnings.push(`Formula prefix stripped from row ${i + 1}, column ${j + 1}`);
       }
 
-      // Strip HTML tags
-      if (HTML_TAG_RE.test(cell)) {
-        cell = cell.replace(HTML_TAG_RE, "");
+      // Strip HTML tags (use separate regex to avoid lastIndex issues with global flag)
+      const stripped = cell.replace(/<\/?[a-z][^>]*>/gi, "");
+      if (stripped !== cell) {
+        cell = stripped;
         warnings.push(`HTML tags stripped from row ${i + 1}, column ${j + 1}`);
       }
 

@@ -2,17 +2,38 @@ import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from
 
 const SNAPTRADE_BASE = "https://api.snaptrade.com/api/v1";
 
-// ── HMAC-SHA256 signature generation ────────────────────────────
+// ── JSON stringify with sorted keys (matches SnapTrade SDK) ─────
+function jsonStringifySorted(obj: unknown): string {
+  const allKeys: string[] = [];
+  const seen: Record<string, null> = {};
+  JSON.stringify(obj, (key, value) => {
+    if (!(key in seen)) {
+      allKeys.push(key);
+      seen[key] = null;
+    }
+    return value;
+  });
+  allKeys.sort();
+  return JSON.stringify(obj, allKeys);
+}
+
+// ── HMAC-SHA256 signature generation (matches SnapTrade SDK) ────
 async function signRequest(
-  path: string,
-  body: string,
+  requestPath: string,
+  queryString: string,
+  requestData: Record<string, unknown> | null,
   consumerKey: string,
-): Promise<{ signature: string; timestamp: string }> {
-  const timestamp = Math.floor(Date.now() / 1000).toString();
-  const sigContent = path + body + timestamp;
+): Promise<string> {
+  const sigObject = {
+    content: requestData,
+    path: requestPath,
+    query: queryString,
+  };
+  const sigContent = jsonStringifySorted(sigObject);
+  const encodedKey = encodeURI(consumerKey);
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(consumerKey),
+    new TextEncoder().encode(encodedKey),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -22,8 +43,7 @@ async function signRequest(
     key,
     new TextEncoder().encode(sigContent),
   );
-  const signature = btoa(String.fromCharCode(...new Uint8Array(sig)));
-  return { signature, timestamp };
+  return btoa(String.fromCharCode(...new Uint8Array(sig)));
 }
 
 // ── SnapTrade API helper ────────────────────────────────────────
@@ -42,16 +62,23 @@ async function snapRequest(
     throw new Error("SNAPTRADE_CLIENT_ID / SNAPTRADE_CONSUMER_KEY not configured");
   }
 
-  const fullPath = `/api/v1/${path}`;
-  const bodyStr = opts.body ? JSON.stringify(opts.body) : "";
-  const { signature, timestamp } = await signRequest(fullPath, bodyStr, consumerKey);
+  const requestPath = `/api/v1/${path}`;
+  const requestData = opts.body ?? null;
+  const timestamp = Math.floor(Date.now() / 1000).toString();
 
   // Build query params — timestamp MUST be a query param per SnapTrade API
   const qp = new URLSearchParams({ clientId, timestamp });
   if (opts.userId) qp.set("userId", opts.userId);
   if (opts.userSecret) qp.set("userSecret", opts.userSecret);
 
-  const url = `${SNAPTRADE_BASE}/${path}?${qp.toString()}`;
+  // Sort query params to match SDK behavior
+  const sortedQp = new URLSearchParams([...qp.entries()].sort());
+  const queryString = sortedQp.toString();
+
+  // Sign using the same format as the official SnapTrade SDK
+  const signature = await signRequest(requestPath, queryString, requestData, consumerKey);
+
+  const url = `${SNAPTRADE_BASE}/${path}?${queryString}`;
 
   const headers: Record<string, string> = {
     Signature: signature,
@@ -59,7 +86,7 @@ async function snapRequest(
   };
 
   const fetchOpts: RequestInit = { method, headers };
-  if (bodyStr) fetchOpts.body = bodyStr;
+  if (requestData) fetchOpts.body = JSON.stringify(requestData);
 
   const res = await fetch(url, fetchOpts);
   if (!res.ok) {

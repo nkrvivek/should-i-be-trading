@@ -2,7 +2,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { getAiUsage, onAiUsageChange, fetchCurrentAiUsage } from "../../api/anthropicClient";
 
 /** Reactive hook for AI usage — re-renders when usage changes */
-export function useAiUsage() {
+export function useAiUsage() { // eslint-disable-line react-refresh/only-export-components
   const usage = useSyncExternalStore(
     onAiUsageChange,
     getAiUsage,

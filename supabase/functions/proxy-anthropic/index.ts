@@ -1,4 +1,4 @@
-import { authenticateRequest, getUserCredential, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getUserCredential, getCorsHeaders, errorResponse } from "../_shared/auth.ts";
 import { sanitizeError } from "../_shared/sanitize.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 

@@ -49,7 +49,7 @@ export default function VCGPanel() {
     setLoading(false);
   };
 
-  useEffect(() => { scan(); }, []);
+  useEffect(() => { scan(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const s = data?.signal;
   const regimeColor = s?.interpretation === "NORMAL" ? "var(--signal-core)"

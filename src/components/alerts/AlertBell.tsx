@@ -4,6 +4,14 @@ import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useAuthStore } from "../../stores/authStore";
 import { hasFeature } from "../../lib/featureGates";
 
+function timeAgo(iso: string): string {
+  const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
+  if (mins < 1) return "now";
+  if (mins < 60) return `${mins}m`;
+  if (mins < 1440) return `${Math.floor(mins / 60)}h`;
+  return `${Math.floor(mins / 1440)}d`;
+}
+
 /**
  * Alert bell icon for the nav bar.
  * Shows unread alert count as a red badge.
@@ -43,7 +51,7 @@ export function AlertBell() {
   // Initial fetch + realtime subscription
   useEffect(() => {
     if (!visible) return;
-    fetchUnread();
+    fetchUnread(); // eslint-disable-line react-hooks/set-state-in-effect
 
     if (!isSupabaseConfigured() || !user) return;
     const channel = supabase
@@ -85,14 +93,6 @@ export function AlertBell() {
     }
     setShowPopover(false);
     navigate("/alerts");
-  };
-
-  const timeAgo = (iso: string) => {
-    const mins = Math.floor((Date.now() - new Date(iso).getTime()) / 60000);
-    if (mins < 1) return "now";
-    if (mins < 60) return `${mins}m`;
-    if (mins < 1440) return `${Math.floor(mins / 60)}h`;
-    return `${Math.floor(mins / 1440)}d`;
   };
 
   return (

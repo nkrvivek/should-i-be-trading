@@ -99,6 +99,10 @@ export interface BrokerConnectionInterface {
   placeOrder(order: OrderRequest): Promise<BrokerOrder>;
   cancelOrder(orderId: string): Promise<void>;
 
+  /** Return current credentials for persistence (e.g. after re-registration) */
+  getCredentials?(): Record<string, string>;
+  /** Return a human-friendly name derived from the underlying brokerage (e.g. "Schwab (via SnapTrade)") */
+  getDisplayName?(): string;
   getOptionChain?(symbol: string, expiration?: string): Promise<OptionChainEntry[]>;
   getTradeHistory?(startDate: string, endDate: string): Promise<BrokerOrder[]>;
 }

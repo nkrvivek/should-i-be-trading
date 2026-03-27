@@ -162,7 +162,7 @@ Deno.serve(async (req) => {
       default:
         break;
     }
-  } catch (err) {
+  } catch {
     // Return 500 so Stripe retries the webhook
     return new Response(JSON.stringify({ error: "Processing failed" }), {
       status: 500,

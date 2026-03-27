@@ -341,7 +341,7 @@ export function InsiderActivityPanel({ symbol = "AAPL" }: Props) {
 
   // Fetch company info only when insider data loads (avoids showing name before data)
   useEffect(() => {
-    if (!activeSymbol) { setCompanyInfo(null); return; }
+    if (!activeSymbol) { setCompanyInfo(null); return; } // eslint-disable-line react-hooks/set-state-in-effect
     if (!data && !error) return; // Wait for insider data first
     fetchCompanyInfo(activeSymbol).then(setCompanyInfo);
   }, [activeSymbol, data, error]);

@@ -42,7 +42,7 @@ export default function SignalsPage() {
   const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([activeTab]));
 
   useEffect(() => {
-    setVisitedTabs((prev) => {
+    setVisitedTabs((prev) => { // eslint-disable-line react-hooks/set-state-in-effect
       if (prev.has(activeTab)) return prev;
       return new Set([...prev, activeTab]);
     });

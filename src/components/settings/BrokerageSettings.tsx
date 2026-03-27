@@ -59,6 +59,9 @@ export default function BrokerageSettings() {
       // Connect/register the user
       await instance.connect({});
 
+      // Grab credentials so we can persist them in the connection entry
+      const snapCreds = instance.getCredentials();
+
       const portalUrl = await instance.getConnectionPortalUrl();
       if (!portalUrl) throw new Error("Could not get Connection Portal URL");
 
@@ -75,8 +78,11 @@ export default function BrokerageSettings() {
           if (popup.closed) {
             clearInterval(pollTimer);
             try {
-              // Add as a new connection entry
-              await addConnection("snaptrade", {}, `SnapTrade (${connections.filter((c) => c.slug === "snaptrade").length + 1})`);
+              // Re-connect the instance to discover newly linked accounts + institution name
+              await instance.connect(snapCreds);
+              const updatedCreds = instance.getCredentials();
+              const displayName = instance.getDisplayName?.() ?? "SnapTrade";
+              await addConnection("snaptrade", updatedCreds, displayName);
             } catch {
               // User may not have completed the flow
             }

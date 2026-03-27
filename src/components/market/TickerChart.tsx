@@ -51,16 +51,17 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
   }, [expanded]);
 
   useEffect(() => {
-    if (!containerRef.current) return;
+    const container = containerRef.current;
+    if (!container) return;
 
     // Clear previous widget
-    containerRef.current.innerHTML = "";
+    container.innerHTML = "";
 
     const widgetDiv = document.createElement("div");
     widgetDiv.className = "tradingview-widget-container__widget";
     widgetDiv.style.height = "100%";
     widgetDiv.style.width = "100%";
-    containerRef.current.appendChild(widgetDiv);
+    container.appendChild(widgetDiv);
 
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
@@ -84,12 +85,10 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
       studies: ["STD;MACD"],
     });
 
-    containerRef.current.appendChild(script);
+    container.appendChild(script);
 
     return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = "";
-      }
+      container.innerHTML = "";
     };
   }, [symbol, theme, expanded]);
 

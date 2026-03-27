@@ -5,7 +5,7 @@
  * Includes sentiment scores when available (bullish/bearish %, buzz ratio).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Panel } from "../layout/Panel";
 import { useMarketNews, type NewsItem, type SentimentData } from "../../hooks/useMarketNews";
 
@@ -238,7 +238,7 @@ function SentimentCell({ label, value, color, subtitle }: { label: string; value
 function NewsRow({ item }: { item: NewsItem }) {
   const time = new Date(item.datetime * 1000);
   const timeStr = time.toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " " + time.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
-  const isRecent = Date.now() - item.datetime * 1000 < 3600000; // Last hour
+  const isRecent = useMemo(() => Date.now() - item.datetime * 1000 < 3600000, [item.datetime]); // eslint-disable-line react-hooks/purity
 
   return (
     <a

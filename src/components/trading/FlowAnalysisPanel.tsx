@@ -53,7 +53,7 @@ export default function FlowAnalysisPanel() {
       .then((r) => r.ok ? r.json() : null)
       .then((d) => d && setData(d))
       .catch(() => { /* Radon not running — expected in prod */ });
-  }, []);
+  }, [radonUrl]);
 
   if (!data && !loading && !error) {
     return (

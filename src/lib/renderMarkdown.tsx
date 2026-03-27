@@ -93,7 +93,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
         letterSpacing: "0.04em", marginTop: i > 0 ? 20 : 0, marginBottom: 10,
         paddingBottom: 6, borderBottom: "1px solid var(--border-dim)",
       }}>
-        {block.replace(/^#\s*/, "").replace(/[⚠️📡🎯📊⚡🔍]/g, "").trim()}
+        {block.replace(/^#\s*/, "").replace(/(?:⚠️|📡|🎯|📊|⚡|🔍)/gu, "").trim()}
       </div>
     );
   }
@@ -106,7 +106,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
         color: "var(--signal-core)", letterSpacing: "0.04em",
         marginTop: i > 0 ? 14 : 0, marginBottom: 6,
       }}>
-        {block.replace(/^###\s*/, "").replace(/[⚠️📡🎯📊⚡🔍]/g, "").trim()}
+        {block.replace(/^###\s*/, "").replace(/(?:⚠️|📡|🎯|📊|⚡|🔍)/gu, "").trim()}
       </div>
     );
   }
@@ -119,7 +119,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
         color: "var(--signal-core)", textTransform: "uppercase",
         letterSpacing: "0.04em", marginTop: i > 0 ? 16 : 0, marginBottom: 6,
       }}>
-        {block.replace(/^##\s*/, "").replace(/[⚠️📡🎯📊⚡🔍]/g, "").trim()}
+        {block.replace(/^##\s*/, "").replace(/(?:⚠️|📡|🎯|📊|⚡|🔍)/gu, "").trim()}
       </div>
     );
   }
@@ -135,7 +135,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
         marginTop: i > 0 ? 16 : 0, marginBottom: 6,
         paddingBottom: 4, borderBottom: "1px solid var(--border-dim)",
       }}>
-        {headerMatch[1].replace(/^[📊⚡🔍🎯⚠️📡]\s*/, "")}
+        {headerMatch[1].replace(/^(?:📊|⚡|🔍|🎯|⚠️|📡)\s*/u, "")}
       </div>
     );
   }

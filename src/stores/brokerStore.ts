@@ -184,13 +184,17 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
       try {
         await instance.connect(credentials);
 
-        const conn: BrokerConnection = { id, slug, displayName: name, instance };
+        // Use the instance's display name if it discovered the underlying brokerage
+        const resolvedName = instance.getDisplayName?.() || name;
+
+        const conn: BrokerConnection = { id, slug, displayName: resolvedName, instance };
 
         const data = await fetchConnectionData(conn);
 
-        // Save credentials
+        // Save credentials — use updated creds if broker refreshed them (e.g. SnapTrade re-registration)
+        const finalCreds = instance.getCredentials?.() ?? credentials;
         const stored = loadConnections();
-        stored.push({ id, slug, credentials, displayName: name });
+        stored.push({ id, slug, credentials: finalCreds, displayName: resolvedName });
         saveConnections(stored);
 
         set((s) => {
@@ -224,11 +228,11 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
 
       set((s) => {
         const newConns = s.connections.filter((c) => c.id !== connectionId);
-        const { [connectionId]: _a, ...accounts } = s.accounts;
-        const { [connectionId]: _p, ...positions } = s.positions;
-        const { [connectionId]: _o, ...orders } = s.orders;
-        const { [connectionId]: _l, ...loading } = s.loading;
-        const { [connectionId]: _e, ...errors } = s.errors;
+        const { [connectionId]: _rmA, ...accounts } = s.accounts;
+        const { [connectionId]: _rmP, ...positions } = s.positions;
+        const { [connectionId]: _rmO, ...orders } = s.orders;
+        const { [connectionId]: _rmL, ...loading } = s.loading;
+        const { [connectionId]: _rmE, ...errors } = s.errors;
         const newState = { connections: newConns, accounts, positions, orders, loading, errors };
         return { ...newState, ...legacyCompat(newState) };
       });
@@ -303,14 +307,27 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
         try {
           await instance.connect(entry.credentials);
 
+          // Use the instance's display name if it discovered the underlying brokerage
+          const resolvedName = instance.getDisplayName?.() || entry.displayName;
+
           const conn: BrokerConnection = {
             id: entry.id,
             slug: entry.slug,
-            displayName: entry.displayName,
+            displayName: resolvedName,
             instance,
           };
 
           const data = await fetchConnectionData(conn);
+
+          // Persist refreshed credentials and display name
+          const refreshedCreds = instance.getCredentials?.() ?? entry.credentials;
+          const allStored = loadConnections();
+          const idx = allStored.findIndex((c) => c.id === entry.id);
+          if (idx >= 0) {
+            allStored[idx].credentials = refreshedCreds;
+            allStored[idx].displayName = resolvedName;
+            saveConnections(allStored);
+          }
 
           set((s) => {
             const alreadyExists = s.connections.some((c) => c.id === entry.id);

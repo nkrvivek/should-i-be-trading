@@ -35,6 +35,7 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
   private snapUserSecret = "";
   private accountId = "";
   private accountIds: string[] = [];
+  private institutionName = "";
 
   private async edgeCall(action: string, extra: Record<string, unknown> = {}): Promise<unknown> {
     const headers = await getEdgeHeaders();
@@ -55,38 +56,92 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
     return res.json();
   }
 
+  /** Returns the current SnapTrade credentials for persistence in connection entries */
+  getCredentials(): Record<string, string> {
+    const creds: Record<string, string> = {};
+    if (this.snapUserId && this.snapUserSecret) {
+      creds.snapUserId = this.snapUserId;
+      creds.snapUserSecret = this.snapUserSecret;
+    }
+    if (this.institutionName) {
+      creds.institutionName = this.institutionName;
+    }
+    return creds;
+  }
+
+  /** Returns a human-friendly name based on the underlying brokerage */
+  getDisplayName(): string {
+    if (this.institutionName) {
+      return `${this.institutionName} (via SnapTrade)`;
+    }
+    return "SnapTrade";
+  }
+
   async connect(credentials: Record<string, string>): Promise<void> {
-    // If credentials provided (returning user via reconnect), use them
+    // Restore institution name from stored credentials if available
+    if (credentials.institutionName) {
+      this.institutionName = credentials.institutionName;
+    }
+
+    // 1) Credentials passed from stored connection entry (best path)
     if (credentials.snapUserId && credentials.snapUserSecret) {
       this.snapUserId = credentials.snapUserId;
       this.snapUserSecret = credentials.snapUserSecret;
     } else {
-      // Check localStorage for saved creds
+      // 2) Fallback: check legacy localStorage key
       const saved = loadSnapCreds();
       if (saved) {
         this.snapUserId = saved.userId;
         this.snapUserSecret = saved.userSecret;
       } else {
-        // New user — register with SnapTrade
+        // 3) New user — register with SnapTrade
+        const data = await this.edgeCall("register") as { userId: string; userSecret: string };
+        this.snapUserId = data.userId;
+        this.snapUserSecret = data.userSecret;
+      }
+    }
+
+    // Always persist to localStorage as backup
+    saveSnapCreds({ userId: this.snapUserId, userSecret: this.snapUserSecret });
+
+    // Fetch connected accounts — wrap in try/catch so expired sessions
+    // don't prevent the connection from being tracked for portal re-auth
+    let accounts: Array<{ id: string; number: string; name: string; institution_name?: string }> = [];
+    try {
+      accounts = await this.edgeCall("listAccounts") as typeof accounts;
+    } catch (err) {
+      // If it's an auth error, the user may need to re-register
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("401") || msg.includes("authentication") || msg.includes("expired")) {
+        // Clear stale credentials and re-register
         const data = await this.edgeCall("register") as { userId: string; userSecret: string };
         this.snapUserId = data.userId;
         this.snapUserSecret = data.userSecret;
         saveSnapCreds({ userId: data.userId, userSecret: data.userSecret });
+        // Retry list accounts with fresh creds
+        try {
+          accounts = await this.edgeCall("listAccounts") as typeof accounts;
+        } catch {
+          // Still failing — mark connected so user can access portal
+          this.isConnected = true;
+          return;
+        }
+      } else {
+        throw err;
       }
     }
-
-    // Fetch connected accounts
-    const accounts = await this.edgeCall("listAccounts") as Array<{
-      id: string;
-      number: string;
-      name: string;
-    }>;
 
     if (!accounts || accounts.length === 0) {
       // No accounts connected yet — user needs the Connection Portal
       // Still mark as connected so they can use getConnectionPortalUrl()
       this.isConnected = true;
       return;
+    }
+
+    // Extract the underlying brokerage name (e.g. "Schwab", "Robinhood")
+    const firstInstitution = accounts[0].institution_name;
+    if (firstInstitution) {
+      this.institutionName = firstInstitution;
     }
 
     this.accountIds = accounts.map((a) => a.id);
@@ -99,6 +154,7 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
     this.snapUserSecret = "";
     this.accountId = "";
     this.accountIds = [];
+    this.institutionName = "";
     this.isConnected = false;
     clearSnapCreds();
   }

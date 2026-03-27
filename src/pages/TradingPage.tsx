@@ -56,7 +56,11 @@ export default function TradingPage() {
     placeOrder,
   } = useBrokerStore();
 
-  const [tab, setTab] = useState<TabId | null>(null);
+  const hasConnections = connections.length > 0;
+  const hasAnyAccount = Object.keys(accounts).length > 0;
+  const brokerReady = hasConnections && hasAnyAccount;
+
+  const [tab, setTab] = useState<TabId>(() => brokerReady ? "portfolio" : "import");
   const [executionModal, setExecutionModal] = useState<{
     open: boolean;
     symbol: string;
@@ -85,9 +89,6 @@ export default function TradingPage() {
     setTab("orders");
   }, []);
 
-  const hasConnections = connections.length > 0;
-  const hasAnyAccount = Object.keys(accounts).length > 0;
-  const brokerReady = hasConnections && hasAnyAccount;
   const isAnyLoading = Object.values(loadingMap).some(Boolean);
   const firstError = Object.values(errorsMap).find((e) => e != null) ?? null;
 
@@ -102,17 +103,11 @@ export default function TradingPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Set initial tab based on broker connection state
-  useEffect(() => {
-    if (tab === null) {
-      setTab(brokerReady ? "portfolio" : "import");
-    }
-  }, [brokerReady, tab]);
-
   // If user is on a broker tab and broker disconnects, reset to import
+  // This is an event-driven transition, not a render-time derivation
   useEffect(() => {
-    if (!brokerReady && tab && BROKER_TABS.includes(tab)) {
-      setTab("import");
+    if (!brokerReady && BROKER_TABS.includes(tab)) {
+      setTab("import"); // eslint-disable-line react-hooks/set-state-in-effect
     }
   }, [brokerReady, tab]);
 
@@ -120,7 +115,7 @@ export default function TradingPage() {
     ? [...BROKER_TABS, "strategies", "import"]
     : ["import", "strategies"];
 
-  const activeTab = tab ?? "import";
+  const activeTab = tab;
 
   // Wrap placeOrder/cancelOrder for legacy OrdersPanel (uses first connection)
   const handlePlaceOrder = async (order: OrderRequest) => {

@@ -143,7 +143,7 @@ export function useMarketScore() {
       }
     } catch { /* ignore */ }
     fetchScore();
-  }, [fetchScore]);
+  }, [fetchScore, status]);
 
   // Auto-refresh during market hours — use ref to avoid interval recreation
   const fetchScoreRef = useRef(fetchScore);

@@ -151,39 +151,26 @@ export default function OrderReviewModal({
   const hasOptions = executionLegs.some((l) => l.type === "call" || l.type === "put");
   const canExecute = riskAcknowledged && preChecks.passed && selectedConnectionId && !executing && !executionResult;
 
-  // Initialize legStatuses when executionLegs change
-  useEffect(() => {
-    if (!executing && !executionResult) {
-      setLegStatuses(executionLegs);
+  const formatMetric = (n: number): string => {
+    if (!isFinite(n) || Math.abs(n) > 1e8) return "Unlimited";
+    const abs = Math.abs(n);
+    if (abs >= 1000) return `$${(abs / 1000).toFixed(1)}K`;
+    return `$${abs.toFixed(0)}`;
+  };
+
+  const formatDollar = (n: number): string =>
+    n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+  const statusIcon = (status: ExecutionLeg["status"]): string => {
+    switch (status) {
+      case "pending": return "\u23F3";
+      case "placing": return "\uD83D\uDD04";
+      case "filled": return "\u2705";
+      case "failed": return "\u274C";
+      case "cancelled": return "\u26D4";
+      default: return "\u23F3";
     }
-  }, [suggestion]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Countdown timer for live accounts
-  useEffect(() => {
-    if (countdown === null || countdown <= 0) return;
-    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown]);
-
-  // Execute when countdown reaches 0
-  useEffect(() => {
-    if (countdown === 0) {
-      doExecute();
-      setCountdown(null);
-    }
-  }, [countdown]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleExecuteClick = useCallback(() => {
-    if (isPaper) {
-      doExecute();
-    } else {
-      setCountdown(3);
-    }
-  }, [isPaper, selectedConnectionId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleCancelCountdown = useCallback(() => {
-    setCountdown(null);
-  }, []);
+  };
 
   async function doExecute() {
     setExecuting(true);
@@ -230,26 +217,39 @@ export default function OrderReviewModal({
     }
   }
 
-  const formatMetric = (n: number): string => {
-    if (!isFinite(n) || Math.abs(n) > 1e8) return "Unlimited";
-    const abs = Math.abs(n);
-    if (abs >= 1000) return `$${(abs / 1000).toFixed(1)}K`;
-    return `$${abs.toFixed(0)}`;
-  };
-
-  const formatDollar = (n: number): string =>
-    n.toLocaleString("en-US", { style: "currency", currency: "USD" });
-
-  const statusIcon = (status: ExecutionLeg["status"]): string => {
-    switch (status) {
-      case "pending": return "\u23F3";
-      case "placing": return "\uD83D\uDD04";
-      case "filled": return "\u2705";
-      case "failed": return "\u274C";
-      case "cancelled": return "\u26D4";
-      default: return "\u23F3";
+  // Initialize legStatuses when executionLegs change
+  useEffect(() => {
+    if (!executing && !executionResult) {
+      setLegStatuses(executionLegs); // eslint-disable-line react-hooks/set-state-in-effect
     }
-  };
+  }, [suggestion]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Countdown timer for live accounts
+  useEffect(() => {
+    if (countdown === null || countdown <= 0) return;
+    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [countdown]);
+
+  // Execute when countdown reaches 0
+  useEffect(() => {
+    if (countdown === 0) {
+      doExecute(); // eslint-disable-line react-hooks/set-state-in-effect
+      setCountdown(null);
+    }
+  }, [countdown]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleExecuteClick = useCallback(() => { // eslint-disable-line react-hooks/preserve-manual-memoization
+    if (isPaper) {
+      doExecute();
+    } else {
+      setCountdown(3);
+    }
+  }, [isPaper, selectedConnectionId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCancelCountdown = useCallback(() => {
+    setCountdown(null);
+  }, []);
 
   return (
     <div style={overlayStyle} onClick={onClose}>

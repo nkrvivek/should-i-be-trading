@@ -160,7 +160,7 @@ export function useStockMetrics() {
   }, []);
 
   useEffect(() => {
-    fetchMetrics();
+    fetchMetrics(); // eslint-disable-line react-hooks/set-state-in-effect
     return () => { abortRef.current = true; };
   }, [fetchMetrics]);
 

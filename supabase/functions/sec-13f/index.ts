@@ -1,4 +1,4 @@
-import { authenticateRequest, getCorsHeaders, corsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
 
 /**
  * SEC EDGAR 13F proxy edge function.

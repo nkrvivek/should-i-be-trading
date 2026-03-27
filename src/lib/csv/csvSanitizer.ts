@@ -16,7 +16,8 @@ const ALLOWED_MIMES = [
 const FORMULA_PREFIXES = ["=", "+", "-", "@", "|", "\t"];
 const DANGEROUS_URI_RE = /^\s*(javascript|data|vbscript)\s*:/i;
 const DDE_PATTERNS = /^[@+]?(SUM|IF|CMD|EXEC|CALL|IMPORTDATA|IMPORTXML|IMPORTRANGE|HYPERLINK)\s*\(/i;
-const NULL_BYTE_FORMULA_RE = /\x00[=+\-@|]/;
+// eslint-disable-next-line no-control-regex
+const NULL_BYTE_FORMULA_RE = /\u0000[=+\-@|]/u;
 
 
 export interface SanitizeResult {
@@ -51,7 +52,7 @@ export function sanitizeContent(raw: string): SanitizeResult {
   const warnings: string[] = [];
 
   // Strip BOM
-  let content = raw.replace(/^\uFEFF/, "");
+  const content = raw.replace(/^\uFEFF/, "");
 
   // Reject null bytes (including null-byte-followed-by-formula attacks)
   if (content.includes("\0") || NULL_BYTE_FORMULA_RE.test(content)) {

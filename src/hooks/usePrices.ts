@@ -68,7 +68,7 @@ export function usePrices(options: UsePricesOptions): UsePricesReturn {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stalenessTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const lastMessageRef = useRef<number>(Date.now());
+  const lastMessageRef = useRef<number>(Date.now()); // eslint-disable-line react-hooks/purity
   const mountedRef = useRef(true);
   const connStateRef = useRef<ConnState>("idle");
   const socketGenRef = useRef(0);
@@ -90,9 +90,9 @@ export function usePrices(options: UsePricesOptions): UsePricesReturn {
     () => indexes.map((i) => `${i.symbol}@${i.exchange}`).sort().join(","),
     [indexes],
   );
-  const normalizedSymbols = useMemo(() => normalizeSymbolList(symbols), [symbolHash]);
-  const normalizedContracts = useMemo(() => uniqueOptionContracts(contracts), [contractHash]);
-  const normalizedIndexes = useMemo(() => indexes, [indexHash]);
+  const normalizedSymbols = useMemo(() => normalizeSymbolList(symbols), [symbolHash]); // eslint-disable-line react-hooks/exhaustive-deps
+  const normalizedContracts = useMemo(() => uniqueOptionContracts(contracts), [contractHash]); // eslint-disable-line react-hooks/exhaustive-deps
+  const normalizedIndexes = useMemo(() => indexes, [indexHash]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const hasSubscriptions =
     normalizedSymbols.length > 0 ||

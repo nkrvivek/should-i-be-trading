@@ -58,8 +58,8 @@ async function webullSign(
   queryParams: Record<string, string>,
   body: string | undefined,
   appSecret: string,
-  nonce: string,
-  timestamp: string,
+  _nonce: string,
+  _timestamp: string,
 ): Promise<string> {
   // Sort query params
   const sortedKeys = Object.keys(queryParams).sort();

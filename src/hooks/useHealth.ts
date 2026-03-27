@@ -17,7 +17,7 @@ export function useHealth(intervalMs = 30_000) {
   }, []);
 
   useEffect(() => {
-    fetch();
+    fetch(); // eslint-disable-line react-hooks/set-state-in-effect
     const timer = setInterval(fetch, intervalMs);
     return () => clearInterval(timer);
   }, [fetch, intervalMs]);

@@ -147,7 +147,7 @@ export default function FundamentalsContent() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [computeScore]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {

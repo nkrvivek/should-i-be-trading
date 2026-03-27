@@ -30,7 +30,7 @@ export function GlossaryPage() {
   const toggleExpand = (term: string) => {
     setExpanded((prev) => {
       const next = new Set(prev);
-      next.has(term) ? next.delete(term) : next.add(term);
+      if (next.has(term)) { next.delete(term); } else { next.add(term); }
       return next;
     });
   };

@@ -40,7 +40,7 @@ export function useWatchlists() {
     setLoading(false);
   }, [user]);
 
-  useEffect(() => { fetchWatchlists(); }, [fetchWatchlists]);
+  useEffect(() => { fetchWatchlists(); }, [fetchWatchlists]); // eslint-disable-line react-hooks/set-state-in-effect
 
   const createWatchlist = useCallback(async (name: string, tickers: string[]) => {
     if (!user || !isSupabaseConfigured()) return;

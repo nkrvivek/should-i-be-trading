@@ -40,6 +40,15 @@ export const PROVIDER_CONFIG: Record<CredentialProvider, { label: string; descri
 export function useUserCredentials() {
   const { user, setCredentials } = useAuthStore();
 
+  const refreshCredentials = useCallback(async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("user_credentials")
+      .select("provider, is_valid, last_validated_at")
+      .eq("user_id", user.id);
+    if (data) setCredentials(data);
+  }, [user, setCredentials]);
+
   const saveCredential = useCallback(
     async (provider: CredentialProvider, credentialData: string) => {
       if (!user) throw new Error("Not authenticated");
@@ -60,7 +69,7 @@ export function useUserCredentials() {
       if (error) throw error;
       await refreshCredentials();
     },
-    [user], // eslint-disable-line react-hooks/exhaustive-deps
+    [user, refreshCredentials],
   );
 
   const removeCredential = useCallback(
@@ -76,17 +85,8 @@ export function useUserCredentials() {
       if (error) throw error;
       await refreshCredentials();
     },
-    [user], // eslint-disable-line react-hooks/exhaustive-deps
+    [user, refreshCredentials],
   );
-
-  const refreshCredentials = useCallback(async () => {
-    if (!user) return;
-    const { data } = await supabase
-      .from("user_credentials")
-      .select("provider, is_valid, last_validated_at")
-      .eq("user_id", user.id);
-    if (data) setCredentials(data);
-  }, [user, setCredentials]);
 
   return { saveCredential, removeCredential, refreshCredentials };
 }

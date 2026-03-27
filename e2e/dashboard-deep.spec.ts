@@ -61,7 +61,7 @@ test.describe("Dashboard — Market Score", () => {
     await page.waitForTimeout(5_000);
 
     // Look for a score number (0-100) or loading state
-    const scoreRegex = /\b([0-9]{1,3})\b/;
+    const _scoreRegex = /\b([0-9]{1,3})\b/;
     const hasScore = await page
       .locator("text=/\\b\\d{1,3}\\b/")
       .first()
@@ -237,7 +237,7 @@ test.describe("Dashboard — Watchlist", () => {
 
     // Verify the ticker is gone or the element count decreased
     if (tickerText) {
-      const stillVisible = await page
+      const _stillVisible = await page
         .getByText(new RegExp(`^${tickerText}$`))
         .first()
         .isVisible()
@@ -409,7 +409,7 @@ test.describe("Dashboard — Responsive Layout", () => {
 
     // Nav links should still be accessible (may be in overflow scroll)
     const dashLink = page.locator("a", { hasText: /dashboard/i }).first();
-    const isVisible = await dashLink.isVisible().catch(() => false);
+    const _isVisible = await dashLink.isVisible().catch(() => false);
 
     // On mobile, nav links may be in a scrollable container
     // At minimum the page should render without error

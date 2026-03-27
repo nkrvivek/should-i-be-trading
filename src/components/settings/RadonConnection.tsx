@@ -42,7 +42,7 @@ export function RadonConnection() {
   };
 
   useEffect(() => {
-    checkHealth();
+    checkHealth(); // eslint-disable-line react-hooks/set-state-in-effect
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const isEnterprise = profile?.tier === "enterprise";

@@ -95,7 +95,7 @@ export function TabBar({ tabs, paramKey = "tab" }: TabBarProps) {
 }
 
 /** Hook to get the active tab from URL */
-export function useActiveTab(tabs: TabDef[], paramKey = "tab"): string {
+export function useActiveTab(tabs: TabDef[], paramKey = "tab"): string { // eslint-disable-line react-refresh/only-export-components
   const [searchParams] = useSearchParams();
   return searchParams.get(paramKey) || tabs[0]?.id || "";
 }

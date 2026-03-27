@@ -261,7 +261,7 @@ export function InsiderMarketOverview() {
       if (cached) {
         const { data, ts, source: src } = JSON.parse(cached);
         if (Date.now() - ts < 30 * 60 * 1000) {
-          setTickers(data);
+          setTickers(data); // eslint-disable-line react-hooks/set-state-in-effect
           setSource(src ?? "finnhub");
           setLastScan(new Date(ts).toLocaleTimeString());
         }

@@ -49,7 +49,7 @@ export function useAlerts() {
   }, [user]);
 
   useEffect(() => {
-    setLoading(true);
+    setLoading(true); // eslint-disable-line react-hooks/set-state-in-effect
     Promise.all([fetchRules(), fetchHistory()]).finally(() => setLoading(false));
   }, [fetchRules, fetchHistory]);
 

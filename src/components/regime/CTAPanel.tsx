@@ -41,30 +41,41 @@ export default function CTAPanel() {
   const [error, setError] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("all");
 
-  useEffect(() => { fetchCFTC(); }, []);
-
-  const fetchCFTC = async () => {
+  const fetchCFTC = async (signal?: AbortSignal) => {
     setLoading(true);
     setError("");
     try {
       if (isSupabaseConfigured()) {
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
         const headers = await getEdgeHeaders();
+        if (signal?.aborted) return;
 
-        const res = await fetch(`${supabaseUrl}/functions/v1/cftc?weeks=8`, { headers });
+        const res = await fetch(`${supabaseUrl}/functions/v1/cftc?weeks=8`, {
+          headers,
+          signal: signal ?? AbortSignal.timeout(15_000),
+        });
         if (!res.ok) throw new Error(`CFTC ${res.status}`);
-        setData(await res.json());
+        const json = await res.json();
+        if (!signal?.aborted) setData(json);
       } else {
-        // Direct call (local dev)
-        const res = await fetch("https://publicreporting.cftc.gov/resource/jun7-fc8e.json?$limit=5");
+        const res = await fetch("https://publicreporting.cftc.gov/resource/jun7-fc8e.json?$limit=5", {
+          signal: signal ?? AbortSignal.timeout(10_000),
+        });
         if (!res.ok) throw new Error("CFTC API unavailable");
-        setData(null); // Need edge function for processing
+        if (!signal?.aborted) setData(null);
       }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "CFTC fetch failed");
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (!signal?.aborted) setError(e instanceof Error ? e.message : "CFTC fetch failed");
     }
-    setLoading(false);
+    if (!signal?.aborted) setLoading(false);
   };
+
+  useEffect(() => {
+    const ac = new AbortController();
+    fetchCFTC(ac.signal);
+    return () => ac.abort();
+  }, []);
 
   const categories = data ? [...new Set(data.contracts.map((c) => c.category))] : [];
   const filtered = data?.contracts.filter((c) => activeCategory === "all" || c.category === activeCategory) ?? [];
@@ -87,7 +98,7 @@ export default function CTAPanel() {
         </div>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           {data && <span style={{ ...mono, fontSize: 12, color: "var(--text-secondary)" }}>Report: {data.lastReport}</span>}
-          <button onClick={fetchCFTC} disabled={loading} style={{ ...mono, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+          <button onClick={() => fetchCFTC()} disabled={loading} style={{ ...mono, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
             {loading ? "..." : "REFRESH"}
           </button>
         </div>

@@ -36,20 +36,29 @@ export default function VCGPanel() {
   const [error, setError] = useState("");
   const radonUrl = localStorage.getItem("sibt_radon_api") || "http://localhost:8321";
 
-  const scan = async () => {
+  const scan = async (signal?: AbortSignal) => {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`${radonUrl}/vcg/scan`, { method: "POST" });
+      const res = await fetch(`${radonUrl}/vcg/scan`, {
+        method: "POST",
+        signal: signal ?? AbortSignal.timeout(10_000),
+      });
       if (!res.ok) throw new Error(`Radon ${res.status}`);
-      setData(await res.json());
+      const json = await res.json();
+      if (!signal?.aborted) setData(json);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "VCG scan failed");
+      if (e instanceof DOMException && e.name === "AbortError") return;
+      if (!signal?.aborted) setError(e instanceof Error ? e.message : "VCG scan failed");
     }
-    setLoading(false);
+    if (!signal?.aborted) setLoading(false);
   };
 
-  useEffect(() => { scan(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const ac = new AbortController();
+    scan(ac.signal);
+    return () => ac.abort();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const s = data?.signal;
   const regimeColor = s?.interpretation === "NORMAL" ? "var(--signal-core)"
@@ -71,7 +80,7 @@ export default function VCGPanel() {
             </span>
           )}
           <span style={{ ...mono, fontSize: 12, color: "var(--text-secondary)" }}>{data?.credit_proxy}</span>
-          <button onClick={scan} disabled={loading} style={{ ...mono, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+          <button onClick={() => scan()} disabled={loading} style={{ ...mono, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
             {loading ? "..." : "SCAN"}
           </button>
         </div>

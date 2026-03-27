@@ -6,21 +6,25 @@ export function useYieldCurve() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
       const curve = await fetchYieldCurve();
-      setData(curve);
-      setError(null);
+      if (!signal?.aborted) { setData(curve); setError(null); }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to fetch yield curve");
+      if (!signal?.aborted) setError(e instanceof Error ? e.message : "Failed to fetch yield curve");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetch(); }, [fetch]);
-  return { data, loading, error, refresh: fetch };
+  useEffect(() => {
+    const ac = new AbortController();
+    load(ac.signal);
+    return () => ac.abort();
+  }, [load]);
+
+  return { data, loading, error, refresh: load };
 }
 
 export function useFredSeries(seriesId: string, limit = 30) {
@@ -28,19 +32,23 @@ export function useFredSeries(seriesId: string, limit = 30) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
+  const load = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     try {
       const obs = await fetchFredSeries(seriesId, limit);
-      setData(obs);
-      setError(null);
+      if (!signal?.aborted) { setData(obs); setError(null); }
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Failed to fetch FRED data");
+      if (!signal?.aborted) setError(e instanceof Error ? e.message : "Failed to fetch FRED data");
     } finally {
-      setLoading(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [seriesId, limit]);
 
-  useEffect(() => { fetch(); }, [fetch]);
-  return { data, loading, error, refresh: fetch };
+  useEffect(() => {
+    const ac = new AbortController();
+    load(ac.signal);
+    return () => ac.abort();
+  }, [load]);
+
+  return { data, loading, error, refresh: load };
 }

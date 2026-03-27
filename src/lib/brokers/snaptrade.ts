@@ -1,4 +1,4 @@
-import type { BrokerConnection, BrokerAccount, BrokerPosition, BrokerOrder, OrderRequest } from "./types";
+import type { BrokerConnectionInterface, BrokerAccount, BrokerPosition, BrokerOrder, OrderRequest } from "./types";
 import { getEdgeHeaders } from "../../api/edgeHeaders";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
@@ -24,7 +24,7 @@ function clearSnapCreds() {
   localStorage.removeItem(CREDS_STORAGE_KEY);
 }
 
-export class SnapTradeBroker implements BrokerConnection {
+export class SnapTradeBroker implements BrokerConnectionInterface {
   name = "SnapTrade";
   slug = "snaptrade";
   icon = "🔗";

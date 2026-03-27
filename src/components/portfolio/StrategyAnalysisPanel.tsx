@@ -244,12 +244,12 @@ function PositionCard({
 }
 
 export default function StrategyAnalysisPanel({ onSimulate }: Props) {
-  const brokerPositions = useBrokerStore((s) => s.positions);
+  const brokerAllPositions = useBrokerStore((s) => s.allPositions);
   const manualPositions = useManualPortfolioStore((s) => s.positions);
 
   const allPositions = useMemo(
-    () => [...brokerPositions, ...manualPositions],
-    [brokerPositions, manualPositions],
+    () => [...brokerAllPositions(), ...manualPositions],
+    [brokerAllPositions, manualPositions],
   );
 
   const analyses = useMemo(

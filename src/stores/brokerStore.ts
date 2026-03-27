@@ -1,168 +1,405 @@
 import { create } from "zustand";
-import type { BrokerAccount, BrokerPosition, BrokerOrder, OrderRequest } from "../lib/brokers/types";
-import { getBrokerInstance, getActiveBrokerSlug, setActiveBrokerSlug } from "../lib/brokers/registry";
+import type {
+  BrokerAccount,
+  BrokerPosition,
+  BrokerOrder,
+  OrderRequest,
+  BrokerConnectionInterface,
+} from "../lib/brokers/types";
+import { createBrokerInstance, BROKER_REGISTRY } from "../lib/brokers/registry";
 
-const CREDS_KEY = "sibt_broker_creds";
+/* ------------------------------------------------------------------ */
+/*  Persistence helpers                                                */
+/* ------------------------------------------------------------------ */
 
-/** Persist non-secret credentials (e.g. apiUrl) for auto-reconnect */
-function saveBrokerCreds(slug: string, credentials: Record<string, string>) {
-  try { localStorage.setItem(CREDS_KEY, JSON.stringify({ slug, credentials })); } catch { /* */ }
+const OLD_CREDS_KEY = "sibt_broker_creds";
+const OLD_ACTIVE_KEY = "sibt_active_broker";
+const CONNECTIONS_KEY = "sibt_broker_connections";
+
+interface StoredConnection {
+  id: string;
+  slug: string;
+  credentials: Record<string, string>;
+  displayName: string;
 }
 
-function loadBrokerCreds(): { slug: string; credentials: Record<string, string> } | null {
+function loadConnections(): StoredConnection[] {
   try {
-    const raw = localStorage.getItem(CREDS_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch { return null; }
+    const raw = localStorage.getItem(CONNECTIONS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch { /* */ }
+
+  // Migrate from old single-broker format
+  try {
+    const oldRaw = localStorage.getItem(OLD_CREDS_KEY);
+    const oldSlug = localStorage.getItem(OLD_ACTIVE_KEY);
+    if (oldRaw && oldSlug) {
+      const old = JSON.parse(oldRaw) as { slug: string; credentials: Record<string, string> };
+      const info = BROKER_REGISTRY.find((b) => b.slug === old.slug);
+      const migrated: StoredConnection[] = [{
+        id: `${old.slug}-migrated`,
+        slug: old.slug,
+        credentials: old.credentials,
+        displayName: info?.name ?? old.slug,
+      }];
+      localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(migrated));
+      localStorage.removeItem(OLD_CREDS_KEY);
+      localStorage.removeItem(OLD_ACTIVE_KEY);
+      return migrated;
+    }
+  } catch { /* */ }
+
+  return [];
 }
 
-function clearBrokerCreds() {
-  localStorage.removeItem(CREDS_KEY);
+function saveConnections(connections: StoredConnection[]) {
+  try {
+    localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(connections));
+  } catch { /* */ }
+}
+
+/* ------------------------------------------------------------------ */
+/*  Types                                                              */
+/* ------------------------------------------------------------------ */
+
+export interface BrokerConnection {
+  id: string;
+  slug: string;
+  displayName: string;
+  instance: BrokerConnectionInterface;
 }
 
 interface BrokerState {
+  connections: BrokerConnection[];
+  accounts: Record<string, BrokerAccount>;
+  positions: Record<string, BrokerPosition[]>;
+  orders: Record<string, BrokerOrder[]>;
+  loading: Record<string, boolean>;
+  errors: Record<string, string | null>;
+
+  /* Computed aggregates */
+  allPositions: () => BrokerPosition[];
+  allOrders: () => BrokerOrder[];
+  allAccounts: () => BrokerAccount[];
+
+  /* Legacy compat — first connection's data */
   activeBroker: string | null;
   account: BrokerAccount | null;
-  positions: BrokerPosition[];
-  orders: BrokerOrder[];
-  loading: boolean;
-  error: string | null;
 
-  setActiveBroker: (slug: string | null) => void;
+  /* Actions */
+  addConnection: (slug: string, credentials: Record<string, string>, displayName?: string) => Promise<string>;
+  removeConnection: (connectionId: string) => Promise<void>;
+  refresh: (connectionId?: string) => Promise<void>;
+  reconnectAll: () => Promise<void>;
+  placeOrder: (connectionId: string, order: OrderRequest) => Promise<BrokerOrder>;
+  cancelOrder: (connectionId: string, orderId: string) => Promise<void>;
+
+  /* Legacy compat actions */
   connect: (slug: string, credentials: Record<string, string>) => Promise<void>;
   disconnect: () => void;
-  refresh: () => Promise<void>;
   reconnect: () => Promise<void>;
-  placeOrder: (order: OrderRequest) => Promise<BrokerOrder>;
-  cancelOrder: (orderId: string) => Promise<void>;
 }
 
-export const useBrokerStore = create<BrokerState>((set, get) => ({
-  activeBroker: getActiveBrokerSlug(),
-  account: null,
-  positions: [],
-  orders: [],
-  loading: false,
-  error: null,
+/* ------------------------------------------------------------------ */
+/*  Store                                                              */
+/* ------------------------------------------------------------------ */
 
-  setActiveBroker: (slug) => {
-    setActiveBrokerSlug(slug);
-    set({ activeBroker: slug, account: null, positions: [], orders: [], error: null });
-  },
+export const useBrokerStore = create<BrokerState>((set, get) => {
+  /* Helper: fetch data for a single connection */
+  async function fetchConnectionData(conn: BrokerConnection) {
+    const [account, positions, orders] = await Promise.all([
+      conn.instance.getAccount(),
+      conn.instance.getPositions(),
+      conn.instance.getOrders(),
+    ]);
+    return { account: { ...account, brokerId: conn.id }, positions, orders };
+  }
 
-  connect: async (slug, credentials) => {
-    set({ loading: true, error: null });
-    try {
-      const broker = getBrokerInstance(slug);
-      if (!broker) throw new Error(`Broker ${slug} not available`);
-      await broker.connect(credentials);
-      setActiveBrokerSlug(slug);
-      saveBrokerCreds(slug, credentials);
+  /* Helper: derive legacy compat fields from current state */
+  function legacyCompat(state: Partial<BrokerState>) {
+    const s = { ...get(), ...state };
+    const firstConn = s.connections[0];
+    return {
+      activeBroker: firstConn?.slug ?? null,
+      account: firstConn ? (s.accounts[firstConn.id] ?? null) : null,
+    };
+  }
 
-      const [account, positions, orders] = await Promise.all([
-        broker.getAccount(),
-        broker.getPositions(),
-        broker.getOrders(),
-      ]);
+  return {
+    connections: [],
+    accounts: {},
+    positions: {},
+    orders: {},
+    loading: {},
+    errors: {},
 
-      set({ activeBroker: slug, account, positions, orders, loading: false });
-    } catch (e) {
-      set({ loading: false, error: e instanceof Error ? e.message : "Connection failed" });
-      throw e;
-    }
-  },
+    activeBroker: null,
+    account: null,
 
-  disconnect: () => {
-    const { activeBroker } = get();
-    if (activeBroker) {
-      const broker = getBrokerInstance(activeBroker);
-      broker?.disconnect();
-    }
-    setActiveBrokerSlug(null);
-    clearBrokerCreds();
-    set({ activeBroker: null, account: null, positions: [], orders: [], error: null });
-  },
+    /* ---- Computed aggregates ---- */
+    allPositions: () => {
+      const { connections, positions } = get();
+      const merged: BrokerPosition[] = [];
+      for (const conn of connections) {
+        const connPositions = positions[conn.id] ?? [];
+        for (const p of connPositions) {
+          merged.push({ ...p, brokerId: conn.id, brokerName: conn.displayName });
+        }
+      }
+      return merged;
+    },
 
-  /**
-   * Reconnect a saved broker session. Called on page load when activeBroker
-   * is in localStorage but the instance isn't connected yet.
-   */
-  reconnect: async () => {
-    const { activeBroker } = get();
-    if (!activeBroker) return;
+    allOrders: () => {
+      const { connections, orders } = get();
+      const merged: BrokerOrder[] = [];
+      for (const conn of connections) {
+        const connOrders = orders[conn.id] ?? [];
+        for (const o of connOrders) {
+          merged.push({ ...o, brokerId: conn.id, brokerName: conn.displayName });
+        }
+      }
+      return merged;
+    },
 
-    const broker = getBrokerInstance(activeBroker);
-    if (!broker || broker.isConnected) return;
+    allAccounts: () => {
+      const { connections, accounts } = get();
+      return connections.map((c) => accounts[c.id]).filter(Boolean) as BrokerAccount[];
+    },
 
-    // Restore credentials from localStorage
-    const saved = loadBrokerCreds();
-    const credentials = saved?.slug === activeBroker ? saved.credentials : {};
+    /* ---- Actions ---- */
 
-    set({ loading: true, error: null });
-    try {
-      await broker.connect(credentials);
+    addConnection: async (slug, credentials, displayName) => {
+      const id = `${slug}-${Date.now()}`;
+      const instance = createBrokerInstance(slug);
+      if (!instance) throw new Error(`Broker ${slug} not available`);
 
-      const [account, positions, orders] = await Promise.all([
-        broker.getAccount(),
-        broker.getPositions(),
-        broker.getOrders(),
-      ]);
+      const info = BROKER_REGISTRY.find((b) => b.slug === slug);
+      const name = displayName ?? info?.name ?? slug;
 
-      set({ account, positions, orders, loading: false, error: null });
-    } catch (e) {
-      // Connection failed — broker may be offline, show error but keep slug
-      set({
-        loading: false,
-        error: e instanceof Error ? e.message : "Reconnection failed — is the broker running?",
+      set((s) => ({
+        loading: { ...s.loading, [id]: true },
+        errors: { ...s.errors, [id]: null },
+      }));
+
+      try {
+        await instance.connect(credentials);
+
+        const conn: BrokerConnection = { id, slug, displayName: name, instance };
+
+        const data = await fetchConnectionData(conn);
+
+        // Save credentials
+        const stored = loadConnections();
+        stored.push({ id, slug, credentials, displayName: name });
+        saveConnections(stored);
+
+        set((s) => {
+          const newState = {
+            connections: [...s.connections, conn],
+            accounts: { ...s.accounts, [id]: data.account },
+            positions: { ...s.positions, [id]: data.positions },
+            orders: { ...s.orders, [id]: data.orders },
+            loading: { ...s.loading, [id]: false },
+            errors: { ...s.errors, [id]: null },
+          };
+          return { ...newState, ...legacyCompat(newState) };
+        });
+
+        return id;
+      } catch (e) {
+        set((s) => ({
+          loading: { ...s.loading, [id]: false },
+          errors: { ...s.errors, [id]: e instanceof Error ? e.message : "Connection failed" },
+        }));
+        throw e;
+      }
+    },
+
+    removeConnection: async (connectionId) => {
+      const { connections } = get();
+      const conn = connections.find((c) => c.id === connectionId);
+      if (conn) {
+        conn.instance.disconnect();
+      }
+
+      set((s) => {
+        const newConns = s.connections.filter((c) => c.id !== connectionId);
+        const { [connectionId]: _a, ...accounts } = s.accounts;
+        const { [connectionId]: _p, ...positions } = s.positions;
+        const { [connectionId]: _o, ...orders } = s.orders;
+        const { [connectionId]: _l, ...loading } = s.loading;
+        const { [connectionId]: _e, ...errors } = s.errors;
+        const newState = { connections: newConns, accounts, positions, orders, loading, errors };
+        return { ...newState, ...legacyCompat(newState) };
       });
-    }
-  },
 
-  refresh: async () => {
-    const { activeBroker } = get();
-    if (!activeBroker) return;
-    const broker = getBrokerInstance(activeBroker);
+      // Update localStorage
+      const stored = loadConnections().filter((c) => c.id !== connectionId);
+      saveConnections(stored);
+    },
 
-    // If not connected, attempt reconnect first
-    if (!broker?.isConnected) {
-      return get().reconnect();
-    }
+    refresh: async (connectionId) => {
+      const { connections } = get();
+      const targets = connectionId
+        ? connections.filter((c) => c.id === connectionId)
+        : connections;
 
-    set({ loading: true });
-    try {
-      const [account, positions, orders] = await Promise.all([
-        broker.getAccount(),
-        broker.getPositions(),
-        broker.getOrders(),
-      ]);
-      set({ account, positions, orders, loading: false, error: null });
-    } catch (e) {
-      set({ loading: false, error: e instanceof Error ? e.message : "Refresh failed" });
-    }
-  },
+      if (targets.length === 0) return;
 
-  placeOrder: async (order) => {
-    const { activeBroker } = get();
-    if (!activeBroker) throw new Error("No broker connected");
-    const broker = getBrokerInstance(activeBroker);
-    if (!broker?.isConnected) throw new Error("Broker not connected");
+      // Set loading
+      set((s) => {
+        const loading = { ...s.loading };
+        for (const t of targets) loading[t.id] = true;
+        return { loading };
+      });
 
-    const result = await broker.placeOrder(order);
-    // Refresh orders after placing
-    const orders = await broker.getOrders();
-    set({ orders });
-    return result;
-  },
+      await Promise.allSettled(
+        targets.map(async (conn) => {
+          try {
+            // If not connected, try reconnecting
+            if (!conn.instance.isConnected) {
+              const stored = loadConnections().find((c) => c.id === conn.id);
+              await conn.instance.connect(stored?.credentials ?? {});
+            }
 
-  cancelOrder: async (orderId) => {
-    const { activeBroker } = get();
-    if (!activeBroker) throw new Error("No broker connected");
-    const broker = getBrokerInstance(activeBroker);
-    if (!broker?.isConnected) throw new Error("Broker not connected");
+            const data = await fetchConnectionData(conn);
+            set((s) => {
+              const newState = {
+                accounts: { ...s.accounts, [conn.id]: data.account },
+                positions: { ...s.positions, [conn.id]: data.positions },
+                orders: { ...s.orders, [conn.id]: data.orders },
+                loading: { ...s.loading, [conn.id]: false },
+                errors: { ...s.errors, [conn.id]: null },
+              };
+              return { ...newState, ...legacyCompat(newState) };
+            });
+          } catch (e) {
+            set((s) => ({
+              loading: { ...s.loading, [conn.id]: false },
+              errors: { ...s.errors, [conn.id]: e instanceof Error ? e.message : "Refresh failed" },
+            }));
+          }
+        }),
+      );
+    },
 
-    await broker.cancelOrder(orderId);
-    const orders = await broker.getOrders();
-    set({ orders });
-  },
-}));
+    reconnectAll: async () => {
+      const stored = loadConnections();
+      if (stored.length === 0) return;
+
+      for (const entry of stored) {
+        // Skip if already connected
+        const existing = get().connections.find((c) => c.id === entry.id);
+        if (existing?.instance.isConnected) continue;
+
+        const instance = existing?.instance ?? createBrokerInstance(entry.slug);
+        if (!instance) continue;
+
+        set((s) => ({
+          loading: { ...s.loading, [entry.id]: true },
+          errors: { ...s.errors, [entry.id]: null },
+        }));
+
+        try {
+          await instance.connect(entry.credentials);
+
+          const conn: BrokerConnection = {
+            id: entry.id,
+            slug: entry.slug,
+            displayName: entry.displayName,
+            instance,
+          };
+
+          const data = await fetchConnectionData(conn);
+
+          set((s) => {
+            const alreadyExists = s.connections.some((c) => c.id === entry.id);
+            const newConns = alreadyExists
+              ? s.connections.map((c) => (c.id === entry.id ? conn : c))
+              : [...s.connections, conn];
+            const newState = {
+              connections: newConns,
+              accounts: { ...s.accounts, [entry.id]: data.account },
+              positions: { ...s.positions, [entry.id]: data.positions },
+              orders: { ...s.orders, [entry.id]: data.orders },
+              loading: { ...s.loading, [entry.id]: false },
+              errors: { ...s.errors, [entry.id]: null },
+            };
+            return { ...newState, ...legacyCompat(newState) };
+          });
+        } catch (e) {
+          // If instance was newly created (not existing), still track it so it can be retried
+          if (!existing) {
+            const conn: BrokerConnection = {
+              id: entry.id,
+              slug: entry.slug,
+              displayName: entry.displayName,
+              instance,
+            };
+            set((s) => {
+              const alreadyExists = s.connections.some((c) => c.id === entry.id);
+              return {
+                connections: alreadyExists ? s.connections : [...s.connections, conn],
+                loading: { ...s.loading, [entry.id]: false },
+                errors: { ...s.errors, [entry.id]: e instanceof Error ? e.message : "Reconnection failed" },
+              };
+            });
+          } else {
+            set((s) => ({
+              loading: { ...s.loading, [entry.id]: false },
+              errors: { ...s.errors, [entry.id]: e instanceof Error ? e.message : "Reconnection failed" },
+            }));
+          }
+        }
+      }
+    },
+
+    placeOrder: async (connectionId, order) => {
+      const { connections } = get();
+      const conn = connections.find((c) => c.id === connectionId);
+      if (!conn) throw new Error("Connection not found");
+      if (!conn.instance.isConnected) throw new Error("Broker not connected");
+
+      const result = await conn.instance.placeOrder(order);
+      const orders = await conn.instance.getOrders();
+      set((s) => ({ orders: { ...s.orders, [connectionId]: orders } }));
+      return result;
+    },
+
+    cancelOrder: async (connectionId, orderId) => {
+      const { connections } = get();
+      const conn = connections.find((c) => c.id === connectionId);
+      if (!conn) throw new Error("Connection not found");
+      if (!conn.instance.isConnected) throw new Error("Broker not connected");
+
+      await conn.instance.cancelOrder(orderId);
+      const orders = await conn.instance.getOrders();
+      set((s) => ({ orders: { ...s.orders, [connectionId]: orders } }));
+    },
+
+    /* ---- Legacy compat ---- */
+
+    connect: async (slug, credentials) => {
+      // Legacy: adds a new connection (or reconnects the first one with the same slug)
+      const { connections } = get();
+      const existing = connections.find((c) => c.slug === slug);
+      if (existing) {
+        // Reconnect existing
+        await get().refresh(existing.id);
+        return;
+      }
+      await get().addConnection(slug, credentials);
+    },
+
+    disconnect: () => {
+      const { connections, removeConnection } = get();
+      if (connections.length > 0) {
+        removeConnection(connections[0].id);
+      }
+    },
+
+    reconnect: async () => {
+      await get().reconnectAll();
+    },
+  };
+});

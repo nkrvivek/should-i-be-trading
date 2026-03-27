@@ -5,7 +5,7 @@ import { SchwabBroker } from "./schwab";
 import { EtradeBroker } from "./etrade";
 import { WebullBroker } from "./webull";
 import { SnapTradeBroker } from "./snaptrade";
-import type { BrokerConnection } from "./types";
+import type { BrokerConnectionInterface } from "./types";
 
 export interface BrokerInfo {
   name: string;
@@ -114,32 +114,32 @@ export const BROKER_REGISTRY: BrokerInfo[] = [
   },
 ];
 
-const instances: Record<string, BrokerConnection> = {};
+const instances: Record<string, BrokerConnectionInterface> = {};
 
-export function getBrokerInstance(slug: string): BrokerConnection | null {
+export function getBrokerInstance(slug: string): BrokerConnectionInterface | null {
   if (instances[slug]) return instances[slug];
+  const instance = createBrokerInstance(slug);
+  if (instance) instances[slug] = instance;
+  return instance;
+}
+
+/** Create a fresh broker adapter instance (not cached). Used for multi-connection support. */
+export function createBrokerInstance(slug: string): BrokerConnectionInterface | null {
   switch (slug) {
     case "snaptrade":
-      instances[slug] = new SnapTradeBroker();
-      return instances[slug];
+      return new SnapTradeBroker();
     case "alpaca":
-      instances[slug] = new AlpacaBroker();
-      return instances[slug];
+      return new AlpacaBroker();
     case "ibkr":
-      instances[slug] = new IBKRBroker();
-      return instances[slug];
+      return new IBKRBroker();
     case "tradier":
-      instances[slug] = new TradierBroker();
-      return instances[slug];
+      return new TradierBroker();
     case "schwab":
-      instances[slug] = new SchwabBroker();
-      return instances[slug];
+      return new SchwabBroker();
     case "etrade":
-      instances[slug] = new EtradeBroker();
-      return instances[slug];
+      return new EtradeBroker();
     case "webull":
-      instances[slug] = new WebullBroker();
-      return instances[slug];
+      return new WebullBroker();
     default:
       return null;
   }

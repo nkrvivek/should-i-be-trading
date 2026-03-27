@@ -40,15 +40,36 @@ type TabId = "import" | "strategies" | "portfolio" | "orders" | "flow" | "journa
 const BROKER_TABS: TabId[] = ["portfolio", "orders", "flow", "journal"];
 
 export default function TradingPage() {
-  const { account, positions, orders, loading, error, activeBroker, placeOrder, cancelOrder, refresh, reconnect } = useBrokerStore();
+  const {
+    connections,
+    accounts,
+    loading: loadingMap,
+    errors: errorsMap,
+    allPositions,
+    allOrders,
+    allAccounts,
+    refresh,
+    reconnectAll,
+    cancelOrder,
+    placeOrder,
+  } = useBrokerStore();
+
   const [tab, setTab] = useState<TabId | null>(null);
 
-  const brokerReady = !!(activeBroker && account);
+  const hasConnections = connections.length > 0;
+  const hasAnyAccount = Object.keys(accounts).length > 0;
+  const brokerReady = hasConnections && hasAnyAccount;
+  const isAnyLoading = Object.values(loadingMap).some(Boolean);
+  const firstError = Object.values(errorsMap).find((e) => e != null) ?? null;
 
-  // Auto-reconnect when broker slug is saved but instance isn't connected yet (page reload)
+  const positions = allPositions();
+  const orders = allOrders();
+  const combinedAccounts = allAccounts();
+
+  // Auto-reconnect saved connections on page load
   useEffect(() => {
-    if (activeBroker && !account && !loading) {
-      reconnect();
+    if (!hasConnections) {
+      reconnectAll();
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -66,51 +87,102 @@ export default function TradingPage() {
     }
   }, [brokerReady, tab]);
 
-  // When broker is connected: portfolio, orders, flow, journal, strategies, import
-  // When no broker: import, strategies
   const visibleTabs: TabId[] = brokerReady
     ? [...BROKER_TABS, "strategies", "import"]
     : ["import", "strategies"];
 
   const activeTab = tab ?? "import";
 
+  // Wrap placeOrder/cancelOrder for legacy OrdersPanel (uses first connection)
+  const handlePlaceOrder = async (order: OrderRequest) => {
+    if (connections.length === 0) throw new Error("No broker connected");
+    return placeOrder(connections[0].id, order);
+  };
+  const handleCancelOrder = async (orderId: string) => {
+    // Find which connection owns this order
+    const allOrd = allOrders();
+    const match = allOrd.find((o) => o.id === orderId);
+    const connId = match?.brokerId ?? connections[0]?.id;
+    if (!connId) throw new Error("No broker connected");
+    return cancelOrder(connId, orderId);
+  };
+
   return (
     <TerminalShell>
     <div style={{ maxWidth: 1400, margin: "0 auto", padding: "24px 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h1 style={{ ...monoStyle, fontSize: 24, fontWeight: 700 }}>TRADING</h1>
-        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", justifyContent: "flex-end" }}>
           {brokerReady ? (
             <>
-              <span style={{ ...monoStyle, fontSize: 13, color: "var(--signal-core, #05AD98)" }}>
-                {activeBroker!.toUpperCase()} CONNECTED
-                {account?.isPaperTrading && " (PAPER)"}
-              </span>
-              <button onClick={refresh} style={{ ...monoStyle, fontSize: 13, padding: "4px 12px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+              {connections.map((conn) => {
+                const connAccount = accounts[conn.id];
+                const connLoading = loadingMap[conn.id];
+                const connError = errorsMap[conn.id];
+                return (
+                  <span
+                    key={conn.id}
+                    style={{
+                      ...monoStyle,
+                      fontSize: 12,
+                      padding: "4px 10px",
+                      borderRadius: 999,
+                      background: connError
+                        ? "rgba(234, 179, 8, 0.12)"
+                        : "rgba(5, 173, 152, 0.12)",
+                      color: connError
+                        ? "var(--warning, #f59e0b)"
+                        : "var(--signal-core, #05AD98)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    {conn.displayName.toUpperCase()}
+                    {connAccount?.isPaperTrading ? " (PAPER)" : ""}
+                    {connLoading && " ..."}
+                    {connError && " OFFLINE"}
+                  </span>
+                );
+              })}
+              <button
+                onClick={() => refresh()}
+                style={{
+                  ...monoStyle,
+                  fontSize: 13,
+                  padding: "4px 12px",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: 4,
+                  background: "none",
+                  cursor: "pointer",
+                }}
+              >
                 REFRESH
               </button>
             </>
-          ) : activeBroker && loading ? (
+          ) : hasConnections && isAnyLoading ? (
             <span style={{ ...monoStyle, fontSize: 13, color: "var(--warning, #f59e0b)", animation: "pulse 1.4s ease-in-out infinite" }}>
-              CONNECTING TO {activeBroker.toUpperCase()}...
+              CONNECTING...
             </span>
-          ) : activeBroker && error ? (
+          ) : hasConnections && firstError ? (
             <span style={{ ...monoStyle, fontSize: 13, color: "var(--text-muted, #94a3b8)" }}>
-              {activeBroker.toUpperCase()} OFFLINE
+              BROKER OFFLINE
             </span>
           ) : null}
         </div>
       </div>
 
       {/* Account Summary (when broker connected) */}
-      {brokerReady && <AccountSummary account={account} />}
-      {activeBroker && error && !brokerReady && (
+      {brokerReady && combinedAccounts.length > 0 && (
+        <AccountSummary accounts={combinedAccounts} connections={connections} />
+      )}
+      {hasConnections && firstError && !brokerReady && (
         <div style={{ ...panelStyle, background: "var(--bg-panel-raised, #f8fafc)", color: "var(--text-secondary)", border: "1px solid var(--border-dim)", display: "flex", alignItems: "center", gap: 12, fontSize: 13, fontFamily: "var(--font-mono, 'IBM Plex Mono', monospace)" }}>
           <span style={{ fontSize: 18 }}>⚠</span>
           <div>
-            <strong>Broker connection unavailable</strong> — {error.includes("502") || error.includes("Gateway") ? "IB Gateway is not running or still starting up. Start it and approve 2FA, then refresh." : error}
+            <strong>Broker connection unavailable</strong> — {firstError.includes("502") || firstError.includes("Gateway") ? "IB Gateway is not running or still starting up. Start it and approve 2FA, then refresh." : firstError}
             <div style={{ marginTop: 4 }}>
-              <button onClick={refresh} style={{ ...monoStyle, fontSize: 12, padding: "2px 10px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer", marginRight: 8 }}>RETRY</button>
+              <button onClick={() => refresh()} style={{ ...monoStyle, fontSize: 12, padding: "2px 10px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "none", cursor: "pointer", marginRight: 8 }}>RETRY</button>
               <span style={{ color: "var(--text-muted)" }}>Portfolio import and strategy analysis are available below without a broker.</span>
             </div>
           </div>
@@ -142,10 +214,10 @@ export default function TradingPage() {
       </div>
 
       {/* Tab content */}
-      {brokerReady && loading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
+      {brokerReady && isAnyLoading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
 
       {brokerReady && activeTab === "portfolio" && <PositionsTable positions={positions} />}
-      {brokerReady && activeTab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
+      {brokerReady && activeTab === "orders" && <OrdersPanel orders={orders} onCancel={handleCancelOrder} onPlace={handlePlaceOrder} />}
       {brokerReady && activeTab === "flow" && <FlowAnalysisPanel />}
       {brokerReady && activeTab === "journal" && <JournalPanel />}
       {activeTab === "strategies" && (
@@ -165,7 +237,9 @@ export default function TradingPage() {
           {!brokerReady && (
             <div style={{ ...panelStyle, textAlign: "center", padding: 24, marginTop: 8 }}>
               <span style={{ ...monoStyle, fontSize: 13, color: "var(--text-muted)" }}>
-                Want live portfolio sync? <a href="/settings" style={{ color: "var(--signal-core)", textDecoration: "none" }}>Connect a broker in Settings →</a>
+                Want live portfolio sync? <a href="/settings" style={{ color: "var(--signal-core)", textDecoration: "none" }}>
+                  {connections.length > 0 ? "Add Another Broker" : "Connect a Broker"} in Settings →
+                </a>
               </span>
             </div>
           )}
@@ -177,21 +251,61 @@ export default function TradingPage() {
 }
 
 
-function AccountSummary({ account }: { account: import("../lib/brokers/types").BrokerAccount }) {
+function AccountSummary({ accounts, connections }: {
+  accounts: import("../lib/brokers/types").BrokerAccount[];
+  connections: import("../stores/brokerStore").BrokerConnection[];
+}) {
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
+
+  // Combined totals
+  const totals = accounts.reduce(
+    (acc, a) => ({
+      equity: acc.equity + a.equity,
+      buyingPower: acc.buyingPower + a.buyingPower,
+      cash: acc.cash + a.cash,
+      portfolioValue: acc.portfolioValue + a.portfolioValue,
+    }),
+    { equity: 0, buyingPower: 0, cash: 0, portfolioValue: 0 },
+  );
+
   return (
-    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 16 }}>
-      {[
-        { label: "EQUITY", value: fmt(account.equity) },
-        { label: "BUYING POWER", value: fmt(account.buyingPower) },
-        { label: "CASH", value: fmt(account.cash) },
-        { label: "PORTFOLIO VALUE", value: fmt(account.portfolioValue) },
-      ].map((m) => (
-        <div key={m.label} style={panelStyle}>
-          <div style={headerStyle}>{m.label}</div>
-          <div style={{ ...monoStyle, fontSize: 20, fontWeight: 700 }}>{m.value}</div>
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: accounts.length > 1 ? 8 : 0 }}>
+        {[
+          { label: accounts.length > 1 ? "COMBINED EQUITY" : "EQUITY", value: fmt(totals.equity) },
+          { label: "BUYING POWER", value: fmt(totals.buyingPower) },
+          { label: "CASH", value: fmt(totals.cash) },
+          { label: "PORTFOLIO VALUE", value: fmt(totals.portfolioValue) },
+        ].map((m) => (
+          <div key={m.label} style={panelStyle}>
+            <div style={headerStyle}>{m.label}</div>
+            <div style={{ ...monoStyle, fontSize: 20, fontWeight: 700 }}>{m.value}</div>
+          </div>
+        ))}
+      </div>
+      {accounts.length > 1 && (
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {accounts.map((a) => {
+            const conn = connections.find((c) => c.id === a.brokerId);
+            return (
+              <div
+                key={a.brokerId ?? a.id}
+                style={{
+                  ...monoStyle,
+                  fontSize: 12,
+                  padding: "6px 12px",
+                  background: "var(--bg-panel-raised, #f8fafc)",
+                  border: "1px solid var(--border-dim)",
+                  borderRadius: 4,
+                  color: "var(--text-secondary)",
+                }}
+              >
+                {conn?.displayName ?? a.broker}: {fmt(a.equity)}
+              </div>
+            );
+          })}
         </div>
-      ))}
+      )}
     </div>
   );
 }
@@ -204,19 +318,35 @@ function PositionsTable({ positions }: { positions: import("../lib/brokers/types
     return <div style={{ ...panelStyle, textAlign: "center", color: "var(--text-secondary)", padding: 32 }}>No open positions</div>;
   }
 
+  const showBrokerCol = positions.some((p) => p.brokerName);
+
   return (
     <div style={{ overflowX: "auto" }}>
       <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 14 }}>
         <thead>
           <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-            {["Symbol", "Side", "Qty", "Avg Entry", "Current", "Mkt Value", "P&L", "P&L %"].map((h) => (
+            {[...(showBrokerCol ? ["Broker"] : []), "Symbol", "Side", "Qty", "Avg Entry", "Current", "Mkt Value", "P&L", "P&L %"].map((h) => (
               <th key={h} style={{ ...headerStyle, padding: "8px 12px", textAlign: "right", whiteSpace: "nowrap" }}>{h}</th>
             ))}
           </tr>
         </thead>
         <tbody>
-          {positions.map((p) => (
-            <tr key={p.symbol} style={{ borderBottom: "1px solid var(--border-dim)" }}>
+          {positions.map((p, i) => (
+            <tr key={`${p.brokerId}-${p.symbol}-${i}`} style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              {showBrokerCol && (
+                <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                  <span style={{
+                    fontSize: 11,
+                    padding: "2px 6px",
+                    borderRadius: 4,
+                    background: "var(--bg-panel-raised, #f1f5f9)",
+                    color: "var(--text-muted, #94a3b8)",
+                    whiteSpace: "nowrap",
+                  }}>
+                    {p.brokerName}
+                  </span>
+                </td>
+              )}
               <td style={{ padding: "8px 12px", fontWeight: 600, textAlign: "right" }}>{p.symbol}</td>
               <td style={{ padding: "8px 12px", textAlign: "right", color: p.side === "long" ? "var(--signal-core)" : "var(--fault, #E85D6C)" }}>{p.side.toUpperCase()}</td>
               <td style={{ padding: "8px 12px", textAlign: "right" }}>{p.qty}</td>
@@ -274,6 +404,7 @@ function OrdersPanel({ orders, onCancel, onPlace }: {
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
   const inputStyle: React.CSSProperties = { ...monoStyle, fontSize: 14, padding: "6px 10px", border: "1px solid var(--border-dim)", borderRadius: 4, background: "var(--bg-panel-raised, #f8fafc)", width: "100%" };
   const selectStyle: React.CSSProperties = { ...inputStyle, cursor: "pointer" };
+  const showBrokerCol = orders.some((o) => o.brokerName);
 
   return (
     <div>
@@ -307,14 +438,21 @@ function OrdersPanel({ orders, onCancel, onPlace }: {
         <table style={{ width: "100%", borderCollapse: "collapse", ...monoStyle, fontSize: 14 }}>
           <thead>
             <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-              {["Symbol", "Side", "Type", "Qty", "Price", "Status", "Filled", ""].map((h) => (
+              {[...(showBrokerCol ? ["Broker"] : []), "Symbol", "Side", "Type", "Qty", "Price", "Status", "Filled", ""].map((h) => (
                 <th key={h} style={{ ...headerStyle, padding: "8px 12px", textAlign: "right" }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {orders.slice(0, 20).map((o) => (
-              <tr key={o.id} style={{ borderBottom: "1px solid var(--border-dim)" }}>
+              <tr key={`${o.brokerId}-${o.id}`} style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                {showBrokerCol && (
+                  <td style={{ padding: "8px 12px", textAlign: "right" }}>
+                    <span style={{ fontSize: 11, padding: "2px 6px", borderRadius: 4, background: "var(--bg-panel-raised, #f1f5f9)", color: "var(--text-muted)" }}>
+                      {o.brokerName}
+                    </span>
+                  </td>
+                )}
                 <td style={{ padding: "8px 12px", fontWeight: 600, textAlign: "right" }}>{o.symbol}</td>
                 <td style={{ padding: "8px 12px", textAlign: "right", color: o.side === "buy" ? "var(--signal-core)" : "var(--fault)" }}>{o.side.toUpperCase()}</td>
                 <td style={{ padding: "8px 12px", textAlign: "right" }}>{o.type}</td>
@@ -492,12 +630,12 @@ function StrategiesPanel({ positions, orders, onSimulate }: {
                 </tr>
               </thead>
               <tbody>
-                {ccEligible.map((p) => {
+                {ccEligible.map((p, i) => {
                   const strike = Math.ceil(p.currentPrice * 1.05);
                   const estPremium = p.currentPrice * 0.015;
                   const contracts = Math.floor(p.qty / 100);
                   return (
-                    <tr key={p.symbol} style={{ borderBottom: "1px solid var(--border-dim)" }}>
+                    <tr key={`${p.brokerId}-${p.symbol}-${i}`} style={{ borderBottom: "1px solid var(--border-dim)" }}>
                       <td style={{ padding: "8px 10px", fontWeight: 600, textAlign: "right" }}>{p.symbol}</td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>{p.qty} ({contracts}x)</td>
                       <td style={{ padding: "8px 10px", textAlign: "right" }}>${p.currentPrice.toFixed(2)}</td>

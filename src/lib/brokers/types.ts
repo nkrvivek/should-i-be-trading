@@ -10,6 +10,8 @@ export interface BrokerPosition {
   unrealizedPL: number;
   unrealizedPLPercent: number;
   assetType: "stock" | "option" | "crypto";
+  brokerId?: string;
+  brokerName?: string;
 }
 
 export interface BrokerOrder {
@@ -30,6 +32,8 @@ export interface BrokerOrder {
     optionType: "call" | "put";
     underlying: string;
   };
+  brokerId?: string;
+  brokerName?: string;
 }
 
 export interface BrokerAccount {
@@ -41,6 +45,7 @@ export interface BrokerAccount {
   portfolioValue: number;
   dayTradeCount?: number;
   isPaperTrading: boolean;
+  brokerId?: string;
 }
 
 export interface OrderRequest {
@@ -71,7 +76,7 @@ export interface OptionChainEntry {
   vega: number;
 }
 
-export interface BrokerConnection {
+export interface BrokerConnectionInterface {
   name: string;
   slug: string;
   icon: string;
@@ -90,3 +95,6 @@ export interface BrokerConnection {
   getOptionChain?(symbol: string, expiration?: string): Promise<OptionChainEntry[]>;
   getTradeHistory?(startDate: string, endDate: string): Promise<BrokerOrder[]>;
 }
+
+/** @deprecated Use BrokerConnectionInterface instead */
+export type BrokerConnection = BrokerConnectionInterface;

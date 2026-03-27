@@ -18,7 +18,8 @@ export default function StrategySuggester({ context }: { context?: SignalContext
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const { positions } = useBrokerStore();
+  const allPositions = useBrokerStore((s) => s.allPositions);
+  const positions = allPositions();
   useAuthStore();
 
   const generate = async () => {

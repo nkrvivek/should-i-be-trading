@@ -74,18 +74,21 @@ export function DashboardPage() {
           margin: "0 auto",
         }}
       >
-        {/* Row 1: Traffic Light + Fear/Greed Gauge + Market Quality Score */}
+        {/* Row 1: Traffic Light + Fear/Greed Gauge + Market Quality Score + Daily Briefing */}
         <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }}>
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <TrafficLight verdict={verdict} />
             {marketScore && <FearGreedGauge score={marketScore.total} />}
             {marketScore && <QuickMarketStats score={marketScore} />}
           </div>
-          <ScoreBreakdown
-            score={marketScore}
-            loading={scoreLoading}
-            onRefresh={refreshScore}
-          />
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <ScoreBreakdown
+              score={marketScore}
+              loading={scoreLoading}
+              onRefresh={refreshScore}
+            />
+            <DailyBriefing cri={null} verdict={verdict} marketScore={marketScore} />
+          </div>
         </div>
 
         {/* Row 2: Sector Heat Map + Chart */}
@@ -101,9 +104,6 @@ export function DashboardPage() {
           </div>
           <TickerChart />
         </div>
-
-        {/* Row 3: Daily Briefing — prominent, full width */}
-        <DailyBriefing cri={null} verdict={verdict} marketScore={marketScore} />
 
         {/* Row 4: Watchlist */}
         <WatchlistManager />

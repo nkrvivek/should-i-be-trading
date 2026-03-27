@@ -37,12 +37,11 @@ const monoStyle: React.CSSProperties = {
 
 type TabId = "import" | "strategies" | "portfolio" | "orders" | "flow" | "journal";
 
-const ALWAYS_TABS: TabId[] = ["import", "strategies"];
 const BROKER_TABS: TabId[] = ["portfolio", "orders", "flow", "journal"];
 
 export default function TradingPage() {
   const { account, positions, orders, loading, error, activeBroker, placeOrder, cancelOrder, refresh, reconnect } = useBrokerStore();
-  const [tab, setTab] = useState<TabId>("import");
+  const [tab, setTab] = useState<TabId | null>(null);
 
   const brokerReady = !!(activeBroker && account);
 
@@ -53,16 +52,27 @@ export default function TradingPage() {
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Set initial tab based on broker connection state
+  useEffect(() => {
+    if (tab === null) {
+      setTab(brokerReady ? "portfolio" : "import");
+    }
+  }, [brokerReady, tab]);
+
   // If user is on a broker tab and broker disconnects, reset to import
   useEffect(() => {
-    if (!brokerReady && BROKER_TABS.includes(tab)) {
+    if (!brokerReady && tab && BROKER_TABS.includes(tab)) {
       setTab("import");
     }
   }, [brokerReady, tab]);
 
+  // When broker is connected: portfolio, orders, flow, journal, strategies, import
+  // When no broker: import, strategies
   const visibleTabs: TabId[] = brokerReady
-    ? [...ALWAYS_TABS, ...BROKER_TABS]
-    : ALWAYS_TABS;
+    ? [...BROKER_TABS, "strategies", "import"]
+    : ["import", "strategies"];
+
+  const activeTab = tab ?? "import";
 
   return (
     <TerminalShell>
@@ -118,9 +128,9 @@ export default function TradingPage() {
               fontSize: 14,
               padding: "8px 20px",
               border: "none",
-              borderBottom: tab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
+              borderBottom: activeTab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
               background: "none",
-              color: tab === t ? "var(--signal-core)" : "var(--text-secondary)",
+              color: activeTab === t ? "var(--signal-core)" : "var(--text-secondary)",
               cursor: "pointer",
               fontWeight: tab === t ? 600 : 400,
               textTransform: "uppercase",
@@ -134,11 +144,11 @@ export default function TradingPage() {
       {/* Tab content */}
       {brokerReady && loading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
 
-      {brokerReady && tab === "portfolio" && <PositionsTable positions={positions} />}
-      {brokerReady && tab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
-      {brokerReady && tab === "flow" && <FlowAnalysisPanel />}
-      {brokerReady && tab === "journal" && <JournalPanel />}
-      {tab === "strategies" && (
+      {brokerReady && activeTab === "portfolio" && <PositionsTable positions={positions} />}
+      {brokerReady && activeTab === "orders" && <OrdersPanel orders={orders} onCancel={cancelOrder} onPlace={placeOrder} />}
+      {brokerReady && activeTab === "flow" && <FlowAnalysisPanel />}
+      {brokerReady && activeTab === "journal" && <JournalPanel />}
+      {activeTab === "strategies" && (
         <StrategiesPanel
           positions={positions}
           orders={orders}
@@ -148,7 +158,7 @@ export default function TradingPage() {
         />
       )}
 
-      {tab === "import" && (
+      {activeTab === "import" && (
         <Suspense fallback={<div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}>
           <CsvUploadPanel />
           <ManualPortfolioTable />

@@ -58,6 +58,25 @@ const SECTOR_MAP: Record<string, string> = {
 
 const MAJOR_TICKERS = new Set(Object.keys(SECTOR_MAP));
 
+// Cache enrichment data in localStorage to avoid refetching analyst/EPS data
+const ENRICHMENT_CACHE_KEY = "sibt_earnings_enrichment";
+const ENRICHMENT_CACHE_TTL = 60 * 60 * 1000; // 1 hour — analyst data doesn't change fast
+
+function loadEnrichmentCache(): Map<string, { analyst?: AnalystConsensus; surprises?: EpsSurprise[]; ts: number }> {
+  try {
+    const raw = localStorage.getItem(ENRICHMENT_CACHE_KEY);
+    if (!raw) return new Map();
+    const parsed = JSON.parse(raw) as Array<[string, { analyst?: AnalystConsensus; surprises?: EpsSurprise[]; ts: number }]>;
+    return new Map(parsed.filter(([, v]) => Date.now() - v.ts < ENRICHMENT_CACHE_TTL));
+  } catch { return new Map(); }
+}
+
+function saveEnrichmentCache(cache: Map<string, { analyst?: AnalystConsensus; surprises?: EpsSurprise[]; ts: number }>) {
+  try {
+    localStorage.setItem(ENRICHMENT_CACHE_KEY, JSON.stringify([...cache.entries()]));
+  } catch { /* ignore */ }
+}
+
 export function useEarningsCalendar(weeksRange = 4, direction: "upcoming" | "past" = "upcoming") {
   const [earnings, setEarnings] = useState<EarningsEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -152,13 +171,24 @@ async function enrichWithAnalystData(
 ) {
   const analystMap = new Map<string, AnalystConsensus>();
   const surpriseMap = new Map<string, EpsSurprise[]>();
+  const enrichmentCache = loadEnrichmentCache();
 
-  // Batch 3 at a time with delays
-  for (let i = 0; i < symbols.length; i += 3) {
-    const batch = symbols.slice(i, i + 3);
+  // Filter out symbols already in cache
+  const uncached = symbols.filter((sym) => {
+    const cached = enrichmentCache.get(sym);
+    if (cached) {
+      if (cached.analyst) analystMap.set(sym, cached.analyst);
+      if (cached.surprises) surpriseMap.set(sym, cached.surprises);
+      return false;
+    }
+    return true;
+  });
+
+  // Batch 3 at a time with delays — only for uncached symbols
+  for (let i = 0; i < uncached.length; i += 3) {
+    const batch = uncached.slice(i, i + 3);
     await Promise.all(batch.map(async (sym) => {
       try {
-        // Analyst recommendations
         const recRes = await fetch(
           `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/recommendation&symbol=${sym}`,
           { headers },
@@ -172,7 +202,6 @@ async function enrichWithAnalystData(
       } catch { /* ignore */ }
 
       try {
-        // EPS surprises (last 4 quarters)
         const epsRes = await fetch(
           `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/earnings&symbol=${sym}&limit=4`,
           { headers },
@@ -190,10 +219,20 @@ async function enrichWithAnalystData(
           }
         }
       } catch { /* ignore */ }
+
+      // Cache the result
+      enrichmentCache.set(sym, {
+        analyst: analystMap.get(sym),
+        surprises: surpriseMap.get(sym),
+        ts: Date.now(),
+      });
     }));
 
-    if (i + 3 < symbols.length) await new Promise((r) => setTimeout(r, 2000));
+    if (i + 3 < uncached.length) await new Promise((r) => setTimeout(r, 2000));
   }
+
+  // Persist cache
+  saveEnrichmentCache(enrichmentCache);
 
   // Merge analyst data into entries
   const enriched = entries.map((e) => ({

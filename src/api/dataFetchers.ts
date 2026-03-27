@@ -7,6 +7,7 @@
 
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
+import { dedupFetch } from "./fetchDedup";
 
 /**
  * Fetch from Finnhub via edge function (or direct with API key).
@@ -32,7 +33,7 @@ export async function finnhubFetch<T>(
 
   const headers: Record<string, string> = useEdge ? await getEdgeHeaders() : {};
 
-  const res = await fetch(url, { headers });
+  const res = await dedupFetch(url, { headers });
   if (!res.ok) throw new Error(`Finnhub ${res.status}`);
   return res.json();
 }
@@ -48,7 +49,7 @@ export async function fredFetchSeries(seriesId: string, limit = 5): Promise<numb
 
   try {
     const url = `${supabaseUrl}/functions/v1/fred?series_id=${seriesId}&limit=${limit}&sort_order=desc`;
-    const res = await fetch(url, { headers });
+    const res = await dedupFetch(url, { headers }, 5 * 60_000); // FRED data: 5min dedup
     if (!res.ok) return [];
     const data = await res.json();
     const obs = data?.observations;

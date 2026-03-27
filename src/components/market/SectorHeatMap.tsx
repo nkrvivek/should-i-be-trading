@@ -3,6 +3,7 @@ import { Panel } from "../layout/Panel";
 import { getCredential } from "../../lib/credentials";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { getEdgeHeaders } from "../../api/edgeHeaders";
+import { dedupFetch } from "../../api/fetchDedup";
 
 type SectorData = {
   symbol: string;
@@ -56,7 +57,7 @@ export function SectorHeatMap() {
             let res: Response;
             if (useEdge) {
               const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finnhub?endpoint=quote&symbol=${s.symbol}`;
-              res = await fetch(edgeUrl, {
+              res = await dedupFetch(edgeUrl, {
                 headers: edgeHeaders!,
               });
             } else {

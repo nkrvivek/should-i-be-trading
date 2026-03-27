@@ -219,7 +219,7 @@ export function PricingContent() {
   };
 
   return (
-    <div style={{ maxWidth: 1000, margin: "0 auto", padding: "24px 0" }}>
+    <div style={{ maxWidth: 1200, margin: "0 auto", padding: "24px 0" }}>
       <div style={{ textAlign: "center", marginBottom: 40 }}>
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, color: "var(--text-primary)", marginBottom: 8 }}>
           Simple, Transparent Pricing
@@ -280,7 +280,7 @@ export function PricingContent() {
         </div>
       )}
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16 }}>
         {TIERS.map((tier) => {
           const isCurrent = effectiveTier() === tier.tier;
 

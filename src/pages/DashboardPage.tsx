@@ -13,6 +13,7 @@ import { TickerChart } from "../components/market/TickerChart";
 import { WatchlistManager } from "../components/watchlist/WatchlistManager";
 import { Panel } from "../components/layout/Panel";
 import { FearGreedGauge } from "../components/dashboard/FearGreedGauge";
+import { QuickMarketStats } from "../components/dashboard/QuickMarketStats";
 import { useAlertEvaluator } from "../hooks/useAlertEvaluator";
 
 export function DashboardPage() {
@@ -78,6 +79,7 @@ export function DashboardPage() {
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <TrafficLight verdict={verdict} />
             {marketScore && <FearGreedGauge score={marketScore.total} />}
+            {marketScore && <QuickMarketStats score={marketScore} />}
           </div>
           <ScoreBreakdown
             score={marketScore}

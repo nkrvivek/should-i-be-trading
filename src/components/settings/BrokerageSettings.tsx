@@ -1,7 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { BROKER_REGISTRY } from "../../lib/brokers/registry";
 import { getBrokerInstance } from "../../lib/brokers/registry";
 import { useBrokerStore } from "../../stores/brokerStore";
+import { useAuthStore } from "../../stores/authStore";
+import { hasFeature } from "../../lib/featureGates";
 import type { SnapTradeBroker } from "../../lib/brokers/snaptrade";
 
 const monoStyle: React.CSSProperties = { fontFamily: "'IBM Plex Mono', monospace" };
@@ -10,6 +13,10 @@ const inputStyle: React.CSSProperties = { ...monoStyle, fontSize: 14, padding: "
 
 export default function BrokerageSettings() {
   const { activeBroker, account, connect, disconnect, loading, error } = useBrokerStore();
+  const { effectiveTier } = useAuthStore();
+  const navigate = useNavigate();
+  const userTier = effectiveTier();
+  const canUseSnapTrade = hasFeature(userTier, "snaptrade");
   const [expandedBroker, setExpandedBroker] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [connectError, setConnectError] = useState("");
@@ -127,6 +134,13 @@ export default function BrokerageSettings() {
                   ) : isActive ? (
                     <button onClick={disconnect} style={{ ...monoStyle, fontSize: 13, padding: "6px 14px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>
                       DISCONNECT
+                    </button>
+                  ) : isSnapTrade && !canUseSnapTrade ? (
+                    <button
+                      onClick={() => navigate("/pricing")}
+                      style={{ ...monoStyle, fontSize: 12, padding: "6px 14px", border: "1px solid var(--warning, #f59e0b)", color: "var(--warning, #f59e0b)", borderRadius: 4, background: "none", cursor: "pointer" }}
+                    >
+                      UPGRADE TO PRO
                     </button>
                   ) : (
                     <button

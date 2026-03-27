@@ -2,7 +2,7 @@ import { useState } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { Panel } from "../components/layout/Panel";
 import { useEarningsCalendar, type EarningsEntry } from "../hooks/useEarningsCalendar";
-import { EarningsSummaryPanel } from "../components/ai/EarningsSummaryPanel";
+import { EarningsIntelPanel } from "../components/earnings/EarningsIntelPanel";
 
 const HOUR_LABELS: Record<string, { label: string; color: string }> = {
   bmo: { label: "PRE-MKT", color: "var(--warning)" },
@@ -73,7 +73,7 @@ export function EarningsPage() {
   const { earnings, loading, error, refresh } = useEarningsCalendar(6);
   const [sectorFilter, setSectorFilter] = useState<string | null>(null);
   const [hourFilter, setHourFilter] = useState<string | null>(null);
-  const [summaryTarget, setSummaryTarget] = useState<{ symbol: string; quarter: number; year: number; earningsDate?: string } | null>(null);
+  const [summaryTarget, setSummaryTarget] = useState<{ symbol: string; quarter: number; year: number; earningsDate?: string; epsEstimate?: number | null; revenueEstimate?: number | null } | null>(null);
 
   // Get unique sectors
   const sectors = [...new Set(earnings.map((e) => e.sector ?? "Other"))].sort();
@@ -282,7 +282,7 @@ export function EarningsPage() {
                         </td>
                         <td style={{ padding: "0 8px" }}>
                           <button
-                            onClick={() => setSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year, earningsDate: e.date })}
+                            onClick={() => setSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year, earningsDate: e.date, epsEstimate: e.epsEstimate, revenueEstimate: e.revenueEstimate })}
                             style={{
                               padding: "1px 6px",
                               borderRadius: 999,
@@ -297,7 +297,7 @@ export function EarningsPage() {
                               whiteSpace: "nowrap",
                             }}
                           >
-                            SUMMARIZE
+                            INTEL
                           </button>
                         </td>
                       </tr>
@@ -328,13 +328,15 @@ export function EarningsPage() {
         </div>
       </div>
 
-      {/* AI Summary slide-out panel */}
+      {/* Earnings Intel slide-out panel */}
       {summaryTarget && (
-        <EarningsSummaryPanel
+        <EarningsIntelPanel
           symbol={summaryTarget.symbol}
           quarter={summaryTarget.quarter}
           year={summaryTarget.year}
           earningsDate={summaryTarget.earningsDate}
+          currentEpsEstimate={summaryTarget.epsEstimate}
+          currentRevEstimate={summaryTarget.revenueEstimate}
           onClose={() => setSummaryTarget(null)}
         />
       )}

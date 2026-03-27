@@ -15,7 +15,7 @@ const ALLOWED_ENDPOINTS = new Set([
 // ── Allowed query params whitelist ──────────────────────────────
 const ALLOWED_PARAMS = new Set([
   "symbol", "from", "to", "resolution", "category",
-  "exchange", "metric", "count",
+  "exchange", "metric", "count", "limit",
 ]);
 
 // ── In-memory cache (per Deno isolate) ──────────────────────────

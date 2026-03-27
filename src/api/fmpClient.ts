@@ -210,6 +210,21 @@ export function searchSymbol(query: string, limit = 10): Promise<Array<{ symbol:
   return fmpCall({ endpoint: "search", query, limit });
 }
 
+export interface FmpHistoricalPrice {
+  date: string;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  adjClose: number;
+  volume: number;
+  changePercent: number;
+}
+
+export function getHistoricalPrice(symbol: string, from?: string, to?: string): Promise<{ symbol: string; historical: FmpHistoricalPrice[] }> {
+  return fmpCall({ endpoint: "historical-price", symbol, ...(from ? { from } : {}), ...(to ? { to } : {}) });
+}
+
 /**
  * Fetch a complete fundamental snapshot for a ticker.
  * Bundles profile + ratios + key metrics + price target in parallel.

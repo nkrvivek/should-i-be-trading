@@ -116,12 +116,13 @@ export function AppNav() {
   ];
 
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "nowrap", overflow: "auto", maxWidth: "100%" }}>
+    <div className="app-nav-bar" style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "nowrap", overflow: "auto", maxWidth: "100%", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
       {links.map(({ to, label, pro }) => (
         <NavLink
           key={to}
           to={to}
           end={to === "/"}
+          className="app-nav-link"
           style={({ isActive }) => ({
             padding: "5px 12px",
             fontFamily: "var(--font-mono)",

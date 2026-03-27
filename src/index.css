@@ -235,6 +235,24 @@ body {
     padding: 12px 16px !important;
   }
 
+  /* App nav (authenticated) — compact on mobile */
+  .app-nav-tagline {
+    display: none !important;
+  }
+  .app-nav-bar {
+    gap: 2px !important;
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .app-nav-bar::-webkit-scrollbar {
+    display: none;
+  }
+  .app-nav-link {
+    padding: 4px 8px !important;
+    font-size: 10px !important;
+    letter-spacing: 0.02em !important;
+  }
+
   .landing-hero {
     min-height: 60vh !important;
     padding: 40px 16px !important;

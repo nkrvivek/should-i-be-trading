@@ -48,6 +48,7 @@ export function TerminalShell({ children, cri = null }: Props) {
             SIBT
           </span>
           <span
+            className="app-nav-tagline"
             style={{
               fontFamily: "var(--font-sans)",
               fontSize: 12,

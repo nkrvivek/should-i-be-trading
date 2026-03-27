@@ -176,3 +176,73 @@ test.describe("Wash Sale Monitor", () => {
     await expect(page.getByText(/wash sale/i).first()).toBeVisible({ timeout: 5_000 });
   });
 });
+
+test.describe("Strategy Sub-Tabs — Content or Empty State", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/trading");
+    await page.waitForLoadState("networkidle");
+    await page.locator("button", { hasText: /STRATEGIES/i }).click();
+    await page.waitForTimeout(300);
+  });
+
+  test("STRATEGY SUGGESTER sub-tab shows strategy content or empty state", async ({ page }) => {
+    await page.locator("button", { hasText: "STRATEGY SUGGESTER" }).click();
+    await page.waitForTimeout(300);
+
+    // Should show analysis panel content or an empty/import-prompt state
+    const hasContent = await page.getByText(/STRATEGY ANALYSIS|covered call|protective put|strategy/i).first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const hasEmpty = await page.getByText(/import.*portfolio|no.*positions|upload|add.*position/i).first().isVisible({ timeout: 3_000 }).catch(() => false);
+
+    expect(hasContent || hasEmpty).toBe(true);
+  });
+
+  test("COVERED CALLS sub-tab shows opportunities or empty state", async ({ page }) => {
+    await page.locator("button", { hasText: "COVERED CALLS" }).click();
+    await page.waitForTimeout(300);
+
+    const hasContent = await page.getByText(/covered call opportunities|premium|strike/i).first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const hasEmpty = await page.getByText(/no.*position|import.*portfolio|no.*eligible|no covered call/i).first().isVisible({ timeout: 3_000 }).catch(() => false);
+
+    expect(hasContent || hasEmpty).toBe(true);
+  });
+
+  test("CASH-SECURED PUTS sub-tab shows CSP content or empty state", async ({ page }) => {
+    await page.locator("button", { hasText: "CASH-SECURED PUTS" }).click();
+    await page.waitForTimeout(300);
+
+    const hasContent = await page.getByText(/cash.secured put|csp|premium|strike/i).first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const hasEmpty = await page.getByText(/no.*position|no.*data|enter.*ticker|watchlist/i).first().isVisible({ timeout: 3_000 }).catch(() => false);
+
+    expect(hasContent || hasEmpty).toBe(true);
+  });
+
+  test("WASH SALE sub-tab shows monitor content or empty state", async ({ page }) => {
+    await page.locator("button", { hasText: "WASH SALE" }).click();
+    await page.waitForTimeout(300);
+
+    const hasContent = await page.getByText(/wash sale|30.day|violation|at risk/i).first().isVisible({ timeout: 5_000 }).catch(() => false);
+    const hasEmpty = await page.getByText(/no.*wash.*sale|no.*position|import.*portfolio|no.*violations/i).first().isVisible({ timeout: 3_000 }).catch(() => false);
+
+    expect(hasContent || hasEmpty).toBe(true);
+  });
+
+  test("switching between all sub-tabs renders each without errors", async ({ page }) => {
+    const subTabs = ["STRATEGY SUGGESTER", "COVERED CALLS", "CASH-SECURED PUTS", "WASH SALE"];
+
+    for (const tabName of subTabs) {
+      await page.locator("button", { hasText: tabName }).click();
+      await page.waitForTimeout(300);
+
+      // Each tab should render some visible content area (not blank)
+      const bodyText = await page.locator("body").innerText();
+      expect(bodyText.length).toBeGreaterThan(50);
+    }
+
+    // Return to first sub-tab — should still work
+    await page.locator("button", { hasText: "STRATEGY SUGGESTER" }).click();
+    await page.waitForTimeout(300);
+    await expect(
+      page.getByText(/STRATEGY ANALYSIS|strategy|import|portfolio/i).first()
+    ).toBeVisible({ timeout: 5_000 });
+  });
+});

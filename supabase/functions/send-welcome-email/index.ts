@@ -46,6 +46,14 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Enforce request body size limit
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 50000) {
+      return new Response(JSON.stringify({ error: "Request too large" }), {
+        status: 413, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json();
 
     // DB webhook sends { type, table, record, ... } — extract from record if present

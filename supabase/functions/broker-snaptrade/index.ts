@@ -1,4 +1,5 @@
 import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { sanitizeError } from "../_shared/sanitize.ts";
 
 const SNAPTRADE_BASE = "https://api.snaptrade.com/api/v1";
 
@@ -113,6 +114,12 @@ Deno.serve(async (req) => {
     // Authenticate user
     const auth = await authenticateRequest(req);
 
+    // Enforce request body size limit
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 50000) {
+      return errorResponse("Request too large", 413, req);
+    }
+
     const body = await req.json();
     const { action, userId, userSecret, accountId } = body as {
       action?: string;
@@ -122,6 +129,12 @@ Deno.serve(async (req) => {
     };
 
     if (!action) return errorResponse("Missing 'action'", 400, req);
+
+    // Validate accountId format if provided
+    const ACCOUNT_ID_RE = /^[a-zA-Z0-9-]{1,64}$/;
+    if (accountId && !ACCOUNT_ID_RE.test(accountId)) {
+      return errorResponse("Invalid account ID format", 400, req);
+    }
 
     switch (action) {
       // ── Register a new SnapTrade user ───────────────────────
@@ -205,9 +218,10 @@ Deno.serve(async (req) => {
     }
   } catch (e) {
     const msg = e instanceof Error ? e.message : "SnapTrade proxy error";
+    const sanitizedMsg = String(sanitizeError(msg));
     if (msg.includes("authentication") || msg.includes("token") || msg.includes("Missing")) {
-      return errorResponse(msg, 401, req);
+      return errorResponse(sanitizedMsg, 401, req);
     }
-    return errorResponse(msg, 500, req);
+    return errorResponse(sanitizedMsg, 500, req);
   }
 });

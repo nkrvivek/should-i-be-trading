@@ -21,7 +21,9 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const s = inputSymbol.trim().toUpperCase();
-    if (s) setSymbol(s);
+    const SYMBOL_RE = /^[A-Z0-9.]{1,10}$/;
+    if (!s || !SYMBOL_RE.test(s)) return;
+    setSymbol(s);
   };
 
   const toggleExpand = useCallback(() => {

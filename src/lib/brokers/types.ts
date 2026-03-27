@@ -56,6 +56,13 @@ export interface OrderRequest {
   limitPrice?: number;
   stopPrice?: number;
   timeInForce: "day" | "gtc" | "ioc" | "fok";
+  optionDetails?: {
+    underlying: string;
+    strike: number;
+    expiration: string; // YYYYMMDD
+    optionType: "call" | "put";
+    occSymbol?: string; // pre-built OCC symbol
+  };
 }
 
 export interface OptionChainEntry {

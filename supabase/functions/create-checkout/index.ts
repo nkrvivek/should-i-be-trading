@@ -9,6 +9,12 @@ Deno.serve(async (req) => {
 
   try {
     const ctx = await authenticateRequest(req);
+    // Enforce request body size limit
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 50000) {
+      return errorResponse("Request too large", 413, req);
+    }
+
     const { tier, interval } = await req.json();
 
     if (!["starter", "pro", "enterprise"].includes(tier)) {

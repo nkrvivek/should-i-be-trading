@@ -52,6 +52,13 @@ Deno.serve(async (req) => {
       return errorResponse(`Endpoint not allowed: ${endpoint}`, 403, req);
     }
 
+    // Validate symbol format if provided
+    const SYMBOL_RE = /^[A-Z0-9.]{1,10}$/;
+    const symbol = url.searchParams.get("symbol");
+    if (symbol && !SYMBOL_RE.test(symbol.toUpperCase())) {
+      return errorResponse("Invalid symbol format", 400, req);
+    }
+
     const params = new URLSearchParams();
     for (const [key, value] of url.searchParams.entries()) {
       if (key !== "endpoint" && ALLOWED_PARAMS.has(key)) params.set(key, value);

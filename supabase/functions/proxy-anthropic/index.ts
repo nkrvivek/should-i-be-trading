@@ -1,4 +1,5 @@
 import { authenticateRequest, getUserCredential, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import { sanitizeError } from "../_shared/sanitize.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 /**
@@ -217,6 +218,12 @@ Deno.serve(async (req) => {
       usingServerKey = true;
     }
 
+    // Enforce request body size limit
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 50000) {
+      return errorResponse("Request too large", 413, req);
+    }
+
     const body = await req.json();
 
     // 2. Rate limit if using server key
@@ -260,13 +267,7 @@ Deno.serve(async (req) => {
 
     // Sanitize error responses to avoid leaking the server API key
     if (!response.ok) {
-      const sanitized = JSON.parse(JSON.stringify(data), (_key, value) => {
-        if (typeof value === "string") {
-          return value.replace(/x-api-key[^\s,}]*/gi, "x-api-key=[REDACTED]")
-                      .replace(/sk-ant-[a-zA-Z0-9_-]+/g, "[REDACTED]");
-        }
-        return value;
-      });
+      const sanitized = sanitizeError(data);
       return new Response(JSON.stringify(sanitized), {
         status: response.status,
         headers: { "Content-Type": "application/json", ...getCorsHeaders(req) },

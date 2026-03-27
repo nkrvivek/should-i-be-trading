@@ -73,6 +73,8 @@ const TIERS: Tier[] = [
       "Portfolio-aware AI chat (positions, P&L, account context)",
       "AI Stock Screener (natural language queries)",
       "AI Earnings Summaries (one-click TLDR)",
+      "Strategy execution (one-click from suggestions, multi-leg orders)",
+      "Multi-broker portfolio (connect multiple brokers, combined view)",
       "SnapTrade broker connect (25+ brokers, one-click)",
       "Exa research integration",
       "Multi-panel terminal (watchlist, portfolio, orders)",

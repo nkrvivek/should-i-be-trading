@@ -107,7 +107,8 @@ export function LandingPage() {
         }}>
           One dashboard. One verdict. Market regime analysis, technical signal overlays,
           earnings intelligence, institutional 13F filings, insider &amp; congressional trades,
-          news sentiment, SIBT Score, portfolio import from any broker, and portfolio-aware AI.
+          news sentiment, SIBT Score, multi-brokerage portfolio sync, strategy execution,
+          and portfolio-aware AI.
           Combined into a simple traffic light that tells you whether the market conditions favor trading today.
         </p>
 
@@ -302,6 +303,16 @@ export function LandingPage() {
             title="Wash Sale Monitor"
             description="Automatic 30-day lookback wash sale detection across your portfolio — including stock-to-option transactions. Flags potential wash sales before they become a tax surprise."
             tag="STARTER"
+          />
+          <FeatureCard
+            title="Strategy Execution"
+            description="From analysis to execution in one click. Risk-ranked strategies with multi-leg order placement, pre-execution validation, broker selection, and real-time confirmation. Risk disclaimers built in."
+            tag="PRO"
+          />
+          <FeatureCard
+            title="Multi-Brokerage Portfolio"
+            description="Connect Robinhood, Schwab, Fidelity, and more simultaneously. Cross-broker wash sale detection, combined portfolio view, and unified strategy analysis across all your accounts."
+            tag="PRO"
           />
           <FeatureCard
             title="82-Term Trading Glossary"

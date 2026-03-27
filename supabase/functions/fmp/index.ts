@@ -62,6 +62,12 @@ Deno.serve(async (req) => {
       return errorResponse("FMP_API_KEY not configured", 500, req);
     }
 
+    // Enforce request body size limit
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 50000) {
+      return errorResponse("Request too large", 413, req);
+    }
+
     const body = await req.json();
     const { endpoint, symbol, period, limit, ...extraParams } = body as {
       endpoint: string;
@@ -70,6 +76,12 @@ Deno.serve(async (req) => {
       limit?: number;
       [key: string]: unknown;
     };
+
+    // Validate symbol format if provided
+    const SYMBOL_RE = /^[A-Z0-9.]{1,10}$/;
+    if (symbol && !SYMBOL_RE.test(symbol.toUpperCase())) {
+      return errorResponse("Invalid symbol format", 400, req);
+    }
 
     // Validate endpoint
     const config = ENDPOINTS[endpoint];

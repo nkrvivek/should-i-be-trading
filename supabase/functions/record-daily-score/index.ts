@@ -108,6 +108,14 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Enforce request body size limit
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 50000) {
+      return new Response(JSON.stringify({ error: "Request too large" }), {
+        status: 413, headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
     const body = await req.json().catch(() => ({}));
     const backfill = body.backfill === true;
     const days = Math.min(body.days ?? 252, 500);

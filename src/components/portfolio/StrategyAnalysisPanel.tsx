@@ -7,6 +7,7 @@ import type { SimulatorLeg } from "../../lib/strategy/payoff";
 
 interface Props {
   onSimulate: (symbol: string, price: number, legs: SimulatorLeg[]) => void;
+  onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
 }
 
 const panelStyle: React.CSSProperties = {
@@ -101,6 +102,21 @@ const simulateBtnStyle: React.CSSProperties = {
   whiteSpace: "nowrap",
 };
 
+const executeBtnStyle: React.CSSProperties = {
+  padding: "5px 14px",
+  background: "rgba(232, 93, 108, 0.12)",
+  border: "1px solid var(--negative)",
+  borderRadius: 4,
+  fontFamily: "var(--font-mono)",
+  fontSize: 11,
+  fontWeight: 600,
+  color: "var(--negative)",
+  cursor: "pointer",
+  textTransform: "uppercase",
+  letterSpacing: "0.05em",
+  whiteSpace: "nowrap",
+};
+
 function RiskBadge({ level }: { level: StrategySuggestion["riskLevel"] }) {
   const colors = riskBadgeColors[level];
   return (
@@ -126,9 +142,13 @@ function RiskBadge({ level }: { level: StrategySuggestion["riskLevel"] }) {
 function SuggestionRow({
   suggestion,
   onSimulate,
+  onExecute,
+  canExecute,
 }: {
   suggestion: StrategySuggestion;
   onSimulate: () => void;
+  onExecute?: () => void;
+  canExecute: boolean;
 }) {
   return (
     <div style={suggestionRowStyle}>
@@ -170,9 +190,16 @@ function SuggestionRow({
           {suggestion.maxLossCoverage}
         </span>
       </div>
-      <button style={simulateBtnStyle} onClick={onSimulate}>
-        Simulate
-      </button>
+      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <button style={simulateBtnStyle} onClick={onSimulate}>
+          Simulate
+        </button>
+        {canExecute && onExecute && (
+          <button style={executeBtnStyle} onClick={onExecute}>
+            Execute
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -180,9 +207,13 @@ function SuggestionRow({
 function PositionCard({
   analysis,
   onSimulate,
+  onExecute,
+  canExecute,
 }: {
   analysis: PositionAnalysis;
   onSimulate: Props["onSimulate"];
+  onExecute?: Props["onExecute"];
+  canExecute: boolean;
 }) {
   const { symbol, position, suggestions, warnings } = analysis;
   const sideColor = position.side === "long" ? "var(--positive)" : "var(--negative)";
@@ -237,15 +268,25 @@ function PositionCard({
           key={i}
           suggestion={s}
           onSimulate={() => onSimulate(symbol, position.currentPrice, s.legs)}
+          onExecute={
+            onExecute
+              ? () => onExecute(symbol, position.currentPrice, s)
+              : undefined
+          }
+          canExecute={canExecute}
         />
       ))}
     </div>
   );
 }
 
-export default function StrategyAnalysisPanel({ onSimulate }: Props) {
+export default function StrategyAnalysisPanel({ onSimulate, onExecute }: Props) {
+  const connections = useBrokerStore((s) => s.connections);
   const brokerAllPositions = useBrokerStore((s) => s.allPositions);
   const manualPositions = useManualPortfolioStore((s) => s.positions);
+
+  // Can execute if at least one non-SnapTrade connection exists
+  const canExecute = connections.some((c) => c.slug !== "snaptrade");
 
   const allPositions = useMemo(
     () => [...brokerAllPositions(), ...manualPositions],
@@ -312,7 +353,13 @@ export default function StrategyAnalysisPanel({ onSimulate }: Props) {
         </div>
       ) : (
         analyses.map((a, i) => (
-          <PositionCard key={`${a.symbol}-${i}`} analysis={a} onSimulate={onSimulate} />
+          <PositionCard
+            key={`${a.symbol}-${i}`}
+            analysis={a}
+            onSimulate={onSimulate}
+            onExecute={onExecute}
+            canExecute={canExecute}
+          />
         ))
       )}
     </div>

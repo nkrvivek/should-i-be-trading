@@ -15,6 +15,8 @@ const ALLOWED_MIMES = [
 
 const FORMULA_PREFIXES = ["=", "+", "-", "@", "|", "\t"];
 const DANGEROUS_URI_RE = /^\s*(javascript|data|vbscript)\s*:/i;
+const DDE_PATTERNS = /^[@+]?(SUM|IF|CMD|EXEC|CALL|IMPORTDATA|IMPORTXML|IMPORTRANGE|HYPERLINK)\s*\(/i;
+const NULL_BYTE_FORMULA_RE = /\x00[=+\-@|]/;
 
 
 export interface SanitizeResult {
@@ -51,8 +53,8 @@ export function sanitizeContent(raw: string): SanitizeResult {
   // Strip BOM
   let content = raw.replace(/^\uFEFF/, "");
 
-  // Reject null bytes
-  if (content.includes("\0")) {
+  // Reject null bytes (including null-byte-followed-by-formula attacks)
+  if (content.includes("\0") || NULL_BYTE_FORMULA_RE.test(content)) {
     return { valid: false, error: "File contains null bytes and cannot be processed.", warnings };
   }
 
@@ -85,13 +87,25 @@ export function sanitizeContent(raw: string): SanitizeResult {
         return { valid: false, error: `Dangerous URI detected in row ${i + 1}, column ${j + 1}. File rejected.`, warnings };
       }
 
-      // Strip formula prefixes
+      // Strip formula prefixes (including inside quoted cells)
       const originalCell = cell;
       while (cell.length > 0 && FORMULA_PREFIXES.includes(cell[0])) {
         cell = cell.slice(1);
       }
       if (cell !== originalCell) {
         warnings.push(`Formula prefix stripped from row ${i + 1}, column ${j + 1}`);
+      }
+
+      // DDE attack prevention: detect function-call patterns like @SUM(, +SUM(, etc.
+      if (DDE_PATTERNS.test(cell)) {
+        cell = "'" + cell;
+        warnings.push(`DDE pattern prefixed with quote in row ${i + 1}, column ${j + 1}`);
+      }
+
+      // Prefix any remaining suspicious cells that start with formula chars after stripping
+      if (cell.length > 0 && ["=", "+", "-", "@"].includes(cell[0])) {
+        cell = "'" + cell;
+        warnings.push(`Suspicious cell prefixed with quote in row ${i + 1}, column ${j + 1}`);
       }
 
       // Strip HTML tags (use separate regex to avoid lastIndex issues with global flag)

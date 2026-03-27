@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, lazy, Suspense } from "react";
+import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
@@ -6,9 +6,11 @@ import FlowAnalysisPanel from "../components/trading/FlowAnalysisPanel";
 import StrategySuggester from "../components/trading/StrategySuggester";
 import StrategyAnalysisPanel from "../components/portfolio/StrategyAnalysisPanel";
 import WashSalePanel from "../components/portfolio/WashSalePanel";
+import OrderReviewModal from "../components/trading/OrderReviewModal";
 import { detectWashSales } from "../lib/strategy/washSaleDetector";
 import type { OrderRequest } from "../lib/brokers/types";
 import type { SimulatorLeg } from "../lib/strategy/payoff";
+import type { StrategySuggestion } from "../lib/portfolio/strategyAnalyzer";
 
 const CsvUploadPanel = lazy(() => import("../components/portfolio/CsvUploadPanel"));
 const ManualPortfolioTable = lazy(() => import("../components/portfolio/ManualPortfolioTable"));
@@ -55,6 +57,33 @@ export default function TradingPage() {
   } = useBrokerStore();
 
   const [tab, setTab] = useState<TabId | null>(null);
+  const [executionModal, setExecutionModal] = useState<{
+    open: boolean;
+    symbol: string;
+    price: number;
+    suggestion: StrategySuggestion;
+  } | null>(null);
+
+  const handleOpenExecutionModal = useCallback(
+    (symbol: string, price: number, suggestion: StrategySuggestion) => {
+      setExecutionModal({ open: true, symbol, price, suggestion });
+    },
+    [],
+  );
+
+  const handleCloseExecutionModal = useCallback(() => {
+    setExecutionModal(null);
+  }, []);
+
+  const handleExecutionComplete = useCallback(() => {
+    // Auto-refresh broker data after execution
+    refresh();
+  }, [refresh]);
+
+  const handleViewOrdersAfterExecution = useCallback(() => {
+    setExecutionModal(null);
+    setTab("orders");
+  }, []);
 
   const hasConnections = connections.length > 0;
   const hasAnyAccount = Object.keys(accounts).length > 0;
@@ -227,6 +256,7 @@ export default function TradingPage() {
           onSimulate={(_symbol, _price, _legs) => {
             console.log("[StrategyAnalyzer] Simulate:", { _symbol, _price, _legs });
           }}
+          onExecute={handleOpenExecutionModal}
         />
       )}
 
@@ -244,6 +274,18 @@ export default function TradingPage() {
             </div>
           )}
         </Suspense>
+      )}
+
+      {/* Execution Modal */}
+      {executionModal && (
+        <OrderReviewModal
+          symbol={executionModal.symbol}
+          currentPrice={executionModal.price}
+          suggestion={executionModal.suggestion}
+          onClose={handleCloseExecutionModal}
+          onComplete={handleExecutionComplete}
+          onViewOrders={handleViewOrdersAfterExecution}
+        />
       )}
     </div>
     </TerminalShell>
@@ -546,10 +588,11 @@ function JournalPanel() {
   );
 }
 
-function StrategiesPanel({ positions, orders, onSimulate }: {
+function StrategiesPanel({ positions, orders, onSimulate, onExecute }: {
   positions: import("../lib/brokers/types").BrokerPosition[];
   orders: import("../lib/brokers/types").BrokerOrder[];
   onSimulate: (symbol: string, price: number, legs: SimulatorLeg[]) => void;
+  onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
 }) {
   const [stratTab, setStratTab] = useState<"suggester" | "covered" | "csp" | "washsale">("suggester");
   const ccEligible = positions.filter((p) => p.side === "long" && p.qty >= 100 && p.assetType === "stock");
@@ -606,7 +649,7 @@ function StrategiesPanel({ positions, orders, onSimulate }: {
       {stratTab === "suggester" && (
         <div>
           <StrategySuggester context={{ positions: positions.map((p) => ({ symbol: p.symbol, qty: p.qty, side: p.side, currentPrice: p.currentPrice, unrealizedPL: p.unrealizedPL })) }} />
-          <StrategyAnalysisPanel onSimulate={onSimulate} />
+          <StrategyAnalysisPanel onSimulate={onSimulate} onExecute={onExecute} />
         </div>
       )}
 

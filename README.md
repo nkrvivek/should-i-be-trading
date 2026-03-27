@@ -20,8 +20,10 @@ Self-service platform. Connect your brokerage or bring your own API keys. No inv
 
 **Portfolio & Brokerage**
 - SnapTrade integration (25+ brokers, one-click connect): Schwab, Fidelity, Robinhood, E\*Trade, Webull, Interactive Brokers, Alpaca, Tradier, Vanguard, and more
+- Multi-brokerage support — connect multiple brokers simultaneously, combined portfolio view, cross-broker wash sale detection
 - CSV portfolio upload with multi-broker auto-detection (Schwab, Fidelity, TD, Robinhood, E\*Trade, Webull, Vanguard) and security sanitization pipeline
 - Strategy Analyzer: covered calls, protective puts, collars, iron condors, butterflies, spreads — 19 strategies, risk-ranked
+- Strategy-to-Execution flow — execute strategies directly from suggestions with risk disclaimers, broker selection, and multi-leg order placement
 - Options chain with live Greeks (Black-Scholes), one-click trade entry
 - Wash Sale Monitor with 30-day lookback and stock-to-option detection
 
@@ -41,7 +43,7 @@ Self-service platform. Connect your brokerage or bring your own API keys. No inv
 - Portfolio-aware AI chat (Claude) grounded in live positions and market context — with rate limiting and usage tracking per tier
 - AI stock screener — natural language queries against 70+ tickers
 - AI earnings summaries — one-click TLDR of earnings call transcripts
-- Daily market briefing with full regime context
+- Daily market briefing with full regime context (auto-populated from free market data, enhanced with AI)
 
 **Education & Alerts**
 - 82-term searchable glossary with 9 deep-dive articles
@@ -63,7 +65,7 @@ Self-service platform. Connect your brokerage or bring your own API keys. No inv
 | Charts | TradingView (free embed) |
 | Payments | Stripe |
 | Hosting | Cloudflare Pages |
-| E2E Testing | Playwright (178 tests) |
+| E2E Testing | Playwright (210+ tests) |
 
 ## Getting Started
 
@@ -81,12 +83,12 @@ npm run build   # Production build
 
 ```bash
 npm test                  # Unit tests (Vitest)
-npx playwright test       # E2E tests (178 tests, headless)
+npx playwright test       # E2E tests (210+ tests, headless)
 npm run test:e2e:ui       # Interactive Playwright UI
 npm run test:e2e:headed   # Watch in browser
 ```
 
-E2E tests cover: navigation, CSV upload (multi-broker auto-detect, security sanitization), AI usage tracking, strategy analysis, wash sale monitoring, auth gates, trial flows, alerts, and responsive layout.
+E2E tests cover: navigation, CSV upload (multi-broker auto-detect, security sanitization), AI usage tracking, strategy analysis, strategy execution flow, multi-brokerage connections, wash sale monitoring, auth gates, trial flows, alerts, and responsive layout.
 
 ## Architecture
 
@@ -95,7 +97,7 @@ E2E tests cover: navigation, CSV upload (multi-broker auto-detect, security sani
 │  SIBT (Vite + React 19 + TypeScript + Zustand)               │
 │                                                              │
 │  Pages: Dashboard, Signals, Research, Strategies,            │
-│         Terminal, Settings, Learn                             │
+│         Terminal, Settings, Learn, Execution                  │
 │                                                              │
 │  Hooks ─── Edge Functions ─── External APIs                  │
 └──────┬───────────┬────────────┬───────────┬──────────────────┘

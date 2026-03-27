@@ -49,6 +49,12 @@ Deno.serve(async (req) => {
 
   try {
     const ctx = await authenticateRequest(req);
+    // Enforce request body size limit
+    const contentLength = parseInt(req.headers.get("content-length") || "0");
+    if (contentLength > 50000) {
+      return errorResponse("Request too large", 413, req);
+    }
+
     const { provider, credential_data } = await req.json();
 
     if (!provider || !credential_data) {

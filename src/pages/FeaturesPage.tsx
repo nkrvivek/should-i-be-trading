@@ -735,6 +735,66 @@ const FEATURES: FeatureSection[] = [
 │  ▶ Reading Dark Pool Flow                   │
 └──────────────────────────────────────────────┘`,
   },
+  {
+    title: "Strategy Execution",
+    tier: "PRO",
+    description: "From analysis to execution in one click. Execute strategies directly from risk-ranked suggestions with broker selection, multi-leg order placement, pre-execution validation, and real-time confirmation.",
+    details: [
+      "One-click execution from strategy suggestions",
+      "Multi-leg order placement (spreads, condors, butterflies)",
+      "Broker selection when multiple brokers connected",
+      "Pre-execution validation with risk disclaimers",
+      "Real-time order confirmation and status tracking",
+      "Risk/reward summary before every order submission",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  EXECUTE STRATEGY           NVDA            │
+│                                              │
+│  Iron Condor  860P/880P/920C/940C           │
+│  Net Credit: $4.20  Max Risk: $1,580        │
+│                                              │
+│  BROKER: Schwab - Individual  [CHANGE]      │
+│                                              │
+│  LEGS                                       │
+│  SELL 1 PUT  880  $8.40   ✓ Valid           │
+│  BUY  1 PUT  860  $5.20   ✓ Valid           │
+│  SELL 1 CALL 920  $7.80   ✓ Valid           │
+│  BUY  1 CALL 940  $4.80   ✓ Valid           │
+│                                              │
+│  ⚠ Risk: Max loss $1,580 per contract       │
+│  [CANCEL]              [CONFIRM EXECUTION]  │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Multi-Brokerage Portfolio",
+    tier: "PRO",
+    description: "Connect multiple brokers simultaneously for a unified view of all your accounts. Combined portfolio analysis, cross-broker wash sale detection, and unified strategy suggestions.",
+    details: [
+      "Connect Schwab, Fidelity, Robinhood, and more at the same time",
+      "Combined portfolio view across all connected brokers",
+      "Cross-broker wash sale detection (stock sold at one broker, repurchased at another)",
+      "Unified strategy analysis across all positions",
+      "Per-broker account summaries with aggregate totals",
+      "Broker selection for strategy execution",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  MULTI-BROKER PORTFOLIO                     │
+│                                              │
+│  CONNECTED BROKERS                          │
+│  ● Schwab        $142,680   3 accounts      │
+│  ● Fidelity       $89,420   2 accounts      │
+│  ● Robinhood      $24,300   1 account       │
+│                                              │
+│  COMBINED         $256,400   6 accounts     │
+│  Day P&L: +$2,840  |  Open P&L: +$18,200   │
+│                                              │
+│  ⚠ CROSS-BROKER WASH SALE                   │
+│  AAPL: Sold at Schwab, bought at Robinhood  │
+│  within 30 days. Disallowed loss: $1,200    │
+│                                              │
+│  [MANAGE CONNECTIONS]  [COMBINED ANALYSIS]  │
+└──────────────────────────────────────────────┘`,
+  },
 ];
 
 const TIER_COLORS: Record<string, string> = {

@@ -903,6 +903,99 @@ export const GLOSSARY: GlossaryEntry[] = [
     relatedTerms: ["Position Sizing", "Bankroll", "Market Cycle"],
     difficulty: "beginner",
   },
+
+  // ─── Deep Dives: Institutional Flow & Market Intelligence ──────────────────
+
+  {
+    term: "Dark Pool Activity & Market Impact",
+    category: "Deep Dives",
+    definition:
+      "Dark pools are private exchanges where institutional investors (hedge funds, pension funds, banks) execute large block trades without displaying orders on public exchanges. About 40% of all U.S. equity trading volume now occurs in dark pools. Why it matters: when a fund needs to buy 5 million shares of AAPL, doing it on the open market would drive the price up before they finish buying. Dark pools let them execute without tipping off other traders. For retail traders, dark pool data is a window into what the 'smart money' is doing BEFORE it shows up in price action. A surge in dark pool buying often precedes a move up; heavy selling can precede a drop. SIBT tracks dark pool prints via Unusual Whales to help you see institutional positioning in real-time.",
+    example:
+      "Large dark pool prints in NVDA at $120 preceded a 15% rally over 3 weeks — institutions were accumulating before earnings",
+    relatedTerms: ["Dark Pool", "Block Trade", "Sweep Order", "Options Flow", "13F Filing"],
+    difficulty: "intermediate",
+  },
+  {
+    term: "Insider Trading Intelligence",
+    category: "Deep Dives",
+    definition:
+      "Company insiders (CEOs, CFOs, board members, 10%+ shareholders) are required to report their trades within 2 business days via SEC Form 4. While insiders can't trade on material non-public information (MNPI), their trades still carry signal value because they know their company better than anyone. Research shows: insider BUYING is a stronger signal than selling (selling can be for personal reasons — taxes, diversification, home purchase). Cluster buying (multiple insiders buying in the same period) is the strongest signal. Insider buying during market downturns is especially bullish — they're putting their own money in when others are panicking. SIBT scans 25+ major stocks for insider activity patterns and classifies signals from HEAVY_SELLING to HEAVY_BUYING.",
+    example:
+      "JPMorgan CEO Jamie Dimon bought $26M in JPM stock in Feb 2016 near market lows — the stock rallied 30% over the next year",
+    relatedTerms: ["Form 4", "13F Filing", "Dark Pool"],
+    difficulty: "intermediate",
+  },
+  {
+    term: "Congressional Trading & the STOCK Act",
+    category: "Deep Dives",
+    definition:
+      "Members of Congress are legally required to disclose stock trades within 45 days under the STOCK Act (Stop Trading on Congressional Knowledge Act, 2012). However, the system has serious problems: the 45-day delay means trades are often reported long after they could be useful; enforcement is weak (fines are just $200 for late filings); and members of Congress routinely outperform the market. Studies show Congress members' portfolios beat the S&P 500 by 6-12% annually. They sit on committees with access to non-public policy information — upcoming regulations, defense contracts, healthcare policy changes — that directly affects stock prices. Some notable examples: multiple senators sold stocks before the COVID crash in early 2020 after receiving classified briefings. The ethics debate is ongoing: critics argue this is legalized insider trading; defenders say members need to be able to manage personal finances. Several bills to ban congressional stock trading have been proposed but none have passed. SIBT tracks these disclosures so you can see what Congress is buying and selling.",
+    example:
+      "In Jan 2020, Sen. Burr sold $1.7M in stocks after a classified COVID briefing — weeks before the market crashed 34%",
+    relatedTerms: ["Form 4", "13F Filing", "Insider Trading Intelligence"],
+    difficulty: "beginner",
+  },
+  {
+    term: "13F Filings: Following the Smart Money",
+    category: "Deep Dives",
+    definition:
+      "Every institutional investor managing $100M+ must file a 13F with the SEC quarterly, disclosing their U.S. equity holdings. This covers ~5,000 institutions including hedge funds (Bridgewater, Citadel, Renaissance), mutual funds (Vanguard, BlackRock), and pension funds. The filing deadline is 45 days after quarter-end, so data is delayed — but still valuable for identifying long-term positioning trends. Key signals to watch: new positions (what are top funds initiating?), increased stakes (doubling down = conviction), exits (what are they dumping?), and consensus picks (multiple top funds buying the same stock). Caveats: 13Fs only show long equity positions — not shorts, options, or international holdings. A fund might show a large long position but hedge it with puts not visible in the filing. SIBT tracks 20 curated top-tier filers including Buffett, Dalio, Ackman, and Druckenmiller.",
+    example:
+      "Buffett's Berkshire 13F showing a new $4B Apple position in 2016 — AAPL went up 500% over the next 5 years",
+    relatedTerms: ["13F Filing", "Dark Pool", "Form 4", "Insider Trading Intelligence"],
+    difficulty: "intermediate",
+  },
+  {
+    term: "Earnings Season & Market Impact",
+    category: "Deep Dives",
+    definition:
+      "Earnings season occurs four times a year when publicly traded companies report quarterly financial results. It's the single biggest driver of individual stock moves — stocks can gap 10-20% in either direction on earnings surprises. Key metrics to watch: EPS (earnings per share) vs analyst estimates, revenue vs estimates, forward guidance (more important than the beat/miss), and management commentary on macro conditions. The market doesn't just react to whether a company beat or missed — it reacts to the MAGNITUDE of the surprise and the quality of forward guidance. A company can beat estimates but drop if guidance is weak. IV crush is common after earnings: implied volatility spikes before the event and collapses after, destroying option premium regardless of direction. SIBT tracks 80+ major stocks across 10 sectors with pre/post-market timing and AI-generated earnings summaries.",
+    example:
+      "NVDA beat EPS by 22% in Q3 2024 but the stock barely moved — because the beat was already priced into the 200%+ run-up",
+    relatedTerms: ["EPS (Earnings Per Share)", "Revenue", "IV Crush", "Implied Volatility (IV)", "P/E Ratio"],
+    difficulty: "beginner",
+  },
+  {
+    term: "Macro Indicators & What They Mean for Trading",
+    category: "Deep Dives",
+    definition:
+      "Macroeconomic indicators are data releases that describe the health of the overall economy. They drive interest rate expectations, which drive asset prices. The most market-moving indicators: CPI (inflation) — higher than expected = hawkish Fed = stocks down; Jobs Report (NFP) — strong jobs = economy healthy but may delay rate cuts; GDP — broad economic growth measure; ISM Manufacturing — leading indicator of economic activity; FOMC Meetings — the Fed's interest rate decisions and forward guidance. The yield curve (2-year vs 10-year Treasury spread) is a powerful recession predictor: when it inverts (2Y > 10Y), a recession typically follows within 12-18 months. The Dollar Index (DXY) affects multinational earnings and emerging markets. SIBT pulls live data from FRED (Federal Reserve Economic Data) for all major indicators and incorporates them into the Market Quality Score.",
+    example:
+      "The 2s/10s yield curve inverted in July 2022 — 18 months later, recession fears peaked and the market had already bottomed",
+    relatedTerms: ["Market Cycle", "Bear Market", "Recession", "VIX"],
+    difficulty: "intermediate",
+  },
+  {
+    term: "Backtesting: Proving Your Edge",
+    category: "Deep Dives",
+    definition:
+      "Backtesting is applying a trading strategy to historical data to see how it would have performed. It answers the question: does this actually work? A good backtest shows win rate, average win/loss, max drawdown, Sharpe ratio, and total return vs a benchmark (usually buy-and-hold SPY). Critical pitfalls to avoid: survivorship bias (only testing stocks that still exist today), lookahead bias (using information that wasn't available at the time), curve fitting (over-optimizing parameters to fit historical data perfectly — which fails on new data), and ignoring transaction costs and slippage. The best backtests use out-of-sample validation: optimize on one period, test on a completely different period. SIBT's backtester simulates the Market Quality Score strategy against buy-and-hold SPY over 3, 6, and 12-month periods to show whether signal-following adds value.",
+    example:
+      "SIBT backtest: following the signal (trade on green, sit out on red) produced 12.3% return vs 8.1% buy-and-hold over 12 months with lower max drawdown",
+    relatedTerms: ["Market Cycle", "Drawdown", "Kelly Criterion", "Traffic Light Verdict"],
+    difficulty: "intermediate",
+  },
+  {
+    term: "COT Report: What the Biggest Traders Are Doing",
+    category: "Deep Dives",
+    definition:
+      "The Commitments of Traders (COT) report is published weekly by the CFTC (Commodity Futures Trading Commission) every Friday at 3:30 PM ET, based on data from the prior Tuesday. It breaks down futures positioning into three groups: Commercials (hedgers like airlines hedging oil, farmers hedging crops — they trade to reduce business risk, not to speculate), Large Speculators (hedge funds, CTAs — they trade for profit and are typically trend-followers), and Small Speculators (retail traders — historically the worst at timing). The key insight: when commercials are at extreme long positions, it's often bullish (they know their market); when large speculators are at extreme positions, it's often a contrarian signal (they tend to be wrong at extremes). The COT Index measures current positioning as a percentile of the last 3 years — readings above 90 or below 10 signal extremes. SIBT tracks 10 key contracts: S&P 500, Nasdaq, Dow, Gold, Silver, Crude Oil, Natural Gas, Euro, 10Y Treasury, and VIX futures.",
+    example:
+      "In Oct 2022, large speculators were net short S&P 500 futures at a 3-year extreme — the market bottomed and rallied 25% over the next year",
+    relatedTerms: ["Market Maker", "CTA (Commodity Trading Advisor)", "VIX", "Market Cycle"],
+    difficulty: "advanced",
+  },
+  {
+    term: "Options Flow: Reading Institutional Bets",
+    category: "Deep Dives",
+    definition:
+      "Options flow analysis tracks large, unusual options trades to identify institutional bets before they play out in the stock price. Key types: Sweeps (aggressive orders that sweep across multiple exchanges for immediate fill — indicates urgency), Blocks (privately negotiated large trades, typically $1M+), and unusual volume (options volume exceeding 3x average open interest). What to look for: ask-side sweeps = buying (bullish for calls, bearish for puts); bid-side = selling. Large premium trades ($500K+) on short-dated options often signal someone knows something (upcoming catalyst, M&A, earnings surprise). The put/call ratio provides macro sentiment — extreme readings (>1.5 or <0.5) are contrarian indicators. GEX (gamma exposure) affects market behavior: positive GEX = market makers dampen moves (low vol regime); negative GEX = they amplify moves (high vol, potential for violent swings). SIBT streams options flow via Unusual Whales with filtering by premium size, type, and sentiment.",
+    example:
+      "Days before the AVGO-VMW merger announcement, unusual call sweeps appeared in VMW with 10x normal volume — classic informed positioning",
+    relatedTerms: ["Options Flow", "Sweep Order", "Dark Pool", "GEX (Gamma Exposure)", "Put/Call Ratio (P/C)", "Implied Volatility (IV)"],
+    difficulty: "advanced",
+  },
 ];
 
 export const GLOSSARY_CATEGORIES = [

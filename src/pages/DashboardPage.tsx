@@ -95,13 +95,15 @@ export function DashboardPage() {
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
+          gridTemplateRows: "1fr",
+          alignItems: "stretch",
           gap: 16,
           height: 700,
         }}>
           <div style={{ height: "100%", overflow: "auto" }}>
             <SectorHeatMap />
           </div>
-          <div style={{ height: "100%" }}>
+          <div style={{ height: "100%", display: "flex", flexDirection: "column" }}>
             <TickerChart />
           </div>
         </div>

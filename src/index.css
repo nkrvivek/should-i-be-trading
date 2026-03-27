@@ -119,3 +119,8 @@ body {
 .skeleton-pulse {
   animation: pulse 1.4s ease-in-out infinite;
 }
+
+/* Make sector heatmap panel fill its grid cell height */
+.sector-heatmap-panel {
+  height: 100% !important;
+}

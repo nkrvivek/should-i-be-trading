@@ -21,7 +21,7 @@ export function LandingPage() {
   return (
     <div style={{ background: "#0a0f14", color: "#e2e8f0", minHeight: "100vh", fontFamily: "var(--font-sans)" }}>
       {/* Nav */}
-      <nav style={{
+      <nav className="landing-nav" style={{
         display: "flex",
         justifyContent: "space-between",
         alignItems: "center",
@@ -36,7 +36,7 @@ export function LandingPage() {
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <img src="/logo-icon.svg" alt="SIBT" style={{ height: 32 }} />
           <span style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: "#05AD98" }}>SIBT</span>
-          <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "#94a3b8" }}>Should I Be Trading?</span>
+          <span className="landing-nav-tagline" style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "#94a3b8" }}>Should I Be Trading?</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => navigate("/login")} style={navBtn}>SIGN IN</button>
@@ -47,7 +47,7 @@ export function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section style={{
+      <section className="landing-hero" style={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -84,7 +84,7 @@ export function LandingPage() {
           </div>
         </div>
 
-        <h1 style={{
+        <h1 className="landing-hero-heading" style={{
           position: "relative",
           fontFamily: "var(--font-mono)",
           fontSize: 48,
@@ -97,7 +97,7 @@ export function LandingPage() {
           <span style={{ color: "#05AD98" }}>Right Now?</span>
         </h1>
 
-        <p style={{
+        <p className="landing-hero-desc" style={{
           position: "relative",
           fontSize: 16,
           color: "#94a3b8",
@@ -111,7 +111,7 @@ export function LandingPage() {
           Combined into a simple traffic light that tells you whether the market conditions favor trading today.
         </p>
 
-        <div style={{ position: "relative", display: "flex", gap: 12 }}>
+        <div className="landing-cta-row" style={{ position: "relative", display: "flex", gap: 12 }}>
           <button onClick={() => navigate("/login")} style={ctaBtn}>
             TRY FREE
           </button>
@@ -126,7 +126,7 @@ export function LandingPage() {
       </section>
 
       {/* Powered by */}
-      <section style={{
+      <section className="landing-powered-row landing-section" style={{
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
@@ -134,6 +134,7 @@ export function LandingPage() {
         padding: "24px 32px",
         borderTop: "1px solid #1e293b",
         borderBottom: "1px solid #1e293b",
+        flexWrap: "wrap",
       }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", letterSpacing: "0.05em" }}>POWERED BY</span>
         {["FRED", "Finnhub", "FMP", "SEC EDGAR", "Anthropic Claude", "Tradier", "Exa", "Interactive Brokers", "SnapTrade"].map((name) => (
@@ -145,7 +146,7 @@ export function LandingPage() {
       </section>
 
       {/* Supported Brokerages */}
-      <section style={{
+      <section className="landing-section" style={{
         padding: "48px 32px",
         textAlign: "center",
       }}>
@@ -192,11 +193,11 @@ export function LandingPage() {
       </section>
 
       {/* Features */}
-      <section style={{ padding: "80px 32px", maxWidth: 1100, margin: "0 auto" }}>
+      <section className="landing-section" style={{ padding: "80px 32px", maxWidth: 1100, margin: "0 auto" }}>
         <h2 style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, textAlign: "center", marginBottom: 48 }}>
           What You Get
         </h2>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
+        <div className="landing-features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
           <FeatureCard
             title="Market Quality Score"
             description="Five-category scoring engine: Volatility (VIX), Momentum, Trend (SP500 vs 20/50/200d MAs), Sector Breadth, and Macro (10Y yield). Computes a 0-100 score with clear YES / CAUTION / NO verdict."
@@ -311,11 +312,11 @@ export function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section style={{ padding: "80px 32px", borderTop: "1px solid #1e293b" }}>
+      <section className="landing-section" style={{ padding: "80px 32px", borderTop: "1px solid #1e293b" }}>
         <h2 style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, textAlign: "center", marginBottom: 48 }}>
           How It Works
         </h2>
-        <div style={{ display: "flex", justifyContent: "center", gap: 48, maxWidth: 800, margin: "0 auto" }}>
+        <div className="landing-steps-row" style={{ display: "flex", justifyContent: "center", gap: 48, maxWidth: 800, margin: "0 auto" }}>
           <Step n={1} title="Sign Up" desc="14-day Pro trial, no credit card required. Free tier available permanently." />
           <Step n={2} title="Analyze" desc="Market Quality Score, technical signals, SIBT Score, earnings intelligence, insider activity, 13F filings, news sentiment, COT data, and AI briefings — all computed automatically. Import your portfolio via CSV or connect your broker." />
           <Step n={3} title="Decide" desc="Get a clear verdict: TRADE, CAUTION, or NO TRADE. Bring your own keys for advanced features." />
@@ -323,12 +324,12 @@ export function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" data-theme="dark" style={{ padding: "80px 24px", borderTop: "1px solid #1e293b" }}>
+      <section id="pricing" data-theme="dark" className="landing-section" style={{ padding: "80px 24px", borderTop: "1px solid #1e293b" }}>
         <PricingContent />
       </section>
 
       {/* Footer */}
-      <footer style={{
+      <footer className="landing-footer" style={{
         padding: "32px",
         borderTop: "1px solid #1e293b",
         display: "flex",
@@ -344,7 +345,7 @@ export function LandingPage() {
             &copy; {new Date().getFullYear()} Should I Be Trading?
           </span>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+        <div className="landing-footer-links" style={{ display: "flex", alignItems: "center", gap: 16 }}>
           <a href="mailto:hello@sibt.ai" style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#05AD98", textDecoration: "none" }}>
             hello@sibt.ai
           </a>
@@ -362,7 +363,7 @@ export function LandingPage() {
       </footer>
 
       {/* Bottom disclaimer */}
-      <div style={{ padding: "16px 32px", background: "#0f1519", textAlign: "center" }}>
+      <div className="landing-section" style={{ padding: "16px 32px", background: "#0f1519", textAlign: "center" }}>
         <p style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "#475569", maxWidth: 700, margin: "0 auto", lineHeight: 1.6 }}>
           SIBT is not a registered investment adviser, broker-dealer, or financial planner. The platform provides
           market data analysis tools for informational and educational purposes only. Nothing on this platform

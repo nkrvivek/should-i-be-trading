@@ -406,7 +406,7 @@ export function PricingContent() {
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 500, marginBottom: 16 }}>
           Common Questions
         </div>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 700, margin: "0 auto", textAlign: "left" }}>
+        <div className="landing-faq-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, maxWidth: 700, margin: "0 auto", textAlign: "left" }}>
           <FaqItem q="Why not a one-time payment?" a="Subscriptions let us keep improving SIBT with new data sources, AI models, and features. You get continuous updates. Cancel anytime." />
           <FaqItem q="What happens during the trial?" a="Full access to all features for 14 days. No charge until the trial ends. Cancel before it ends and you pay nothing." />
           <FaqItem q="What API keys do I need?" a="You bring your own: Interactive Brokers for live data, Unusual Whales for dark pool flow, Anthropic for AI analysis. Each is optional and unlocks specific features." />

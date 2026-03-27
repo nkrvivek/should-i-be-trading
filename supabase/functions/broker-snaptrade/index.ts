@@ -46,8 +46,8 @@ async function snapRequest(
   const bodyStr = opts.body ? JSON.stringify(opts.body) : "";
   const { signature, timestamp } = await signRequest(fullPath, bodyStr, consumerKey);
 
-  // Build query params
-  const qp = new URLSearchParams({ clientId });
+  // Build query params — timestamp MUST be a query param per SnapTrade API
+  const qp = new URLSearchParams({ clientId, timestamp });
   if (opts.userId) qp.set("userId", opts.userId);
   if (opts.userSecret) qp.set("userSecret", opts.userSecret);
 
@@ -55,7 +55,6 @@ async function snapRequest(
 
   const headers: Record<string, string> = {
     Signature: signature,
-    timestamp,
     "Content-Type": "application/json",
   };
 

@@ -169,6 +169,25 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
     /* ---- Actions ---- */
 
     addConnection: async (slug, credentials, displayName) => {
+      // Dedup: if a connection with the same slug already exists and uses
+      // the same underlying account (e.g. same SnapTrade userId), refresh it
+      // instead of creating a duplicate.
+      const { connections } = get();
+      const existing = connections.find((c) => {
+        if (c.slug !== slug) return false;
+        // For SnapTrade: same userId = same account
+        if (slug === "snaptrade" && credentials.snapUserId) {
+          const stored = loadConnections().find((s) => s.id === c.id);
+          return stored?.credentials?.snapUserId === credentials.snapUserId;
+        }
+        return false;
+      });
+      if (existing) {
+        // Just refresh the existing connection instead of adding a duplicate
+        await get().refresh(existing.id);
+        return existing.id;
+      }
+
       const id = `${slug}-${Date.now()}`;
       const instance = createBrokerInstance(slug);
       if (!instance) throw new Error(`Broker ${slug} not available`);
@@ -291,7 +310,23 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
       const stored = loadConnections();
       if (stored.length === 0) return;
 
+      // Deduplicate stored connections — keep first entry per slug+account key
+      const seen = new Set<string>();
+      const deduped: typeof stored = [];
       for (const entry of stored) {
+        const key = entry.slug === "snaptrade" && entry.credentials?.snapUserId
+          ? `${entry.slug}:${entry.credentials.snapUserId}`
+          : entry.id;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push(entry);
+      }
+      // Persist cleaned list if duplicates were removed
+      if (deduped.length < stored.length) {
+        saveConnections(deduped);
+      }
+
+      for (const entry of deduped) {
         // Skip if already connected
         const existing = get().connections.find((c) => c.id === entry.id);
         if (existing?.instance.isConnected) continue;

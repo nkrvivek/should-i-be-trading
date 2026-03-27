@@ -45,16 +45,6 @@ export type EarningsIntelData = {
 
 /* ─── Helpers ───────────────────────────────────────── */
 
-function tradingDayOffset(prices: FmpHistoricalPrice[], targetDate: string, offset: number): FmpHistoricalPrice | null {
-  // prices are sorted newest-first from FMP
-  const sorted = [...prices].sort((a, b) => a.date.localeCompare(b.date));
-  const idx = sorted.findIndex((p) => p.date >= targetDate);
-  if (idx < 0) return null;
-  const target = idx + offset;
-  if (target < 0 || target >= sorted.length) return null;
-  return sorted[target];
-}
-
 function calcPriceChange(prices: FmpHistoricalPrice[], earningsDate: string, offset: number): number | null {
   const sorted = [...prices].sort((a, b) => a.date.localeCompare(b.date));
   // Find the trading day on or just after earnings date

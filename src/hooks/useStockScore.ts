@@ -11,6 +11,8 @@ import {
   getIncomeStatement,
 } from "../api/fmpClient";
 import { computeStockScore, type StockScore, type StockScoreInput } from "../lib/stockScore";
+import { getEdgeHeaders } from "../api/edgeHeaders";
+import { isSupabaseConfigured } from "../lib/supabase";
 
 interface UseStockScoreResult {
   score: StockScore | null;
@@ -43,10 +45,11 @@ export function useStockScore(): UseStockScoreResult {
     setError(null);
 
     try {
-      // Fetch all data in parallel
-      const [snapshot, incomeStatements] = await Promise.all([
+      // Fetch all data in parallel — including insider + options
+      const [snapshot, incomeStatements, insiderData] = await Promise.all([
         getFundamentalSnapshot(ticker),
         getIncomeStatement(ticker, "annual", 2).catch(() => []),
+        fetchInsiderData(ticker).catch(() => null),
       ]);
 
       const { profile, ratios, metrics, priceTarget } = snapshot;
@@ -107,6 +110,11 @@ export function useStockScore(): UseStockScoreResult {
         revenueGrowth,
         netIncomeGrowth,
         epsGrowth,
+
+        // Sentiment: insider data
+        insiderBuyCount: insiderData?.buyCount,
+        insiderSellCount: insiderData?.sellCount,
+        insiderNetShares: insiderData?.netShares,
       };
 
       const result = computeStockScore(ticker, input);
@@ -123,4 +131,54 @@ export function useStockScore(): UseStockScoreResult {
   }, []);
 
   return { score, loading, error, compute };
+}
+
+/* ─── Insider Data Fetcher ──────────────────────────── */
+
+interface InsiderSummary {
+  buyCount: number;
+  sellCount: number;
+  netShares: number;
+}
+
+async function fetchInsiderData(symbol: string): Promise<InsiderSummary | null> {
+  if (!isSupabaseConfigured()) return null;
+
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const headers = await getEdgeHeaders();
+
+  const res = await fetch(
+    `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/insider-transactions&symbol=${encodeURIComponent(symbol)}`,
+    { headers },
+  );
+
+  if (!res.ok) return null;
+
+  const data = await res.json();
+  const txns = data?.data ?? [];
+
+  // Filter to last 90 days
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - 90);
+  const cutoffStr = cutoff.toISOString().split("T")[0];
+
+  let buyCount = 0;
+  let sellCount = 0;
+  let netShares = 0;
+
+  for (const tx of txns) {
+    if (!tx.transactionDate || tx.transactionDate < cutoffStr) continue;
+    const shares = tx.share ?? 0;
+    if (tx.transactionType === "P" || tx.transactionType === "A") {
+      // P = Purchase, A = Acquisition (non-open market)
+      buyCount++;
+      netShares += Math.abs(shares);
+    } else if (tx.transactionType === "S" || tx.transactionType === "D") {
+      // S = Sale, D = Disposition
+      sellCount++;
+      netShares -= Math.abs(shares);
+    }
+  }
+
+  return { buyCount, sellCount, netShares };
 }

@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { chatWithClaude } from "../../api/anthropicClient";
 import { AiUsageBadge, useAiUsage } from "../ai/AiUsageBadge";
 import { renderMarkdown } from "../../lib/renderMarkdown";
@@ -12,12 +12,80 @@ type Props = {
   marketScore?: MarketScore | null;
 };
 
+/** Build a deterministic briefing from the score data — no AI needed */
+function buildDefaultBriefing(verdict: TrafficLightVerdict, marketScore?: MarketScore | null): string | null {
+  if (!marketScore) return null;
+
+  const date = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
+  const signal = verdict.signal;
+  const score = marketScore.total;
+  const window = marketScore.executionWindow;
+
+  // Categorize scores
+  const weak = marketScore.categories.filter(c => c.score < 40);
+  const strong = marketScore.categories.filter(c => c.score >= 70);
+
+  const signalColor = signal === "TRADE" ? "green" : signal === "NO_TRADE" ? "red" : "amber";
+  const signalWord = signal === "TRADE" ? "favorable" : signal === "NO_TRADE" ? "unfavorable" : "mixed";
+
+  let lines = `**MARKET SNAPSHOT** — ${date}\n\n`;
+
+  // What's happening
+  lines += `**WHAT'S HAPPENING**\n`;
+  lines += `The SIBT Score is **${score}/100** with a **${window}% execution window**. `;
+  lines += `The signal is **${signal.replace("_", " ")}** at ${verdict.confidence}% confidence. `;
+  lines += `VIX regime: **${verdict.vixRegime.label}** — ${verdict.vixRegime.detail}. `;
+
+  if (strong.length > 0) {
+    lines += `Strength in ${strong.map(c => `${c.name} (${c.score})`).join(", ")}. `;
+  }
+  if (weak.length > 0) {
+    lines += `Weakness in ${weak.map(c => `${c.name} (${c.score})`).join(", ")}. `;
+  }
+  lines += "\n\n";
+
+  // What it means
+  lines += `**WHAT IT MEANS**\n`;
+  if (signalColor === "green") {
+    lines += `Conditions are ${signalWord} for active trading. The execution window supports position entry with defined risk. Focus on high-conviction setups aligned with the current trend. `;
+  } else if (signalColor === "red") {
+    lines += `Conditions are ${signalWord} for new positions. Consider preserving capital, tightening stops on existing positions, and waiting for the regime to improve. Cash is a position. `;
+  } else {
+    lines += `Conditions are ${signalWord}. Reduce position sizes, favor defined-risk strategies, and be selective. Consider hedging existing exposure. `;
+  }
+  lines += "\n\n";
+
+  // What to watch
+  lines += `**WHAT TO WATCH**\n`;
+  const watchItems: string[] = [];
+  for (const cat of marketScore.categories) {
+    if (cat.detail) watchItems.push(`**${cat.name}**: ${cat.detail}`);
+  }
+  if (verdict.reasons.length > 0) {
+    watchItems.push(`**Key drivers**: ${verdict.reasons.slice(0, 3).join("; ")}`);
+  }
+  lines += watchItems.join(". ") + ".\n\n";
+
+  lines += `*This briefing is generated from live market data — not investment advice.*`;
+
+  return lines;
+}
+
 export function DailyBriefing({ cri, verdict, marketScore }: Props) {
-  const [briefing, setBriefing] = useState<string | null>(null);
+  const [aiBriefing, setAiBriefing] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const aiUsage = useAiUsage();
   const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
+
+  // Auto-generated briefing from market data (always available when score loads)
+  const defaultBriefing = useMemo(
+    () => buildDefaultBriefing(verdict, marketScore),
+    [verdict, marketScore],
+  );
+
+  // Show AI-enhanced briefing if generated, otherwise show default
+  const briefing = aiBriefing ?? defaultBriefing;
 
   const generateBriefing = useCallback(async () => {
     setLoading(true);
@@ -75,13 +143,13 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
         [{ role: "user", content: userPrompt }],
         systemPrompt,
       );
-      setBriefing(response.content);
+      setAiBriefing(response.content);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to generate briefing");
     } finally {
       setLoading(false);
     }
-  }, [cri, verdict]);
+  }, [cri, verdict, marketScore]);
 
   return (
     <div
@@ -120,17 +188,10 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
               opacity: loading || limitReached ? 0.5 : 1,
             }}
           >
-            {loading ? "GENERATING..." : briefing ? "REFRESH" : "GENERATE"}
+            {loading ? "GENERATING..." : aiBriefing ? "REFRESH AI" : "ENHANCE WITH AI"}
           </button>
         </div>
       </div>
-
-      {!briefing && !loading && !error && (
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
-          Click "Generate" to get an AI-powered market briefing based on current regime data.
-          Requires an Anthropic API key configured in Settings.
-        </div>
-      )}
 
       {loading && (
         <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>

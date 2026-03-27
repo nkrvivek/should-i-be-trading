@@ -112,6 +112,17 @@ Deno.serve(async (req) => {
     if (!endpoint) return errorResponse("Missing 'endpoint'", 400, req);
     if (!appKey || !accessToken) return errorResponse("Missing appKey or accessToken", 400, req);
 
+    // Validate input formats
+    if (!/^[a-zA-Z0-9]{8,64}$/.test(appKey)) {
+      return errorResponse("Invalid appKey format", 400, req);
+    }
+    if (!/^[a-zA-Z0-9_.-]{10,2048}$/.test(accessToken)) {
+      return errorResponse("Invalid accessToken format", 400, req);
+    }
+    if (endpoint.includes("..") || endpoint.includes("//")) {
+      return errorResponse("Invalid endpoint path", 400, req);
+    }
+
     if (!isAllowedEndpoint(endpoint)) {
       return errorResponse(`Endpoint not allowed: ${endpoint}`, 403, req);
     }
@@ -174,7 +185,7 @@ Deno.serve(async (req) => {
     if (!response.ok) {
       const text = await response.text();
       console.error(`Webull error (${response.status}):`, text);
-      return errorResponse(`Webull API error: ${response.status} - ${text}`, 502, req);
+      return errorResponse(`Webull API error: ${response.status}`, 502, req);
     }
 
     const data = await response.json();

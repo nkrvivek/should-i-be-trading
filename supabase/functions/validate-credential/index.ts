@@ -42,6 +42,22 @@ const VALIDATORS: Record<string, (key: string) => Promise<boolean>> = {
   },
 };
 
+const rateLimitMap = new Map<string, { count: number; windowStart: number }>();
+const RATE_LIMIT_WINDOW_MS = 60_000;
+const RATE_LIMIT_MAX = 5;
+
+function checkRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(userId);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(userId, { count: 1, windowStart: now });
+    return true;
+  }
+  if (entry.count >= RATE_LIMIT_MAX) return false;
+  entry.count++;
+  return true;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
@@ -49,6 +65,9 @@ Deno.serve(async (req) => {
 
   try {
     const ctx = await authenticateRequest(req);
+    if (!checkRateLimit(ctx.userId)) {
+      return errorResponse("Rate limit exceeded. Try again in a minute.", 429, req);
+    }
     // Enforce request body size limit
     const contentLength = parseInt(req.headers.get("content-length") || "0");
     if (contentLength > 50000) {
@@ -59,6 +78,13 @@ Deno.serve(async (req) => {
 
     if (!provider || !credential_data) {
       return errorResponse("Missing provider or credential_data", 400, req);
+    }
+
+    if (typeof provider !== "string" || !/^[a-z_]{2,30}$/.test(provider)) {
+      return errorResponse("Invalid provider format", 400, req);
+    }
+    if (typeof credential_data !== "string" || credential_data.length < 5 || credential_data.length > 500) {
+      return errorResponse("Invalid credential format", 400, req);
     }
 
     const validator = VALIDATORS[provider];

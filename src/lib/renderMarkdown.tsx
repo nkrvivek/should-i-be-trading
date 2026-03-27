@@ -155,8 +155,8 @@ function renderBlock(block: string, i: number): React.ReactNode {
     );
   }
 
-  // Bullet list
-  if (lines.every((l) => /^[-*▸]\s/.test(l.trim()))) {
+  // Bullet list (▸ with or without space, - or * with space)
+  if (lines.every((l) => /^[-*▸]\s?/.test(l.trim()) && l.trim().length > 1)) {
     return (
       <ul key={i} style={{ margin: "0 0 8px 0", paddingLeft: 16, listStyle: "none" }}>
         {lines.map((line, j) => (
@@ -167,7 +167,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
             }}>
               {"\u25B8"}
             </span>
-            {renderInline(line.trim().replace(/^[-*▸]\s/, ""))}
+            {renderInline(line.trim().replace(/^[-*▸]\s?/, ""))}
           </li>
         ))}
       </ul>
@@ -201,7 +201,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
       <div key={i} style={{ margin: "0 0 8px 0" }}>
         {lines.map((line, j) => {
           const lt = line.trim();
-          if (/^[-*▸]\s/.test(lt)) {
+          if (/^[-*▸]\s?/.test(lt) && lt.length > 1) {
             numberedIdx = 0;
             return (
               <div key={j} style={{ paddingLeft: 12, marginBottom: 4, position: "relative" }}>
@@ -211,7 +211,7 @@ function renderBlock(block: string, i: number): React.ReactNode {
                 }}>
                   {"\u25B8"}
                 </span>
-                {renderInline(lt.replace(/^[-*▸]\s/, ""))}
+                {renderInline(lt.replace(/^[-*▸]\s?/, ""))}
               </div>
             );
           }

@@ -39,14 +39,22 @@ Current Market Context:
 Current Portfolio:
 ${positionSummary}
 
-For each strategy, provide:
-1. **Strategy Name** (e.g., Covered Call on AAPL, Bull Put Spread on MSFT)
-2. **Direction** (Bullish/Bearish/Neutral)
-3. **Confidence** (Low/Medium/High)
-4. **Setup**: Specific strikes, expirations, quantities
-5. **Max Profit / Max Loss / Breakeven**
-6. **Supporting Signals**: Which market signals support this trade
-7. **Risks**: Key risk factors
+For each strategy, format EXACTLY like this (use markdown headers and bullet lists):
+
+## Strategy 1: [Name] on [TICKER]
+
+- **Direction**: Bullish/Bearish/Neutral
+- **Confidence**: Low/Medium/High
+- **Setup**: Specific strikes, expirations, quantities
+
+| Metric | Value |
+|--------|-------|
+| Max Profit | $X |
+| Max Loss | $X |
+| Breakeven | $X |
+
+- **Supporting Signals**: Which market signals support this trade
+- **Risks**: Key risk factors
 
 Rules:
 - Only suggest defined-risk strategies (no naked options)

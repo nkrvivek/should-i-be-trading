@@ -4,6 +4,7 @@ import { TradierBroker } from "./tradier";
 import { SchwabBroker } from "./schwab";
 import { EtradeBroker } from "./etrade";
 import { WebullBroker } from "./webull";
+import { SnapTradeBroker } from "./snaptrade";
 import type { BrokerConnection } from "./types";
 
 export interface BrokerInfo {
@@ -17,6 +18,15 @@ export interface BrokerInfo {
 }
 
 export const BROKER_REGISTRY: BrokerInfo[] = [
+  {
+    name: "SnapTrade",
+    slug: "snaptrade",
+    icon: "🔗",
+    description: "Connect any brokerage instantly — Schwab, Fidelity, Robinhood, E*Trade, Webull & more. No API keys needed.",
+    isPaperAvailable: false,
+    status: "available",
+    credentialFields: [],
+  },
   {
     name: "Alpaca",
     slug: "alpaca",
@@ -109,6 +119,9 @@ const instances: Record<string, BrokerConnection> = {};
 export function getBrokerInstance(slug: string): BrokerConnection | null {
   if (instances[slug]) return instances[slug];
   switch (slug) {
+    case "snaptrade":
+      instances[slug] = new SnapTradeBroker();
+      return instances[slug];
     case "alpaca":
       instances[slug] = new AlpacaBroker();
       return instances[slug];

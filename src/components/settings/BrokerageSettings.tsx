@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { BROKER_REGISTRY } from "../../lib/brokers/registry";
+import { getBrokerInstance } from "../../lib/brokers/registry";
 import { useBrokerStore } from "../../stores/brokerStore";
+import type { SnapTradeBroker } from "../../lib/brokers/snaptrade";
 
 const monoStyle: React.CSSProperties = { fontFamily: "'IBM Plex Mono', monospace" };
 const headerStyle: React.CSSProperties = { ...monoStyle, fontSize: 14, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
@@ -11,6 +13,7 @@ export default function BrokerageSettings() {
   const [expandedBroker, setExpandedBroker] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [connectError, setConnectError] = useState("");
+  const [snapTradeLoading, setSnapTradeLoading] = useState(false);
 
   const handleConnect = async (slug: string) => {
     setConnectError("");
@@ -20,6 +23,52 @@ export default function BrokerageSettings() {
       setCredentials({});
     } catch (e) {
       setConnectError(e instanceof Error ? e.message : "Connection failed");
+    }
+  };
+
+  const handleSnapTradeConnect = async () => {
+    setConnectError("");
+    setSnapTradeLoading(true);
+    try {
+      // First, connect/register the user with SnapTrade
+      await connect("snaptrade", {});
+
+      // Get the broker instance and open Connection Portal
+      const broker = getBrokerInstance("snaptrade") as SnapTradeBroker | null;
+      if (!broker) throw new Error("SnapTrade broker not available");
+
+      const portalUrl = await broker.getConnectionPortalUrl();
+      if (!portalUrl) throw new Error("Could not get Connection Portal URL");
+
+      // Open in a popup window
+      const popup = window.open(
+        portalUrl,
+        "snaptrade_connect",
+        "width=800,height=700,scrollbars=yes,resizable=yes",
+      );
+
+      // Poll for popup close, then refresh accounts
+      if (popup) {
+        const pollTimer = setInterval(async () => {
+          if (popup.closed) {
+            clearInterval(pollTimer);
+            // Refresh the connection to pick up newly linked accounts
+            try {
+              await connect("snaptrade", {});
+            } catch {
+              // Ignore — user may not have completed the flow
+            }
+            setSnapTradeLoading(false);
+            setExpandedBroker(null);
+          }
+        }, 1000);
+      } else {
+        // Popup blocked — fall back to redirect
+        window.location.href = portalUrl;
+      }
+    } catch (e) {
+      setConnectError(e instanceof Error ? e.message : "Connection failed");
+      setSnapTradeLoading(false);
     }
   };
 
@@ -41,6 +90,7 @@ export default function BrokerageSettings() {
           const isActive = activeBroker === broker.slug;
           const isExpanded = expandedBroker === broker.slug;
           const isComingSoon = broker.status === "coming_soon";
+          const isSnapTrade = broker.slug === "snaptrade";
 
           return (
             <div
@@ -89,7 +139,41 @@ export default function BrokerageSettings() {
                 </div>
               </div>
 
-              {isExpanded && !isComingSoon && (
+              {/* SnapTrade — Connection Portal flow (no credential fields) */}
+              {isExpanded && isSnapTrade && !isComingSoon && (
+                <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border-dim)", textAlign: "center" }}>
+                  <button
+                    onClick={handleSnapTradeConnect}
+                    disabled={snapTradeLoading || loading}
+                    style={{
+                      ...monoStyle,
+                      fontSize: 15,
+                      fontWeight: 600,
+                      padding: "14px 40px",
+                      background: "var(--signal-core)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: 4,
+                      cursor: snapTradeLoading ? "wait" : "pointer",
+                      letterSpacing: "0.05em",
+                    }}
+                  >
+                    {snapTradeLoading ? "OPENING PORTAL..." : "CONNECT YOUR BROKER"}
+                  </button>
+                  <p style={{ ...monoStyle, fontSize: 12, color: "var(--text-secondary)", marginTop: 12, lineHeight: 1.6 }}>
+                    Supports Schwab, Fidelity, E*Trade, Robinhood, Webull, Interactive Brokers, and 20+ more
+                  </p>
+                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
+                    A secure window will open to connect your brokerage. No API keys needed.
+                  </p>
+                  {connectError && (
+                    <div style={{ marginTop: 8, color: "var(--fault)", ...monoStyle, fontSize: 13 }}>{connectError}</div>
+                  )}
+                </div>
+              )}
+
+              {/* Standard brokers — credential fields */}
+              {isExpanded && !isSnapTrade && !isComingSoon && (
                 <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid var(--border-dim)" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12 }}>
                     {broker.credentialFields.map((field) => (

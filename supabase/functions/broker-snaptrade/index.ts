@@ -1,0 +1,187 @@
+import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+
+const SNAPTRADE_BASE = "https://api.snaptrade.com/api/v1";
+
+// ── HMAC-SHA256 signature generation ────────────────────────────
+async function signRequest(
+  path: string,
+  body: string,
+  consumerKey: string,
+): Promise<{ signature: string; timestamp: string }> {
+  const timestamp = Math.floor(Date.now() / 1000).toString();
+  const sigContent = path + body + timestamp;
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(consumerKey),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  const sig = await crypto.subtle.sign(
+    "HMAC",
+    key,
+    new TextEncoder().encode(sigContent),
+  );
+  const signature = btoa(String.fromCharCode(...new Uint8Array(sig)));
+  return { signature, timestamp };
+}
+
+// ── SnapTrade API helper ────────────────────────────────────────
+async function snapRequest(
+  method: string,
+  path: string,
+  opts: {
+    userId?: string;
+    userSecret?: string;
+    body?: Record<string, unknown>;
+  } = {},
+): Promise<unknown> {
+  const clientId = Deno.env.get("SNAPTRADE_CLIENT_ID");
+  const consumerKey = Deno.env.get("SNAPTRADE_CONSUMER_KEY");
+  if (!clientId || !consumerKey) {
+    throw new Error("SNAPTRADE_CLIENT_ID / SNAPTRADE_CONSUMER_KEY not configured");
+  }
+
+  const fullPath = `/api/v1/${path}`;
+  const bodyStr = opts.body ? JSON.stringify(opts.body) : "";
+  const { signature, timestamp } = await signRequest(fullPath, bodyStr, consumerKey);
+
+  // Build query params
+  const qp = new URLSearchParams({ clientId });
+  if (opts.userId) qp.set("userId", opts.userId);
+  if (opts.userSecret) qp.set("userSecret", opts.userSecret);
+
+  const url = `${SNAPTRADE_BASE}/${path}?${qp.toString()}`;
+
+  const headers: Record<string, string> = {
+    Signature: signature,
+    timestamp,
+    "Content-Type": "application/json",
+  };
+
+  const fetchOpts: RequestInit = { method, headers };
+  if (bodyStr) fetchOpts.body = bodyStr;
+
+  const res = await fetch(url, fetchOpts);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`SnapTrade error (${res.status}):`, text);
+    throw new Error(`SnapTrade API error ${res.status}: ${text}`);
+  }
+
+  // Some DELETE endpoints return empty body
+  const contentType = res.headers.get("content-type") ?? "";
+  if (contentType.includes("application/json")) {
+    return res.json();
+  }
+  return {};
+}
+
+// ── Edge function entry point ───────────────────────────────────
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: getCorsHeaders(req) });
+  }
+
+  try {
+    // Authenticate user
+    const auth = await authenticateRequest(req);
+
+    const body = await req.json();
+    const { action, userId, userSecret, accountId } = body as {
+      action?: string;
+      userId?: string;
+      userSecret?: string;
+      accountId?: string;
+    };
+
+    if (!action) return errorResponse("Missing 'action'", 400, req);
+
+    switch (action) {
+      // ── Register a new SnapTrade user ───────────────────────
+      case "register": {
+        const snapUserId = `sibt-${auth.userId}`;
+        const data = await snapRequest("POST", "snapTrade/registerUser", {
+          body: { userId: snapUserId },
+        });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── Generate Connection Portal URL ──────────────────────
+      case "connectPortal": {
+        if (!userId || !userSecret) {
+          return errorResponse("Missing userId or userSecret", 400, req);
+        }
+        const data = await snapRequest("POST", "snapTrade/login", {
+          userId,
+          userSecret,
+          body: { userId, userSecret },
+        });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── List connected accounts ─────────────────────────────
+      case "listAccounts": {
+        if (!userId || !userSecret) {
+          return errorResponse("Missing userId or userSecret", 400, req);
+        }
+        const data = await snapRequest("GET", "accounts", { userId, userSecret });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── Get positions for an account ────────────────────────
+      case "getPositions": {
+        if (!userId || !userSecret || !accountId) {
+          return errorResponse("Missing userId, userSecret, or accountId", 400, req);
+        }
+        const data = await snapRequest("GET", `accounts/${accountId}/positions`, {
+          userId,
+          userSecret,
+        });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── Get balances for an account ─────────────────────────
+      case "getBalances": {
+        if (!userId || !userSecret || !accountId) {
+          return errorResponse("Missing userId, userSecret, or accountId", 400, req);
+        }
+        const data = await snapRequest("GET", `accounts/${accountId}/balances`, {
+          userId,
+          userSecret,
+        });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── Get orders for an account ───────────────────────────
+      case "getOrders": {
+        if (!userId || !userSecret || !accountId) {
+          return errorResponse("Missing userId, userSecret, or accountId", 400, req);
+        }
+        const data = await snapRequest("GET", `accounts/${accountId}/orders`, {
+          userId,
+          userSecret,
+        });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── Delete / disconnect SnapTrade user ──────────────────
+      case "deleteUser": {
+        if (!userId || !userSecret) {
+          return errorResponse("Missing userId or userSecret", 400, req);
+        }
+        await snapRequest("DELETE", "snapTrade/deleteUser", { userId, userSecret });
+        return jsonResponse({ ok: true }, 200, req);
+      }
+
+      default:
+        return errorResponse(`Unknown action: ${action}`, 400, req);
+    }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "SnapTrade proxy error";
+    if (msg.includes("authentication") || msg.includes("token") || msg.includes("Missing")) {
+      return errorResponse(msg, 401, req);
+    }
+    return errorResponse(msg, 500, req);
+  }
+});

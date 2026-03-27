@@ -74,7 +74,7 @@ export default function EarningsContent() {
   const { earnings, loading, error, refresh } = useEarningsCalendar(6);
   const [sectorFilter, setSectorFilter] = useState<string | null>(null);
   const [hourFilter, setHourFilter] = useState<string | null>(null);
-  const [summaryTarget, setSummaryTarget] = useState<{ symbol: string; quarter: number; year: number } | null>(null);
+  const [summaryTarget, setSummaryTarget] = useState<{ symbol: string; quarter: number; year: number; earningsDate?: string } | null>(null);
 
   const sectors = [...new Set(earnings.map((e) => e.sector ?? "Other"))].sort();
 
@@ -246,7 +246,7 @@ export default function EarningsContent() {
                       </td>
                       <td style={{ padding: "0 8px" }}>
                         <button
-                          onClick={() => setSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year })}
+                          onClick={() => setSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year, earningsDate: e.date })}
                           style={{ padding: "1px 6px", borderRadius: 999, fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--info)", background: "transparent", border: "1px solid var(--info)", cursor: "pointer", opacity: 0.8, whiteSpace: "nowrap" }}
                         >
                           SUMMARIZE
@@ -272,7 +272,7 @@ export default function EarningsContent() {
       </div>
 
       {summaryTarget && (
-        <EarningsSummaryPanel symbol={summaryTarget.symbol} quarter={summaryTarget.quarter} year={summaryTarget.year} onClose={() => setSummaryTarget(null)} />
+        <EarningsSummaryPanel symbol={summaryTarget.symbol} quarter={summaryTarget.quarter} year={summaryTarget.year} earningsDate={summaryTarget.earningsDate} onClose={() => setSummaryTarget(null)} />
       )}
     </div>
   );

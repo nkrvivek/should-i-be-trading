@@ -9,12 +9,13 @@ type Props = {
   symbol: string;
   quarter: number;
   year: number;
+  earningsDate?: string; // ISO date string — if in the future, disable summarize
   onClose: () => void;
 };
 
 type Stage = "idle" | "searching" | "reading" | "summarizing" | "done" | "error";
 
-export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) {
+export function EarningsSummaryPanel({ symbol, quarter, year, earningsDate, onClose }: Props) {
   const [stage, setStage] = useState<Stage>("idle");
   const [summary, setSummary] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -22,15 +23,18 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
   const aiUsage = useAiUsage();
   const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
 
+  // Check if earnings are in the future
+  const isUpcoming = earningsDate ? new Date(earningsDate) > new Date() : false;
+
   const handleSummarize = async () => {
     setStage("searching");
     setError(null);
     setSummary(null);
 
     try {
-      // Step 1: Find transcript via Exa
-      const searchQuery = `${symbol} Q${quarter} ${year} earnings call transcript`;
-      const searchResults = await exaSearch(searchQuery, 3, 5000);
+      // Step 1: Find transcript via Exa — target transcript sites, not IR pages
+      const searchQuery = `${symbol} Q${quarter} ${year} earnings call transcript results revenue EPS`;
+      const searchResults = await exaSearch(searchQuery, 5, 8000);
 
       if (searchResults.results.length === 0) {
         setError("No earnings transcript found. The transcript may not be available yet.");
@@ -38,14 +42,16 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
         return;
       }
 
-      const bestResult = searchResults.results[0];
+      // Pick the best result — prefer longer content (actual transcripts), skip thin IR landing pages
+      const sorted = [...searchResults.results].sort((a, b) => (b.text?.length ?? 0) - (a.text?.length ?? 0));
+      const bestResult = sorted[0];
       setSourceUrl(bestResult.url);
       setStage("reading");
 
       // Step 2: Use the transcript text from Exa
       const transcriptText = bestResult.text;
-      if (!transcriptText || transcriptText.length < 100) {
-        setError("Transcript text too short or unavailable. Try again later.");
+      if (!transcriptText || transcriptText.length < 200) {
+        setError("Earnings transcript content too short or not yet available. This may be an upcoming earnings event.");
         setStage("error");
         return;
       }
@@ -133,27 +139,46 @@ export function EarningsSummaryPanel({ symbol, quarter, year, onClose }: Props) 
       <div style={{ flex: 1, overflow: "auto", padding: 16 }}>
         {stage === "idle" && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16, paddingTop: 40 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
-              Search for and summarize the {symbol} Q{quarter} {year} earnings call transcript using AI.
-            </div>
-            <button
-              onClick={handleSummarize}
-              disabled={limitReached}
-              style={{
-                padding: "8px 24px",
-                background: "var(--accent-bg)",
-                border: "none",
-                borderRadius: 4,
-                fontFamily: "var(--font-mono)",
-                fontSize: 13,
-                fontWeight: 600,
-                color: "var(--accent-text)",
-                cursor: "pointer",
-                opacity: limitReached ? 0.4 : 1,
-              }}
-            >
-              {limitReached ? "AI LIMIT REACHED" : "SUMMARIZE EARNINGS"}
-            </button>
+            {isUpcoming ? (
+              <>
+                <div style={{
+                  fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--warning, #f59e0b)",
+                  textAlign: "center", padding: "12px 16px", background: "rgba(245, 158, 11, 0.08)",
+                  border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: 4, maxWidth: 400,
+                }}>
+                  ⚠ {symbol} Q{quarter} {year} earnings are <strong>upcoming</strong>
+                  {earningsDate && ` (${new Date(earningsDate).toLocaleDateString()})`}.
+                  Transcript will be available after the earnings call.
+                </div>
+                <button
+                  disabled
+                  style={{
+                    padding: "8px 24px", background: "var(--bg-panel-raised)", border: "1px solid var(--border-dim)",
+                    borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600,
+                    color: "var(--text-muted)", cursor: "not-allowed", opacity: 0.5,
+                  }}
+                >
+                  SUMMARIZE UNAVAILABLE
+                </button>
+              </>
+            ) : (
+              <>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
+                  Search for and summarize the {symbol} Q{quarter} {year} earnings call transcript using AI.
+                </div>
+                <button
+                  onClick={handleSummarize}
+                  disabled={limitReached}
+                  style={{
+                    padding: "8px 24px", background: "var(--accent-bg)", border: "none",
+                    borderRadius: 4, fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600,
+                    color: "var(--accent-text)", cursor: "pointer", opacity: limitReached ? 0.4 : 1,
+                  }}
+                >
+                  {limitReached ? "AI LIMIT REACHED" : "SUMMARIZE EARNINGS"}
+                </button>
+              </>
+            )}
           </div>
         )}
 

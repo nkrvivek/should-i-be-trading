@@ -96,14 +96,12 @@ export function DashboardPage() {
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: 16,
-          minHeight: 600,
+          height: 700,
         }}>
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ flex: 1, overflow: "auto" }}>
-              <SectorHeatMap />
-            </div>
+          <div style={{ height: "100%", overflow: "auto" }}>
+            <SectorHeatMap />
           </div>
-          <div style={{ minHeight: 600 }}>
+          <div style={{ height: "100%" }}>
             <TickerChart />
           </div>
         </div>

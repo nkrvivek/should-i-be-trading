@@ -107,7 +107,7 @@ export function LandingPage() {
         }}>
           One dashboard. One verdict. Market regime analysis, technical signal overlays,
           institutional 13F filings, insider &amp; congressional trades, news sentiment,
-          SIBT Score, and portfolio-aware AI — combined into a simple traffic light that
+          SIBT Score, and portfolio-aware AI. Combined into a simple traffic light that
           tells you whether the market conditions favor trading today.
         </p>
 
@@ -136,12 +136,59 @@ export function LandingPage() {
         borderBottom: "1px solid #1e293b",
       }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", letterSpacing: "0.05em" }}>POWERED BY</span>
-        {["FRED", "Finnhub", "FMP", "SEC EDGAR", "Anthropic Claude", "Tradier", "Exa", "Interactive Brokers"].map((name) => (
+        {["FRED", "Finnhub", "FMP", "SEC EDGAR", "Anthropic Claude", "Tradier", "Exa", "Interactive Brokers", "SnapTrade"].map((name) => (
           <span key={name} style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#94a3b8" }}>{name}</span>
         ))}
         <a href="https://github.com/nkrvivek/should-i-be-trading" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#05AD98", textDecoration: "none" }}>
           GitHub
         </a>
+      </section>
+
+      {/* Supported Brokerages */}
+      <section style={{
+        padding: "48px 32px",
+        textAlign: "center",
+      }}>
+        <h3 style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 14,
+          fontWeight: 600,
+          color: "#64748b",
+          letterSpacing: "0.08em",
+          marginBottom: 20,
+        }}>
+          SUPPORTED BROKERAGES
+        </h3>
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          justifyContent: "center",
+          gap: "12px 24px",
+          maxWidth: 700,
+          margin: "0 auto",
+        }}>
+          {["Schwab", "Fidelity", "Robinhood", "E*Trade", "Webull", "Interactive Brokers", "Alpaca", "Tradier"].map((name) => (
+            <span key={name} style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 13,
+              color: "#e2e8f0",
+              padding: "6px 14px",
+              background: "#151c22",
+              border: "1px solid #1e293b",
+              borderRadius: 4,
+            }}>
+              {name}
+            </span>
+          ))}
+        </div>
+        <p style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: 12,
+          color: "#64748b",
+          marginTop: 14,
+        }}>
+          20+ more via SnapTrade
+        </p>
       </section>
 
       {/* Features */}

@@ -4,7 +4,7 @@ import { useAuthStore } from "../../stores/authStore";
 import { Badge } from "../shared/Badge";
 
 export function ProfileForm() {
-  const { user, profile, setProfile } = useAuthStore();
+  const { user, profile, setProfile, effectiveTier } = useAuthStore();
   const [displayName, setDisplayName] = useState(profile?.display_name ?? "");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -26,7 +26,8 @@ export function ProfileForm() {
     setSaving(false);
   };
 
-  const tierVariant = profile?.tier === "pro" ? "positive" : profile?.tier === "enterprise" ? "info" : "default";
+  const currentTier = effectiveTier();
+  const tierVariant = currentTier === "pro" ? "positive" : currentTier === "enterprise" ? "info" : "default";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -36,7 +37,7 @@ export function ProfileForm() {
 
       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
         <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>Plan:</span>
-        <Badge label={(profile?.tier ?? "free").toUpperCase()} variant={tierVariant} />
+        <Badge label={currentTier.toUpperCase()} variant={tierVariant} />
       </div>
 
       <div>

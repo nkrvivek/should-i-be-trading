@@ -8,7 +8,8 @@ import { test, expect } from "@playwright/test";
 test.describe("Research Page — Tab Navigation", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("default tab (AI Chat) loads correctly", async ({ page }) => {
@@ -64,7 +65,8 @@ test.describe("Research Page — Tab Navigation", () => {
 test.describe("Research Page — AI Chat Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("chat input and panels are visible", async ({ page }) => {
@@ -128,7 +130,8 @@ test.describe("Research Page — AI Chat Tab", () => {
 test.describe("Research Page — Fundamentals Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research?tab=fundamentals");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("fundamentals tab content loads", async ({ page }) => {
@@ -146,7 +149,8 @@ test.describe("Research Page — Fundamentals Tab", () => {
 test.describe("Research Page — Technical Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research?tab=technical");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("technical tab content loads", async ({ page }) => {
@@ -164,7 +168,8 @@ test.describe("Research Page — Technical Tab", () => {
 test.describe("Research Page — News Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research?tab=news");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("news tab shows headlines or loading state", async ({ page }) => {
@@ -182,7 +187,8 @@ test.describe("Research Page — News Tab", () => {
 test.describe("Research Page — Earnings Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research?tab=earnings");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("earnings tab content loads", async ({ page }) => {
@@ -200,7 +206,8 @@ test.describe("Research Page — Earnings Tab", () => {
 test.describe("Research Page — Insider Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research?tab=insider");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("insider tab content loads", async ({ page }) => {
@@ -218,7 +225,8 @@ test.describe("Research Page — Insider Tab", () => {
 test.describe("Research Page — 13F/Institutional Tab", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/research?tab=institutional");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
   });
 
   test("institutional tab content loads", async ({ page }) => {
@@ -239,7 +247,8 @@ test.describe("Research Page — General", () => {
   }) => {
     await page.setViewportSize({ width: 768, height: 1024 });
     await page.goto("/research");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
 
     // Tab bar should still be visible (may scroll horizontally)
     await expect(
@@ -260,7 +269,8 @@ test.describe("Research Page — General", () => {
     });
 
     await page.goto("/research");
-    await page.waitForLoadState("networkidle");
+    await page.waitForLoadState("domcontentloaded");
+    await page.locator("button", { hasText: /AI CHAT|FUNDAMENTALS|TECHNICAL|NEWS|EARNINGS|INSIDER|13F/i }).first().waitFor({ timeout: 15_000 });
 
     // Click through each tab
     const tabLabels = [

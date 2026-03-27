@@ -154,7 +154,8 @@ test.describe("Alerts — Interface (Pro Tier)", () => {
     }
 
     // Default is "vix_crosses" — needs threshold + direction
-    await expect(page.getByText(/threshold/i).first()).toBeVisible({ timeout: 5_000 });
+    // Use a visible locator to avoid matching hidden <option> elements
+    await expect(page.locator('label, div, span, input').filter({ hasText: /threshold/i }).first()).toBeVisible({ timeout: 5_000 });
 
     // Switch to "regime_change" — different form fields
     await triggerSelect.selectOption("regime_change");

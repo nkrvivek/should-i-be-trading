@@ -197,17 +197,28 @@ export function AppNav() {
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            background: "var(--accent-bg)",
+            background: user.user_metadata?.avatar_url ? "none" : "var(--accent-bg)",
             border: "none",
             borderRadius: "50%",
             cursor: "pointer",
             flexShrink: 0,
+            overflow: "hidden",
+            padding: 0,
           }}
         >
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-            <circle cx="12" cy="8" r="4" fill="var(--accent-text)" />
-            <path d="M4 21c0-4 4-7 8-7s8 3 8 7" fill="var(--accent-text)" />
-          </svg>
+          {user.user_metadata?.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              alt={profile?.display_name ?? "Profile"}
+              style={{ width: 28, height: 28, borderRadius: "50%", objectFit: "cover" }}
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+              <circle cx="12" cy="8" r="4" fill="var(--accent-text)" />
+              <path d="M4 21c0-4 4-7 8-7s8 3 8 7" fill="var(--accent-text)" />
+            </svg>
+          )}
         </button>
       ) : isSupabaseConfigured() ? (
         <NavLink

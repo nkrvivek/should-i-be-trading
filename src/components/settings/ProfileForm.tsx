@@ -35,9 +35,33 @@ export function ProfileForm() {
         Profile
       </div>
 
-      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <span style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)" }}>Plan:</span>
-        <Badge label={currentTier.toUpperCase()} variant={tierVariant} />
+      {/* Avatar + tier */}
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        {user?.user_metadata?.avatar_url ? (
+          <img
+            src={user.user_metadata.avatar_url}
+            alt={profile?.display_name ?? "Profile"}
+            style={{ width: 48, height: 48, borderRadius: "50%", objectFit: "cover", border: "2px solid var(--border-dim)" }}
+            referrerPolicy="no-referrer"
+          />
+        ) : (
+          <div style={{
+            width: 48, height: 48, borderRadius: "50%", background: "var(--accent-bg)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 20, fontWeight: 700, color: "var(--accent-text)", fontFamily: "var(--font-mono)",
+          }}>
+            {(profile?.display_name ?? user?.email ?? "?")[0].toUpperCase()}
+          </div>
+        )}
+        <div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 600, color: "var(--text-primary)" }}>
+            {profile?.display_name || user?.email?.split("@")[0] || "User"}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2 }}>
+            <span style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)" }}>Plan:</span>
+            <Badge label={currentTier.toUpperCase()} variant={tierVariant} />
+          </div>
+        </div>
       </div>
 
       <div>

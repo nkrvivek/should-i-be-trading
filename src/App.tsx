@@ -44,7 +44,8 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/risk" element={<RiskDisclosurePage />} />
           <Route path="/features" element={<FeaturesPage />} />
-          <Route path="/glossary" element={<GlossaryPage />} />
+          <Route path="/learn" element={<GlossaryPage />} />
+          <Route path="/glossary" element={<Navigate to="/learn" replace />} />
 
           {/* Core 5 hub pages */}
           <Route path="/" element={<SmartHome />} />
@@ -111,6 +112,7 @@ export function AppNav() {
     { to: "/research", label: "RESEARCH" },
     { to: "/signals", label: "SIGNALS" },
     { to: "/trading", label: "TRADING", pro: true },
+    { to: "/learn", label: "LEARN" },
   ];
 
   return (

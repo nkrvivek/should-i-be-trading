@@ -7,6 +7,7 @@ import { useState } from "react";
 import { Panel } from "../../components/layout/Panel";
 import { useEarningsCalendar, type EarningsEntry } from "../../hooks/useEarningsCalendar";
 import { EarningsIntelPanel } from "../../components/earnings/EarningsIntelPanel";
+import { EarningsSummaryPanel } from "../../components/ai/EarningsSummaryPanel";
 
 const HOUR_LABELS: Record<string, { label: string; color: string }> = {
   bmo: { label: "PRE-MKT", color: "var(--warning)" },
@@ -71,10 +72,16 @@ function groupByWeek(entries: EarningsEntry[]): { weekLabel: string; entries: Ea
 }
 
 export default function EarningsContent() {
-  const { earnings, loading, error, refresh } = useEarningsCalendar(6);
+  const [view, setView] = useState<"upcoming" | "past">("upcoming");
+  const upcomingData = useEarningsCalendar(6, "upcoming");
+  const pastData = useEarningsCalendar(12, "past");
+
+  const { earnings, loading, error, refresh } = view === "upcoming" ? upcomingData : pastData;
+
   const [sectorFilter, setSectorFilter] = useState<string | null>(null);
   const [hourFilter, setHourFilter] = useState<string | null>(null);
   const [summaryTarget, setSummaryTarget] = useState<{ symbol: string; quarter: number; year: number; earningsDate?: string; epsEstimate?: number | null; revenueEstimate?: number | null } | null>(null);
+  const [aiSummaryTarget, setAiSummaryTarget] = useState<{ symbol: string; quarter: number; year: number; earningsDate?: string } | null>(null);
 
   const sectors = [...new Set(earnings.map((e) => e.sector ?? "Other"))].sort();
 
@@ -93,8 +100,34 @@ export default function EarningsContent() {
     return diff >= 0 && diff <= 7;
   });
 
+  const viewTabs: ("upcoming" | "past")[] = ["upcoming", "past"];
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* View tabs */}
+      <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--border-dim)" }}>
+        {viewTabs.map((t) => (
+          <button
+            key={t}
+            onClick={() => { setView(t); setSectorFilter(null); setHourFilter(null); }}
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: 14,
+              padding: "8px 20px",
+              border: "none",
+              borderBottom: view === t ? "2px solid var(--signal-core)" : "2px solid transparent",
+              background: "none",
+              color: view === t ? "var(--signal-core)" : "var(--text-secondary)",
+              cursor: "pointer",
+              fontWeight: view === t ? 600 : 400,
+              textTransform: "uppercase",
+            }}
+          >
+            {t}
+          </button>
+        ))}
+      </div>
+
       {/* Header */}
       <div
         style={{
@@ -125,11 +158,15 @@ export default function EarningsContent() {
                 margin: "4px 0 0",
               }}
             >
-              Upcoming earnings for {earnings.length} major stocks across {sectors.length} sectors.
-              {thisWeek.length > 0 && ` ${thisWeek.length} reporting this week.`}
+              {view === "upcoming"
+                ? <>Upcoming earnings for {earnings.length} major stocks across {sectors.length} sectors.{thisWeek.length > 0 && ` ${thisWeek.length} reporting this week.`}</>
+                : <>Past earnings for {earnings.length} major stocks across {sectors.length} sectors (last 12 weeks).</>
+              }
             </p>
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>Next 6 weeks</div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)" }}>
+            {view === "upcoming" ? "Next 6 weeks" : "Past 12 weeks"}
+          </div>
         </div>
       </div>
 
@@ -245,12 +282,22 @@ export default function EarningsContent() {
                         )}
                       </td>
                       <td style={{ padding: "0 8px" }}>
-                        <button
-                          onClick={() => setSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year, earningsDate: e.date, epsEstimate: e.epsEstimate, revenueEstimate: e.revenueEstimate })}
-                          style={{ padding: "1px 6px", borderRadius: 999, fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--info)", background: "transparent", border: "1px solid var(--info)", cursor: "pointer", opacity: 0.8, whiteSpace: "nowrap" }}
-                        >
-                          INTEL
-                        </button>
+                        <div style={{ display: "flex", gap: 4 }}>
+                          <button
+                            onClick={() => setSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year, earningsDate: e.date, epsEstimate: e.epsEstimate, revenueEstimate: e.revenueEstimate })}
+                            style={{ padding: "1px 6px", borderRadius: 999, fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--info)", background: "transparent", border: "1px solid var(--info)", cursor: "pointer", opacity: 0.8, whiteSpace: "nowrap" }}
+                          >
+                            INTEL
+                          </button>
+                          {view === "past" && e.epsActual != null && (
+                            <button
+                              onClick={() => setAiSummaryTarget({ symbol: e.symbol, quarter: e.quarter, year: e.year, earningsDate: e.date })}
+                              style={{ padding: "1px 6px", borderRadius: 999, fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600, color: "var(--signal-core)", background: "transparent", border: "1px solid var(--signal-core)", cursor: "pointer", opacity: 0.8, whiteSpace: "nowrap" }}
+                            >
+                              AI
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
@@ -273,6 +320,10 @@ export default function EarningsContent() {
 
       {summaryTarget && (
         <EarningsIntelPanel symbol={summaryTarget.symbol} quarter={summaryTarget.quarter} year={summaryTarget.year} earningsDate={summaryTarget.earningsDate} currentEpsEstimate={summaryTarget.epsEstimate} currentRevEstimate={summaryTarget.revenueEstimate} onClose={() => setSummaryTarget(null)} />
+      )}
+
+      {aiSummaryTarget && (
+        <EarningsSummaryPanel symbol={aiSummaryTarget.symbol} quarter={aiSummaryTarget.quarter} year={aiSummaryTarget.year} earningsDate={aiSummaryTarget.earningsDate} onClose={() => setAiSummaryTarget(null)} />
       )}
     </div>
   );

@@ -362,25 +362,27 @@ export function EarningsIntelPanel({
               </Section>
             )}
 
-            {/* AI Summary link */}
-            <div style={{ textAlign: "center", marginTop: 8, marginBottom: 8 }}>
-              <button
-                onClick={() => setShowAiSummary(true)}
-                style={{
-                  background: "none",
-                  border: "1px solid var(--border-dim)",
-                  borderRadius: 4,
-                  padding: "4px 12px",
-                  fontFamily: "var(--font-mono)",
-                  fontSize: 11,
-                  color: "var(--info)",
-                  cursor: "pointer",
-                  opacity: 0.8,
-                }}
-              >
-                AI SUMMARY
-              </button>
-            </div>
+            {/* AI Summary link — only for past earnings */}
+            {earningsDate && new Date(earningsDate) <= new Date() && (
+              <div style={{ textAlign: "center", marginTop: 8, marginBottom: 8 }}>
+                <button
+                  onClick={() => setShowAiSummary(true)}
+                  style={{
+                    background: "none",
+                    border: "1px solid var(--border-dim)",
+                    borderRadius: 4,
+                    padding: "4px 12px",
+                    fontFamily: "var(--font-mono)",
+                    fontSize: 11,
+                    color: "var(--info)",
+                    cursor: "pointer",
+                    opacity: 0.8,
+                  }}
+                >
+                  AI SUMMARY
+                </button>
+              </div>
+            )}
 
             {/* Disclaimer */}
             <div style={{

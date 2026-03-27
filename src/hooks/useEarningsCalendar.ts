@@ -58,7 +58,7 @@ const SECTOR_MAP: Record<string, string> = {
 
 const MAJOR_TICKERS = new Set(Object.keys(SECTOR_MAP));
 
-export function useEarningsCalendar(weeksAhead = 4) {
+export function useEarningsCalendar(weeksRange = 4, direction: "upcoming" | "past" = "upcoming") {
   const [earnings, setEarnings] = useState<EarningsEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,11 +72,20 @@ export function useEarningsCalendar(weeksAhead = 4) {
       const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
       const today = new Date().toISOString().split("T")[0];
-      const end = new Date(Date.now() + weeksAhead * 7 * 86400000).toISOString().split("T")[0];
+      let from: string;
+      let to: string;
+
+      if (direction === "past") {
+        from = new Date(Date.now() - weeksRange * 7 * 86400000).toISOString().split("T")[0];
+        to = today;
+      } else {
+        from = today;
+        to = new Date(Date.now() + weeksRange * 7 * 86400000).toISOString().split("T")[0];
+      }
 
       const headers = await getEdgeHeaders();
       const res = await fetch(
-        `${supabaseUrl}/functions/v1/finnhub?endpoint=calendar/earnings&from=${today}&to=${end}`,
+        `${supabaseUrl}/functions/v1/finnhub?endpoint=calendar/earnings&from=${from}&to=${to}`,
         { headers },
       );
 
@@ -97,7 +106,10 @@ export function useEarningsCalendar(weeksAhead = 4) {
           hour: (e.hour || "") as EarningsEntry["hour"],
           sector: SECTOR_MAP[e.symbol] ?? "Other",
         }))
-        .sort((a, b) => a.date.localeCompare(b.date));
+        .sort((a, b) => direction === "past"
+          ? b.date.localeCompare(a.date)  // newest-first for past
+          : a.date.localeCompare(b.date)  // chronological for upcoming
+        );
 
       setEarnings(filtered);
 
@@ -109,7 +121,7 @@ export function useEarningsCalendar(weeksAhead = 4) {
     } finally {
       setLoading(false);
     }
-  }, [weeksAhead]);
+  }, [weeksRange, direction]);
 
   useEffect(() => { fetchEarnings(); }, [fetchEarnings]);
   return { earnings, loading, error, refresh: fetchEarnings };

@@ -1,5 +1,9 @@
 import { AlpacaBroker } from "./alpaca";
 import { IBKRBroker } from "./ibkr";
+import { TradierBroker } from "./tradier";
+import { SchwabBroker } from "./schwab";
+import { EtradeBroker } from "./etrade";
+import { WebullBroker } from "./webull";
 import type { BrokerConnection } from "./types";
 
 export interface BrokerInfo {
@@ -38,13 +42,29 @@ export const BROKER_REGISTRY: BrokerInfo[] = [
     ],
   },
   {
+    name: "Tradier",
+    slug: "tradier",
+    icon: "📈",
+    description: "Developer-friendly broker with free market data. Paper trading included.",
+    isPaperAvailable: true,
+    status: "available",
+    credentialFields: [
+      { key: "apiToken", label: "API Token", type: "password", placeholder: "Your Tradier API token" },
+      { key: "mode", label: "Mode", type: "select", placeholder: "paper" },
+    ],
+  },
+  {
     name: "Schwab",
     slug: "schwab",
     icon: "💼",
-    description: "Largest US retail broker. OAuth integration.",
+    description: "Largest US retail broker. OAuth integration (requires token from OAuth flow).",
     isPaperAvailable: false,
-    status: "coming_soon",
-    credentialFields: [],
+    status: "available",
+    credentialFields: [
+      { key: "accessToken", label: "Access Token", type: "password", placeholder: "OAuth access token" },
+      { key: "refreshToken", label: "Refresh Token", type: "password", placeholder: "OAuth refresh token" },
+      { key: "accountHash", label: "Account Hash (optional)", type: "text", placeholder: "Leave blank to auto-detect" },
+    ],
   },
   {
     name: "Robinhood",
@@ -61,17 +81,26 @@ export const BROKER_REGISTRY: BrokerInfo[] = [
     icon: "🐂",
     description: "Mobile-first broker with extended hours trading.",
     isPaperAvailable: true,
-    status: "coming_soon",
-    credentialFields: [],
+    status: "available",
+    credentialFields: [
+      { key: "appKey", label: "App Key", type: "text", placeholder: "Your Webull app key" },
+      { key: "accessToken", label: "Access Token", type: "password", placeholder: "Your Webull access token" },
+      { key: "mode", label: "Mode", type: "select", placeholder: "paper" },
+    ],
   },
   {
     name: "E*Trade",
     slug: "etrade",
     icon: "📊",
     description: "Morgan Stanley brokerage with full options support.",
-    isPaperAvailable: false,
-    status: "coming_soon",
-    credentialFields: [],
+    isPaperAvailable: true,
+    status: "available",
+    credentialFields: [
+      { key: "oauthToken", label: "OAuth Token", type: "password", placeholder: "From OAuth flow" },
+      { key: "oauthTokenSecret", label: "OAuth Token Secret", type: "password", placeholder: "From OAuth flow" },
+      { key: "accountIdKey", label: "Account ID Key (optional)", type: "text", placeholder: "Leave blank to auto-detect" },
+      { key: "mode", label: "Mode", type: "select", placeholder: "live" },
+    ],
   },
 ];
 
@@ -85,6 +114,18 @@ export function getBrokerInstance(slug: string): BrokerConnection | null {
       return instances[slug];
     case "ibkr":
       instances[slug] = new IBKRBroker();
+      return instances[slug];
+    case "tradier":
+      instances[slug] = new TradierBroker();
+      return instances[slug];
+    case "schwab":
+      instances[slug] = new SchwabBroker();
+      return instances[slug];
+    case "etrade":
+      instances[slug] = new EtradeBroker();
+      return instances[slug];
+    case "webull":
+      instances[slug] = new WebullBroker();
       return instances[slug];
     default:
       return null;

@@ -8,6 +8,7 @@ import {
   type MarketOutlook,
 } from "../lib/strategy/catalog";
 import type { SimulatorLeg } from "../lib/strategy/payoff";
+import type { StrategySuggestion } from "../lib/portfolio/strategyAnalyzer";
 import { useMarketScore } from "../hooks/useMarketScore";
 
 type Tab = "library" | "simulator";
@@ -63,7 +64,12 @@ const COMPLEXITY_COLORS: Record<string, string> = {
   advanced: "var(--negative)",
 };
 
-export default function StrategiesPage() {
+interface Props {
+  onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
+  canExecute?: boolean;
+}
+
+export default function StrategiesPage({ onExecute, canExecute }: Props = {}) {
   const [tab, setTab] = useState<Tab>("library");
   const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [outlookFilter, setOutlookFilter] = useState<OutlookFilter>("all");
@@ -409,6 +415,8 @@ export default function StrategiesPage() {
           initialLegs={simLegs}
           initialPrice={simPrice > 0 ? simPrice : 500}
           initialTicker={simTicker || "SPY"}
+          onExecute={onExecute}
+          canExecute={canExecute}
         />
       )}
     </div>

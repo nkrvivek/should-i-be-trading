@@ -240,7 +240,7 @@ export default function TradingPage() {
       {/* Tab content */}
       {brokerReady && isAnyLoading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
 
-      {brokerReady && activeTab === "portfolio" && <PositionsTable positions={positions} />}
+      {brokerReady && activeTab === "portfolio" && <PositionsTable positions={positions} onViewStrategies={() => setTab("strategies")} />}
       {brokerReady && activeTab === "orders" && <OrdersPanel orders={orders} onCancel={handleCancelOrder} onPlace={handlePlaceOrder} />}
       {brokerReady && activeTab === "flow" && <FlowAnalysisPanel />}
       {brokerReady && activeTab === "journal" && <JournalPanel />}
@@ -347,7 +347,7 @@ function AccountSummary({ accounts, connections }: {
   );
 }
 
-function PositionsTable({ positions }: { positions: import("../lib/brokers/types").BrokerPosition[] }) {
+function PositionsTable({ positions, onViewStrategies }: { positions: import("../lib/brokers/types").BrokerPosition[]; onViewStrategies?: () => void }) {
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
   const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(2)}%`;
 
@@ -396,6 +396,27 @@ function PositionsTable({ positions }: { positions: import("../lib/brokers/types
           ))}
         </tbody>
       </table>
+      {positions.length > 0 && onViewStrategies && (
+        <div style={{ textAlign: "center", padding: "12px 0", ...monoStyle, fontSize: 12 }}>
+          <span style={{ color: "var(--text-muted)" }}>
+            {positions.length} positions analyzed.{" "}
+          </span>
+          <button
+            onClick={onViewStrategies}
+            style={{
+              color: "var(--signal-core)",
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              textDecoration: "underline",
+              ...monoStyle,
+              fontSize: 12,
+            }}
+          >
+            View strategy suggestions →
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -589,11 +610,14 @@ function StrategiesPanel({ positions, orders, onSimulate, onExecute }: {
   onSimulate: (symbol: string, price: number, legs: SimulatorLeg[]) => void;
   onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
 }) {
-  const [stratTab, setStratTab] = useState<"suggester" | "covered" | "csp" | "washsale">("suggester");
+  const connections = useBrokerStore((s) => s.connections);
+  const canExecute = connections.some((c) => c.slug !== "snaptrade");
+  const [stratTab, setStratTab] = useState<"analysis" | "suggester" | "covered" | "csp" | "washsale">("analysis");
   const ccEligible = positions.filter((p) => p.side === "long" && p.qty >= 100 && p.assetType === "stock");
   const washSaleViolations = useMemo(() => detectWashSales(orders), [orders]);
 
   const stratTabs: { key: typeof stratTab; label: string; badge?: string }[] = [
+    { key: "analysis", label: "STRATEGY ANALYSIS" },
     { key: "suggester", label: "STRATEGY SUGGESTER" },
     { key: "covered", label: "COVERED CALLS", badge: ccEligible.length ? `${ccEligible.length}` : undefined },
     { key: "csp", label: "CASH-SECURED PUTS" },
@@ -641,11 +665,17 @@ function StrategiesPanel({ positions, orders, onSimulate, onExecute }: {
       </div>
 
       {/* Sub-tab content */}
+      {stratTab === "analysis" && (
+        <StrategyAnalysisPanel onSimulate={onSimulate} onExecute={onExecute} />
+      )}
+
       {stratTab === "suggester" && (
-        <div>
-          <StrategySuggester context={{ positions: positions.map((p) => ({ symbol: p.symbol, qty: p.qty, side: p.side, currentPrice: p.currentPrice, unrealizedPL: p.unrealizedPL })) }} />
-          <StrategyAnalysisPanel onSimulate={onSimulate} onExecute={onExecute} />
-        </div>
+        <StrategySuggester
+          context={{ positions: positions.map((p) => ({ symbol: p.symbol, qty: p.qty, side: p.side, currentPrice: p.currentPrice, unrealizedPL: p.unrealizedPL })) }}
+          onSimulate={onSimulate}
+          onExecute={onExecute}
+          canExecute={canExecute}
+        />
       )}
 
       {stratTab === "covered" && (

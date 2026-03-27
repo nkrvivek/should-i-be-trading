@@ -5,11 +5,14 @@ import { computePositionGreeks } from "../../lib/strategy/greeks";
 import { PayoffChart } from "./PayoffChart";
 import { GreeksPanel } from "./GreeksPanel";
 import { OptionsChainLoader } from "./OptionsChainLoader";
+import type { StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
 
 interface Props {
   initialLegs?: SimulatorLeg[];
   initialPrice?: number;
   initialTicker?: string;
+  onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
+  canExecute?: boolean;
 }
 
 const inputStyle: React.CSSProperties = {
@@ -63,6 +66,8 @@ export function SimulatorPanel({
   initialLegs,
   initialPrice = 500,
   initialTicker = "SPY",
+  onExecute,
+  canExecute,
 }: Props) {
   const [ticker, setTicker] = useState(initialTicker);
   const [currentPrice, setCurrentPrice] = useState(initialPrice);
@@ -393,6 +398,38 @@ export function SimulatorPanel({
             value={`${metrics.riskReward.toFixed(1)}x`}
             color="var(--text-primary)"
           />
+          {canExecute && onExecute && legs.length > 0 && (
+            <button
+              onClick={() => {
+                const suggestion: StrategySuggestion = {
+                  strategyName: detectStrategyName(legs),
+                  riskLevel: "moderate",
+                  riskScore: 5,
+                  description: `Custom strategy on ${ticker}`,
+                  rationale: "User-built strategy from simulator",
+                  legs,
+                  estimatedMaxProfit: metrics.maxProfit === Infinity ? "Unlimited" : `$${formatNum(metrics.maxProfit)}`,
+                  estimatedMaxLoss: metrics.maxLoss === -Infinity ? "Unlimited" : `$${formatNum(metrics.maxLoss)}`,
+                  maxLossCoverage: "N/A",
+                };
+                onExecute(ticker, currentPrice, suggestion);
+              }}
+              style={{
+                background: "var(--signal-core)",
+                color: "#fff",
+                padding: "6px 16px",
+                border: "none",
+                borderRadius: 4,
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "var(--font-mono)",
+                fontSize: 12,
+                marginLeft: "auto",
+              }}
+            >
+              EXECUTE
+            </button>
+          )}
         </div>
       )}
 
@@ -493,4 +530,32 @@ function formatNum(n: number): string {
   const sign = n < 0 ? "-" : n > 0 ? "+" : "";
   if (abs >= 1000) return sign + (abs / 1000).toFixed(1) + "K";
   return sign + abs.toFixed(0);
+}
+
+function detectStrategyName(legs: SimulatorLeg[]): string {
+  if (legs.length === 1) {
+    const l = legs[0];
+    if (l.action === "buy" && l.type === "call") return "Long Call";
+    if (l.action === "buy" && l.type === "put") return "Long Put";
+    if (l.action === "sell" && l.type === "call") return "Short Call";
+    if (l.action === "sell" && l.type === "put") return "Short Put";
+  }
+  if (legs.length === 2) {
+    const hasBC = legs.some((l) => l.action === "buy" && l.type === "call");
+    const hasSC = legs.some((l) => l.action === "sell" && l.type === "call");
+    const hasBP = legs.some((l) => l.action === "buy" && l.type === "put");
+    const hasSP = legs.some((l) => l.action === "sell" && l.type === "put");
+    const hasStock = legs.some((l) => l.type === "stock");
+    if (hasBC && hasSC) return "Call Spread";
+    if (hasBP && hasSP) return "Put Spread";
+    if (hasSC && hasStock) return "Covered Call";
+  }
+  if (legs.length === 4) {
+    const hasBP = legs.some((l) => l.action === "buy" && l.type === "put");
+    const hasSP = legs.some((l) => l.action === "sell" && l.type === "put");
+    const hasBC = legs.some((l) => l.action === "buy" && l.type === "call");
+    const hasSC = legs.some((l) => l.action === "sell" && l.type === "call");
+    if (hasBP && hasSP && hasBC && hasSC) return "Iron Condor";
+  }
+  return "Custom Strategy";
 }

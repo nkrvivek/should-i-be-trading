@@ -3,6 +3,8 @@ import { useAuthStore } from "../../stores/authStore";
 import { useBrokerStore } from "../../stores/brokerStore";
 import { renderMarkdown } from "../../lib/renderMarkdown";
 import { supabase } from "../../lib/supabase";
+import type { SimulatorLeg } from "../../lib/strategy/payoff";
+import type { StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
 
 const mono: React.CSSProperties = { fontFamily: "'IBM Plex Mono', monospace" };
 const header: React.CSSProperties = { ...mono, fontSize: 14, fontWeight: 600, letterSpacing: "0.05em", textTransform: "uppercase" as const, color: "var(--text-secondary, #64748b)" };
@@ -14,10 +16,23 @@ interface SignalContext {
   positions?: { symbol: string; qty: number; side: string; currentPrice: number; unrealizedPL: number }[];
 }
 
-export default function StrategySuggester({ context }: { context?: SignalContext }) {
+interface ParsedStrategy {
+  ticker: string;
+  legs: SimulatorLeg[];
+}
+
+interface Props {
+  context?: SignalContext;
+  onSimulate?: (ticker: string, price: number, legs: SimulatorLeg[]) => void;
+  onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
+  canExecute?: boolean;
+}
+
+export default function StrategySuggester({ context, onSimulate, onExecute, canExecute }: Props) {
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [parsedStrategies, setParsedStrategies] = useState<ParsedStrategy[]>([]);
   const allPositions = useBrokerStore((s) => s.allPositions);
   const positions = allPositions();
   useAuthStore();
@@ -57,6 +72,11 @@ For each strategy, format EXACTLY like this (use markdown headers and bullet lis
 - **Supporting Signals**: Which market signals support this trade
 - **Risks**: Key risk factors
 
+After each strategy, include a JSON block wrapped in \`\`\`json fences with this exact format:
+\`\`\`json
+{"ticker": "AAPL", "legs": [{"action": "buy", "type": "call", "qty": 1, "strike": 185, "premium": 5.20}, {"action": "sell", "type": "call", "qty": 1, "strike": 195, "premium": 2.10}]}
+\`\`\`
+
 Rules:
 - Only suggest defined-risk strategies (no naked options)
 - Prefer strategies that align with the current market regime
@@ -83,7 +103,9 @@ IMPORTANT: This is educational analysis only, not investment advice.`;
         });
         if (res.ok) {
           const data = await res.json();
-          setResponse(data.content?.[0]?.text ?? "No response");
+          const text = data.content?.[0]?.text ?? "No response";
+          setResponse(text);
+          setParsedStrategies(parseStrategyJsonBlocks(text));
           setLoading(false);
           return;
         }
@@ -113,7 +135,9 @@ IMPORTANT: This is educational analysis only, not investment advice.`;
 
       if (!res.ok) throw new Error(`API ${res.status}`);
       const data = await res.json();
-      setResponse(data.content?.[0]?.text ?? "No response");
+      const text = data.content?.[0]?.text ?? "No response";
+      setResponse(text);
+      setParsedStrategies(parseStrategyJsonBlocks(text));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Strategy generation failed");
     }
@@ -159,7 +183,7 @@ IMPORTANT: This is educational analysis only, not investment advice.`;
 
       {response && (
         <div style={{ marginTop: 12, fontSize: 13, lineHeight: 1.7 }}>
-          {renderMarkdown(response)}
+          {renderStrategySections(response, parsedStrategies, onSimulate, onExecute, canExecute)}
         </div>
       )}
 
@@ -168,4 +192,115 @@ IMPORTANT: This is educational analysis only, not investment advice.`;
       </div>
     </div>
   );
+}
+
+function parseStrategyJsonBlocks(text: string): ParsedStrategy[] {
+  const results: ParsedStrategy[] = [];
+  const jsonBlocks = text.match(/```json\n([\s\S]*?)\n```/g);
+  if (!jsonBlocks) return results;
+  for (const block of jsonBlocks) {
+    try {
+      const jsonStr = block.replace(/```json\n/, "").replace(/\n```/, "");
+      const parsed = JSON.parse(jsonStr);
+      if (parsed.ticker && Array.isArray(parsed.legs)) {
+        results.push({
+          ticker: parsed.ticker,
+          legs: parsed.legs.map((l: Record<string, unknown>) => ({
+            action: l.action as "buy" | "sell",
+            type: l.type as "call" | "put" | "stock",
+            qty: Number(l.qty) || 1,
+            strike: Number(l.strike) || 0,
+            premium: Number(l.premium) || 0,
+          })),
+        });
+      }
+    } catch {
+      // skip invalid JSON
+    }
+  }
+  return results;
+}
+
+function renderStrategySections(
+  text: string,
+  parsedStrategies: ParsedStrategy[],
+  onSimulate?: (ticker: string, price: number, legs: SimulatorLeg[]) => void,
+  onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void,
+  canExecute?: boolean,
+) {
+  // Split by ## Strategy headers
+  const sections = text.split(/(?=## Strategy \d)/);
+  let strategyIdx = 0;
+
+  return sections.map((section, i) => {
+    const isStrategySection = /^## Strategy \d/.test(section);
+    const parsed = isStrategySection ? parsedStrategies[strategyIdx] : null;
+    if (isStrategySection) strategyIdx++;
+
+    // Strip JSON fences from rendered markdown
+    const cleanSection = section.replace(/```json\n[\s\S]*?\n```/g, "");
+
+    return (
+      <div key={i}>
+        {renderMarkdown(cleanSection)}
+        {isStrategySection && parsed && (onSimulate || (onExecute && canExecute)) && (
+          <div style={{ display: "flex", gap: 8, margin: "8px 0 16px", paddingLeft: 4 }}>
+            {onSimulate && (
+              <button
+                onClick={() => {
+                  const avgStrike = parsed.legs.reduce((s, l) => s + l.strike, 0) / parsed.legs.length;
+                  onSimulate(parsed.ticker, avgStrike || 100, parsed.legs);
+                }}
+                style={{
+                  ...mono,
+                  fontSize: 12,
+                  padding: "5px 14px",
+                  background: "var(--accent-bg)",
+                  color: "var(--accent-text)",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                SIMULATE
+              </button>
+            )}
+            {onExecute && canExecute && (
+              <button
+                onClick={() => {
+                  const avgStrike = parsed.legs.reduce((s, l) => s + l.strike, 0) / parsed.legs.length;
+                  const suggestion: StrategySuggestion = {
+                    strategyName: `AI Strategy on ${parsed.ticker}`,
+                    riskLevel: "moderate",
+                    riskScore: 5,
+                    description: `AI-suggested strategy on ${parsed.ticker}`,
+                    rationale: "Claude-generated strategy suggestion",
+                    legs: parsed.legs,
+                    estimatedMaxProfit: "See analysis above",
+                    estimatedMaxLoss: "See analysis above",
+                    maxLossCoverage: "N/A",
+                  };
+                  onExecute(parsed.ticker, avgStrike || 100, suggestion);
+                }}
+                style={{
+                  ...mono,
+                  fontSize: 12,
+                  padding: "5px 14px",
+                  background: "var(--signal-core)",
+                  color: "#fff",
+                  border: "none",
+                  borderRadius: 4,
+                  cursor: "pointer",
+                  fontWeight: 600,
+                }}
+              >
+                EXECUTE
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  });
 }

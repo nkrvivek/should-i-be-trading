@@ -26,7 +26,7 @@ const SECTORS: { symbol: string; name: string; color: string }[] = [
 ];
 
 const CACHE_KEY = "sibt_sector_heatmap";
-const CACHE_TTL = 5 * 60 * 1000; // 5 min
+const CACHE_TTL = 10 * 60 * 1000; // 10 min
 
 export function SectorHeatMap() {
   const [sectors, setSectors] = useState<SectorData[]>([]);

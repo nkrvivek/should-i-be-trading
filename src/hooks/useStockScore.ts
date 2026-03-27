@@ -23,7 +23,7 @@ interface UseStockScoreResult {
 
 // Simple cache to avoid re-fetching
 const scoreCache = new Map<string, { score: StockScore; expires: number }>();
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
 
 export function useStockScore(): UseStockScoreResult {
   const [score, setScore] = useState<StockScore | null>(null);

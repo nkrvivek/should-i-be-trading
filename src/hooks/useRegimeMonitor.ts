@@ -13,8 +13,8 @@ import { useMarketHours } from "./useMarketHours";
 import { finnhubFetch, fredFetchSeries } from "../api/dataFetchers";
 
 const CACHE_KEY = "sibt_regime_monitor";
-const CACHE_TTL = 60_000; // 1 min during market hours
-const CLOSED_CACHE_TTL = 15 * 60_000; // 15 min when closed
+const CACHE_TTL = 3 * 60_000; // 3 min during market hours
+const CLOSED_CACHE_TTL = 30 * 60_000; // 30 min when closed
 
 type FinnhubQuote = { c: number; dp: number; pc: number; o: number; h: number; l: number };
 

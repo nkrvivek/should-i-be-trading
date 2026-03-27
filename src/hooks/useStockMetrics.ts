@@ -126,7 +126,7 @@ export function useStockMetrics() {
       }
     }
 
-    // Batch-fetch current prices via FMP quote endpoint (single call per symbol batch)
+    // Batch-fetch current prices via Finnhub quote (already cached at 1min TTL in edge function)
     try {
       for (let i = 0; i < results.length; i += 5) {
         if (abortRef.current) break;
@@ -135,17 +135,12 @@ export function useStockMetrics() {
           batch.map(async (stock) => {
             try {
               const qRes = await fetch(
-                `${supabaseUrl}/functions/v1/fmp`,
-                {
-                  method: "POST",
-                  headers: { ...headers, "Content-Type": "application/json" },
-                  body: JSON.stringify({ endpoint: "quote", symbol: stock.symbol }),
-                },
+                `${supabaseUrl}/functions/v1/finnhub?endpoint=quote&symbol=${stock.symbol}`,
+                { headers },
               );
               if (!qRes.ok) return;
               const qData = await qRes.json();
-              const quote = Array.isArray(qData.data) ? qData.data[0] : qData.data;
-              if (quote?.price) stock.currentPrice = quote.price;
+              if (qData?.c) stock.currentPrice = qData.c; // Finnhub quote: c = current price
             } catch { /* skip price fetch failures */ }
           }),
         );

@@ -5,6 +5,11 @@ const FRED_BASE = "https://api.stlouisfed.org/fred";
 // Allowed FRED endpoints
 const ALLOWED_ENDPOINTS = new Set(["series/observations", "series", "releases"]);
 
+// ── In-memory cache (per Deno isolate) ──────────────────────────
+const cache = new Map<string, { data: unknown; expires: number }>();
+const MAX_CACHE_ENTRIES = 200;
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes — FRED data updates daily at most
+
 // Allowed query params (excludes api_key, file_type, endpoint, series_id which are handled separately)
 const ALLOWED_PARAMS = new Set([
   "observation_start", "observation_end", "frequency",
@@ -54,6 +59,13 @@ Deno.serve(async (req) => {
     params.set("api_key", apiKey);
     params.set("file_type", "json");
 
+    // Check cache
+    const cacheKey = `${endpoint}:${params.toString()}`;
+    const cached = cache.get(cacheKey);
+    if (cached && Date.now() < cached.expires) {
+      return jsonResponse(cached.data, 200, req);
+    }
+
     const response = await fetch(`${FRED_BASE}/${endpoint}?${params}`);
     if (!response.ok) {
       const text = await response.text();
@@ -61,6 +73,14 @@ Deno.serve(async (req) => {
       return errorResponse(`FRED API error: ${response.status}`, 502, req);
     }
     const data = await response.json();
+
+    // Store in cache
+    if (cache.size >= MAX_CACHE_ENTRIES) {
+      const oldest = [...cache.entries()].sort((a, b) => a[1].expires - b[1].expires)[0];
+      if (oldest) cache.delete(oldest[0]);
+    }
+    cache.set(cacheKey, { data, expires: Date.now() + CACHE_TTL });
+
     return jsonResponse(data, 200, req);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "FRED error";

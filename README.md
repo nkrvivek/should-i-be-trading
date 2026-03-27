@@ -13,16 +13,17 @@ Self-service platform. Connect your brokerage or bring your own API keys. No inv
 **Scoring & Regime Analysis**
 - Market Quality Score (0-100) from 5 categories: Volatility, Momentum, Trend, Breadth, Macro
 - SIBT Score — proprietary 1-10 composite stock rating across Technical, Fundamental, Sentiment, and Options signals
+- SIBT Earnings Intelligence — earnings score, historical beat/miss patterns, post-earnings price action analysis with AI summaries
 - Market Regime & Fragility Monitor — 3 pillars, 8 signals, composite market state classification
 - Financial Stress Indicator (FSI) — HYG/TLT ratio vs volatility and credit spreads
 - Signal Backtester — compare signal-following vs buy-and-hold over 90 simulated days
 
 **Portfolio & Brokerage**
-- 7 broker integrations via SnapTrade: Schwab, E\*Trade, Webull, Fidelity, Robinhood, Interactive Brokers, Alpaca, Tradier (20+ more supported)
-- CSV portfolio upload with multi-broker auto-detection and security sanitization pipeline
-- Strategy analyzer: covered calls, protective puts, collars, iron condors, butterflies, spreads (19 strategies)
+- SnapTrade integration (25+ brokers, one-click connect): Schwab, Fidelity, Robinhood, E\*Trade, Webull, Interactive Brokers, Alpaca, Tradier, Vanguard, and more
+- CSV portfolio upload with multi-broker auto-detection (Schwab, Fidelity, TD, Robinhood, E\*Trade, Webull, Vanguard) and security sanitization pipeline
+- Strategy Analyzer: covered calls, protective puts, collars, iron condors, butterflies, spreads — 19 strategies, risk-ranked
 - Options chain with live Greeks (Black-Scholes), one-click trade entry
-- Wash sale monitoring with 30-day lookback
+- Wash Sale Monitor with 30-day lookback and stock-to-option detection
 
 **Market Intelligence**
 - Technical signal overlays: RSI, MACD, EMA/SMA crossovers, Bollinger Bands, Stochastic, ATR, support/resistance
@@ -32,17 +33,18 @@ Self-service platform. Connect your brokerage or bring your own API keys. No inv
 - 13F institutional filings from 20 top hedge funds
 - News sentiment feed with per-stock scoring
 - CFTC Commitments of Traders (COT) dashboard
-- Earnings calendar (80+ stocks, 10 sectors) with AI summaries
+- Earnings calendar (80+ stocks, 10 sectors) with AI summaries and past-earnings analysis
 - Stock fundamentals: income statements, balance sheets, ratios, analyst estimates
+- Macro indicators: yield curve, economic calendar, FRED data
 
 **AI-Powered**
-- Portfolio-aware AI chat (Claude) grounded in live positions and market context
+- Portfolio-aware AI chat (Claude) grounded in live positions and market context — with rate limiting and usage tracking per tier
 - AI stock screener — natural language queries against 70+ tickers
 - AI earnings summaries — one-click TLDR of earnings call transcripts
 - Daily market briefing with full regime context
 
 **Education & Alerts**
-- 82-term searchable glossary with deep-dive articles
+- 82-term searchable glossary with 9 deep-dive articles
 - Alert system with real-time delivery (verdict changes, VIX spikes, insider surges)
 - Push notifications via Service Worker (PWA)
 

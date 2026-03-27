@@ -106,9 +106,9 @@ export function LandingPage() {
           marginBottom: 32,
         }}>
           One dashboard. One verdict. Market regime analysis, technical signal overlays,
-          institutional 13F filings, insider &amp; congressional trades, news sentiment,
-          SIBT Score, and portfolio-aware AI. Combined into a simple traffic light that
-          tells you whether the market conditions favor trading today.
+          earnings intelligence, institutional 13F filings, insider &amp; congressional trades,
+          news sentiment, SIBT Score, portfolio import from any broker, and portfolio-aware AI.
+          Combined into a simple traffic light that tells you whether the market conditions favor trading today.
         </p>
 
         <div style={{ position: "relative", display: "flex", gap: 12 }}>
@@ -167,7 +167,7 @@ export function LandingPage() {
           maxWidth: 700,
           margin: "0 auto",
         }}>
-          {["Schwab", "Fidelity", "Robinhood", "E*Trade", "Webull", "Interactive Brokers", "Alpaca", "Tradier"].map((name) => (
+          {["Schwab", "Fidelity", "Robinhood", "E*Trade", "Webull", "Vanguard", "Interactive Brokers", "Alpaca", "Tradier"].map((name) => (
             <span key={name} style={{
               fontFamily: "var(--font-mono)",
               fontSize: 13,
@@ -187,7 +187,7 @@ export function LandingPage() {
           color: "#64748b",
           marginTop: 14,
         }}>
-          20+ more via SnapTrade
+          25+ more via SnapTrade
         </p>
       </section>
 
@@ -277,6 +277,36 @@ export function LandingPage() {
             description="Surface institutional positioning from dark pool prints and unusual options activity via Radon integration. Connect your Interactive Brokers account for real-time portfolio and order management."
             tag="PRO"
           />
+          <FeatureCard
+            title="SIBT Earnings Intelligence"
+            description="Earnings score per stock with historical beat/miss patterns, post-earnings price action analysis, and AI-generated summaries. See how a stock typically moves after earnings before you trade it."
+            tag="FREE"
+          />
+          <FeatureCard
+            title="CSV Portfolio Import"
+            description="Upload your portfolio from any broker — Schwab, Fidelity, TD Ameritrade, Robinhood, E*Trade, Webull, or Vanguard. Auto-detects broker format with security sanitization pipeline."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="SnapTrade Broker Connect"
+            description="One-click brokerage connection via SnapTrade. Link 25+ brokers including Schwab, Fidelity, Robinhood, E*Trade, Webull, Interactive Brokers, Alpaca, and Tradier. Live portfolio sync."
+            tag="PRO"
+          />
+          <FeatureCard
+            title="Strategy Analyzer (Risk-Ranked)"
+            description="Analyze covered calls, protective puts, collars, iron condors, butterflies, and spreads for your actual positions. Strategies are risk-ranked based on current market regime and your portfolio context."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="Wash Sale Monitor"
+            description="Automatic 30-day lookback wash sale detection across your portfolio — including stock-to-option transactions. Flags potential wash sales before they become a tax surprise."
+            tag="STARTER"
+          />
+          <FeatureCard
+            title="82-Term Trading Glossary"
+            description="Searchable glossary with 82 trading terms and 9 deep-dive articles covering options strategies, market regimes, technical analysis, and risk management. Built-in education for every skill level."
+            tag="FREE"
+          />
         </div>
       </section>
 
@@ -287,7 +317,7 @@ export function LandingPage() {
         </h2>
         <div style={{ display: "flex", justifyContent: "center", gap: 48, maxWidth: 800, margin: "0 auto" }}>
           <Step n={1} title="Sign Up" desc="14-day Pro trial, no credit card required. Free tier available permanently." />
-          <Step n={2} title="Analyze" desc="Market Quality Score, technical signals, SIBT Score, insider activity, 13F filings, news sentiment, COT data, and AI briefings — all computed automatically." />
+          <Step n={2} title="Analyze" desc="Market Quality Score, technical signals, SIBT Score, earnings intelligence, insider activity, 13F filings, news sentiment, COT data, and AI briefings — all computed automatically. Import your portfolio via CSV or connect your broker." />
           <Step n={3} title="Decide" desc="Get a clear verdict: TRADE, CAUTION, or NO TRADE. Bring your own keys for advanced features." />
         </div>
       </section>

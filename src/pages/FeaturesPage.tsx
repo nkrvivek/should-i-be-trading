@@ -569,6 +569,172 @@ const FEATURES: FeatureSection[] = [
 │  Rising = healthy. Falling = deterioration. │
 └──────────────────────────────────────────────┘`,
   },
+  {
+    title: "SIBT Earnings Intelligence",
+    tier: "FREE",
+    description: "Earnings score per stock with historical beat/miss patterns, post-earnings price action, and AI summaries. Know how a stock typically moves after earnings before you trade it.",
+    details: [
+      "Earnings score based on historical patterns",
+      "Beat/miss streak tracking per ticker",
+      "Post-earnings price action: 1-day, 5-day, 30-day moves",
+      "Surprise magnitude analysis (EPS and revenue)",
+      "AI-generated earnings summaries (Pro tier)",
+      "Integrated into earnings calendar and research hub",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  EARNINGS INTELLIGENCE         NVDA         │
+│                                              │
+│  Earnings Score:  8.2 / 10   STRONG         │
+│  Beat Streak:     6 consecutive              │
+│                                              │
+│  POST-EARNINGS MOVES (last 8 quarters)      │
+│  Q4 '25   Beat +12%   1D: +4.2%  5D: +6.1% │
+│  Q3 '25   Beat  +8%   1D: +2.8%  5D: +3.4% │
+│  Q2 '25   Beat +15%   1D: +5.1%  5D: +7.8% │
+│  Q1 '25   Beat  +6%   1D: -1.2%  5D: +2.0% │
+│                                              │
+│  Avg post-earnings 1D move: +2.7%           │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "CSV Portfolio Import",
+    tier: "STARTER",
+    description: "Upload your portfolio from any major broker. Auto-detects Schwab, Fidelity, TD Ameritrade, Robinhood, E*Trade, Webull, and Vanguard CSV formats with a security sanitization pipeline.",
+    details: [
+      "Auto-detect broker format from CSV headers",
+      "Supported: Schwab, Fidelity, TD, Robinhood, E*Trade, Webull, Vanguard",
+      "Security sanitization pipeline (strips PII, validates tickers)",
+      "Maps broker-specific columns to unified portfolio schema",
+      "Handles options positions with strike/expiry parsing",
+      "Instant portfolio analysis after upload",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  CSV PORTFOLIO IMPORT          [UPLOAD]     │
+│                                              │
+│  Detected: Charles Schwab format            │
+│  Rows: 24  |  Valid: 23  |  Skipped: 1     │
+│                                              │
+│  AAPL     100 shares    $189.42   +$2,340   │
+│  NVDA      50 shares    $892.10  +$12,050   │
+│  SPY    Jan25 500C (2)  $12.40     +$480    │
+│  MSFT      75 shares    $412.30   +$1,890   │
+│                                              │
+│  Portfolio value: $142,680                   │
+│  ✓ Sanitized  ✓ Validated  ✓ Ready          │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "SnapTrade Broker Connect",
+    tier: "PRO",
+    description: "One-click brokerage connection via SnapTrade. Link 25+ brokers for live portfolio sync, positions, and account data — no API keys needed.",
+    details: [
+      "25+ supported brokers via SnapTrade OAuth",
+      "Schwab, Fidelity, Robinhood, E*Trade, Webull, Vanguard, IBKR, Alpaca, Tradier",
+      "Live portfolio sync with positions and balances",
+      "Account summary: net liquidation, buying power, margin",
+      "Secure OAuth flow — credentials never touch SIBT servers",
+      "Automatic reconnection and token refresh",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  BROKER CONNECTIONS             [+ CONNECT] │
+│                                              │
+│  ● Schwab          Connected   3 accounts   │
+│  ● Fidelity        Connected   1 account    │
+│  ○ Robinhood       Not linked               │
+│                                              │
+│  SCHWAB — Individual                        │
+│  Net Liq:  $142,680   Buying Power: $84,200 │
+│  Positions: 12   |   Day P&L: +$1,340      │
+│                                              │
+│  Powered by SnapTrade  |  25+ brokers       │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Strategy Analyzer (Risk-Ranked)",
+    tier: "STARTER",
+    description: "Analyze covered calls, protective puts, collars, iron condors, butterflies, and spreads for your actual positions. Strategies are risk-ranked based on current market conditions.",
+    details: [
+      "19 strategies: covered calls, protective puts, collars, spreads, condors, butterflies",
+      "Risk ranking based on current VIX and market regime",
+      "Per-position strategy suggestions from your portfolio",
+      "Max profit, max loss, breakevens, and risk/reward ratio",
+      "Interactive payoff diagrams with price slider",
+      "One-click entry with live options chain data",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  STRATEGY ANALYZER         REGIME: CAUTION  │
+│                                              │
+│  Your Position: NVDA 50 shares @ $892       │
+│                                              │
+│  RISK-RANKED STRATEGIES                     │
+│  1. Covered Call  930C   Risk: LOW    +$850  │
+│  2. Collar  860P/930C    Risk: LOW    +$420  │
+│  3. Protective Put 860P  Risk: MED    -$380  │
+│  4. Bear Put Spread      Risk: MED    +$640  │
+│                                              │
+│  ▶ Select strategy for full payoff analysis │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Wash Sale Monitor",
+    tier: "STARTER",
+    description: "Automatic 30-day lookback wash sale detection across your portfolio — including stock-to-option transactions. Flags potential wash sales before they become a tax surprise.",
+    details: [
+      "30-day lookback window per IRS wash sale rules",
+      "Stock-to-option detection (buy stock, sell option on same underlying)",
+      "Cross-account detection when multiple brokers connected",
+      "Flags potential wash sales with affected lots",
+      "Disallowed loss calculation with cost basis adjustment",
+      "Visual timeline of wash sale windows",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  WASH SALE MONITOR                          │
+│                                              │
+│  ⚠ 2 POTENTIAL WASH SALES DETECTED          │
+│                                              │
+│  AAPL — Stock → Option                      │
+│  Sold 100 shares @ $185   Loss: -$1,200     │
+│  Bought 2x Jan 190C within 30 days          │
+│  Disallowed loss: $1,200  Adj basis: +$600  │
+│                                              │
+│  TSLA — Stock → Stock                       │
+│  Sold 50 shares @ $170    Loss: -$800       │
+│  Repurchased 50 shares @ $168 (12 days)     │
+│  Disallowed loss: $800                       │
+│                                              │
+│  ✓ 18 other positions: No wash sales        │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "82-Term Trading Glossary",
+    tier: "FREE",
+    description: "Searchable glossary with 82 trading terms and 9 deep-dive articles covering options strategies, market regimes, technical analysis, and risk management.",
+    details: [
+      "82 terms from basic to advanced concepts",
+      "9 in-depth articles with examples and visuals",
+      "Covers: options, technical analysis, market regimes, risk management",
+      "Full-text search across all terms and articles",
+      "Quick-reference cards with one-line definitions",
+      "Cross-linked terms for discovery",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  GLOSSARY                    [SEARCH]       │
+│                                              │
+│  82 terms  |  9 deep-dive articles          │
+│                                              │
+│  IRON CONDOR                                │
+│  A neutral options strategy combining a     │
+│  bull put spread and bear call spread.      │
+│  Profits when the underlying stays in a     │
+│  defined range. Max profit = net premium.   │
+│                                              │
+│  DEEP DIVES                                 │
+│  ▶ Options Greeks Explained                 │
+│  ▶ Understanding Market Regimes             │
+│  ▶ Covered Call Strategy Guide              │
+│  ▶ Reading Dark Pool Flow                   │
+└──────────────────────────────────────────────┘`,
+  },
 ];
 
 const TIER_COLORS: Record<string, string> = {

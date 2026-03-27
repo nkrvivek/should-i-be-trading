@@ -12,63 +12,76 @@ type Props = {
   marketScore?: MarketScore | null;
 };
 
-/** Build a deterministic briefing from the score data — no AI needed */
-function buildDefaultBriefing(verdict: TrafficLightVerdict, marketScore?: MarketScore | null): string | null {
-  if (!marketScore) return null;
-
+/** Render a deterministic briefing directly as JSX — no markdown needed */
+function DefaultBriefingContent({ verdict, marketScore }: { verdict: TrafficLightVerdict; marketScore: MarketScore }) {
   const date = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
   const signal = verdict.signal;
   const score = marketScore.total;
   const window = marketScore.executionWindow;
-
-  // Categorize scores
   const weak = marketScore.categories.filter(c => c.score < 40);
   const strong = marketScore.categories.filter(c => c.score >= 70);
+  const signalColor = signal === "TRADE" ? "var(--positive)" : signal === "NO_TRADE" ? "var(--negative)" : "var(--warning)";
 
-  const signalColor = signal === "TRADE" ? "green" : signal === "NO_TRADE" ? "red" : "amber";
-  const signalWord = signal === "TRADE" ? "favorable" : signal === "NO_TRADE" ? "unfavorable" : "mixed";
+  const sectionTitle: React.CSSProperties = {
+    fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, letterSpacing: "0.08em",
+    textTransform: "uppercase", color: "var(--text-muted)", marginBottom: 6, marginTop: 16,
+  };
+  const bodyText: React.CSSProperties = {
+    fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.7,
+  };
 
-  let lines = `**MARKET SNAPSHOT** — ${date}\n\n`;
-
-  // What's happening
-  lines += `**WHAT'S HAPPENING**\n`;
-  lines += `The SIBT Score is **${score}/100** with a **${window}% execution window**. `;
-  lines += `The signal is **${signal.replace("_", " ")}** at ${verdict.confidence}% confidence. `;
-  lines += `VIX regime: **${verdict.vixRegime.label}** — ${verdict.vixRegime.detail}. `;
-
-  if (strong.length > 0) {
-    lines += `Strength in ${strong.map(c => `${c.name} (${c.score})`).join(", ")}. `;
-  }
-  if (weak.length > 0) {
-    lines += `Weakness in ${weak.map(c => `${c.name} (${c.score})`).join(", ")}. `;
-  }
-  lines += "\n\n";
-
-  // What it means
-  lines += `**WHAT IT MEANS**\n`;
-  if (signalColor === "green") {
-    lines += `Conditions are ${signalWord} for active trading. The execution window supports position entry with defined risk. Focus on high-conviction setups aligned with the current trend. `;
-  } else if (signalColor === "red") {
-    lines += `Conditions are ${signalWord} for new positions. Consider preserving capital, tightening stops on existing positions, and waiting for the regime to improve. Cash is a position. `;
+  let implication: string;
+  if (signal === "TRADE") {
+    implication = "Conditions are favorable for active trading. The execution window supports position entry with defined risk. Focus on high-conviction setups aligned with the current trend.";
+  } else if (signal === "NO_TRADE") {
+    implication = "Conditions are unfavorable for new positions. Consider preserving capital, tightening stops on existing positions, and waiting for the regime to improve. Cash is a position.";
   } else {
-    lines += `Conditions are ${signalWord}. Reduce position sizes, favor defined-risk strategies, and be selective. Consider hedging existing exposure. `;
+    implication = "Conditions are mixed. Reduce position sizes, favor defined-risk strategies, and be selective. Consider hedging existing exposure.";
   }
-  lines += "\n\n";
 
-  // What to watch
-  lines += `**WHAT TO WATCH**\n`;
-  const watchItems: string[] = [];
-  for (const cat of marketScore.categories) {
-    if (cat.detail) watchItems.push(`**${cat.name}**: ${cat.detail}`);
-  }
-  if (verdict.reasons.length > 0) {
-    watchItems.push(`**Key drivers**: ${verdict.reasons.slice(0, 3).join("; ")}`);
-  }
-  lines += watchItems.join(". ") + ".\n\n";
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+        MARKET SNAPSHOT <span style={{ fontWeight: 400, color: "var(--text-muted)" }}>— {date}</span>
+      </div>
 
-  lines += `*This briefing is generated from live market data — not investment advice.*`;
+      {/* What's happening */}
+      <div style={sectionTitle}>WHAT'S HAPPENING</div>
+      <div style={bodyText}>
+        The SIBT Score is <strong style={{ color: signalColor }}>{score}/100</strong> with
+        a <strong>{window}%</strong> execution window.
+        Signal: <strong style={{ color: signalColor }}>{signal.replace("_", " ")}</strong> at {verdict.confidence}% confidence.
+        VIX regime: <strong>{verdict.vixRegime.label}</strong> — {verdict.vixRegime.detail}.
+        {strong.length > 0 && <> Strength in {strong.map(c => `${c.name} (${c.score})`).join(", ")}.</>}
+        {weak.length > 0 && <> Weakness in {weak.map(c => `${c.name} (${c.score})`).join(", ")}.</>}
+      </div>
 
-  return lines;
+      {/* What it means */}
+      <div style={sectionTitle}>WHAT IT MEANS</div>
+      <div style={bodyText}>{implication}</div>
+
+      {/* What to watch */}
+      <div style={sectionTitle}>WHAT TO WATCH</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+        {marketScore.categories.map(cat => cat.detail ? (
+          <div key={cat.name} style={bodyText}>
+            <strong style={{ color: "var(--text-primary)" }}>{cat.name}:</strong> {cat.detail}
+          </div>
+        ) : null)}
+        {verdict.reasons.length > 0 && (
+          <div style={bodyText}>
+            <strong style={{ color: "var(--text-primary)" }}>Key drivers:</strong> {verdict.reasons.slice(0, 3).join("; ")}
+          </div>
+        )}
+      </div>
+
+      {/* Disclaimer */}
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, color: "var(--text-muted)", fontStyle: "italic", marginTop: 12, borderTop: "1px solid var(--border-dim)", paddingTop: 8 }}>
+        This briefing is generated from live market data — not investment advice.
+      </div>
+    </div>
+  );
 }
 
 export function DailyBriefing({ cri, verdict, marketScore }: Props) {
@@ -78,14 +91,7 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
   const aiUsage = useAiUsage();
   const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
 
-  // Auto-generated briefing from market data (always available when score loads)
-  const defaultBriefing = useMemo(
-    () => buildDefaultBriefing(verdict, marketScore),
-    [verdict, marketScore],
-  );
-
-  // Show AI-enhanced briefing if generated, otherwise show default
-  const briefing = aiBriefing ?? defaultBriefing;
+  const hasDefaultData = !!marketScore;
 
   const generateBriefing = useCallback(async () => {
     setLoading(true);
@@ -205,14 +211,27 @@ export function DailyBriefing({ cri, verdict, marketScore }: Props) {
         </div>
       )}
 
-      {briefing && (
+      {/* AI-enhanced briefing (markdown) */}
+      {aiBriefing && (
         <div style={{
           fontFamily: "var(--font-sans)",
           fontSize: 14,
           color: "var(--text-secondary)",
           lineHeight: 1.7,
         }}>
-          {renderMarkdown(briefing)}
+          {renderMarkdown(aiBriefing)}
+        </div>
+      )}
+
+      {/* Default data-driven briefing (JSX, no markdown) */}
+      {!aiBriefing && !loading && hasDefaultData && marketScore && (
+        <DefaultBriefingContent verdict={verdict} marketScore={marketScore} />
+      )}
+
+      {/* No data state */}
+      {!aiBriefing && !loading && !hasDefaultData && !error && (
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.6 }}>
+          Waiting for market data to generate briefing...
         </div>
       )}
     </div>

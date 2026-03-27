@@ -23,6 +23,7 @@ async function tradierCall<T>(params: Record<string, unknown>): Promise<T> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify(params),
+    signal: AbortSignal.timeout(15_000),
   });
 
   if (!response.ok) {

@@ -69,6 +69,11 @@ export default function BrokerageSettings() {
             setExpandedBroker(null);
           }
         }, 1000);
+        // Safety: clear interval after 5 minutes to prevent leak if popup is never closed
+        setTimeout(() => {
+          clearInterval(pollTimer);
+          setSnapTradeLoading(false);
+        }, 5 * 60 * 1000);
       } else {
         // Popup blocked — fall back to redirect
         window.location.href = portalUrl;

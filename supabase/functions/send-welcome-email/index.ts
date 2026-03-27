@@ -88,7 +88,7 @@ Deno.serve(async (req) => {
 
     const resendKey = Deno.env.get("RESEND_API_KEY");
     if (!resendKey) {
-      console.log("RESEND_API_KEY not set, skipping welcome email for", userEmail);
+      console.log("RESEND_API_KEY not set, skipping welcome email");
       return new Response(JSON.stringify({ skipped: true, reason: "RESEND_API_KEY not configured" }), {
         status: 200,
         headers: { ...cors, "Content-Type": "application/json" },
@@ -182,7 +182,7 @@ ${BRAND.name} is an analytical tool. Not investment advice.`;
     }
 
     const result = await res.json();
-    console.log("Welcome email sent to", userEmail, "id:", result.id);
+    console.log("Welcome email sent, id:", result.id);
 
     return new Response(JSON.stringify({ sent: true, id: result.id }), {
       status: 200,

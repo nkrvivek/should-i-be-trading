@@ -172,8 +172,8 @@ async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ a
       return { allowed: false, used: finalCount, limit: dailyLimit };
     }
 
-    // Under limit but CAS keeps failing — allow this one to avoid blocking the user
-    return { allowed: true, used: finalCount, limit: dailyLimit };
+    // Under limit but CAS keeps failing — deny to maintain accurate quota
+    return { allowed: false, used: finalCount, limit: dailyLimit };
   } catch {
     // If usage tracking fails, still allow the request
     return { allowed: true, used: 0, limit: dailyLimit };

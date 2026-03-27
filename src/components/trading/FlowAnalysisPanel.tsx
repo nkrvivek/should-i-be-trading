@@ -49,10 +49,10 @@ export default function FlowAnalysisPanel() {
 
   useEffect(() => {
     // Try to load cached data on mount
-    fetch(`${radonUrl}/flow-analysis`, { method: "POST" })
+    fetch(`${radonUrl}/flow-analysis`, { method: "POST", signal: AbortSignal.timeout(10_000) })
       .then((r) => r.ok ? r.json() : null)
       .then((d) => d && setData(d))
-      .catch(() => {});
+      .catch(() => { /* Radon not running — expected in prod */ });
   }, []);
 
   if (!data && !loading && !error) {

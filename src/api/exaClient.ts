@@ -46,6 +46,7 @@ export async function exaSearch(
         "x-api-key": apiKey,
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!response.ok) {
@@ -78,6 +79,7 @@ export async function exaSearch(
         "x-user-token": userToken,
       },
       body: JSON.stringify(body),
+      signal: AbortSignal.timeout(30_000),
     });
 
     if (!response.ok) {

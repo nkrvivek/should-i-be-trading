@@ -36,25 +36,23 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
   );
 
-  // Idempotency check
-  const { data: existingEvent } = await supabaseAdmin
+  // Atomic idempotency: INSERT with ON CONFLICT to prevent race conditions
+  const { data: inserted, error: idempotencyError } = await supabaseAdmin
     .from("stripe_event_log")
+    .upsert(
+      { event_id: event.id, event_type: event.type },
+      { onConflict: "event_id", ignoreDuplicates: true },
+    )
     .select("event_id")
-    .eq("event_id", event.id)
     .single();
 
-  if (existingEvent) {
+  // If upsert returned no row, the event already existed (duplicate)
+  if (!inserted || idempotencyError) {
     return new Response(JSON.stringify({ received: true, duplicate: true }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
   }
-
-  // Log the event for idempotency
-  await supabaseAdmin.from("stripe_event_log").insert({
-    event_id: event.id,
-    event_type: event.type,
-  });
 
   const priceMap = getPriceMapping();
 
@@ -162,12 +160,14 @@ Deno.serve(async (req) => {
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        break;
     }
   } catch (err) {
-    console.error(`Error processing ${event.type}:`, err);
-    // Still return 200 to prevent Stripe retries on processing errors
-    // The event is already logged for debugging
+    // Return 500 so Stripe retries the webhook
+    return new Response(JSON.stringify({ error: "Processing failed" }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   return new Response(JSON.stringify({ received: true }), {

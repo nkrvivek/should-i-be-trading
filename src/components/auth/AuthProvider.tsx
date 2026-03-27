@@ -24,6 +24,8 @@ export function AuthProvider({ children }: Props) {
         fetchSubscription(session.user.id);
       }
       setLoading(false);
+    }).catch(() => {
+      setLoading(false);
     });
 
     // Listen for auth changes

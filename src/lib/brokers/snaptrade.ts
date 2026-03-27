@@ -283,12 +283,62 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
     }));
   }
 
-  async placeOrder(_order: OrderRequest): Promise<BrokerOrder> {
-    throw new Error("Order placement via SnapTrade coming soon");
+  async placeOrder(order: OrderRequest): Promise<BrokerOrder> {
+    if (!this.accountId) throw new Error("No brokerage account linked");
+
+    // Map our OrderRequest to SnapTrade's trade/place format
+    const isOption = !!order.optionDetails;
+    const action = isOption
+      ? (order.side === "buy" ? "BUY_TO_OPEN" : "SELL_TO_OPEN")
+      : order.side.toUpperCase();
+
+    const snapOrder: Record<string, unknown> = {
+      action,
+      symbol: isOption ? order.optionDetails!.occSymbol ?? order.symbol : order.symbol,
+      order_type: mapOrderType(order.type),
+      time_in_force: mapTimeInForce(order.timeInForce),
+      units: order.qty,
+    };
+    if (order.limitPrice != null) snapOrder.price = order.limitPrice;
+    if (order.stopPrice != null) snapOrder.stop = order.stopPrice;
+
+    const data = await this.edgeCall("placeOrder", {
+      accountId: this.accountId,
+      order: snapOrder,
+    }) as {
+      brokerage_order_id?: string;
+      status?: string;
+      action?: string;
+      order_type?: string;
+      total_quantity?: string;
+      limit_price?: number;
+      stop_price?: number;
+      time_placed?: string;
+      filled_quantity?: string;
+      execution_price?: number;
+    };
+
+    return {
+      id: data.brokerage_order_id ?? "",
+      symbol: order.symbol,
+      side: order.side,
+      type: order.type,
+      qty: order.qty,
+      limitPrice: data.limit_price ?? order.limitPrice,
+      stopPrice: data.stop_price ?? order.stopPrice,
+      status: mapSnapTradeStatus(data.status),
+      filledQty: data.filled_quantity ? Number(data.filled_quantity) : undefined,
+      filledAvgPrice: data.execution_price ?? undefined,
+      createdAt: data.time_placed ?? new Date().toISOString(),
+    };
   }
 
-  async cancelOrder(_orderId: string): Promise<void> {
-    throw new Error("Order cancellation via SnapTrade coming soon");
+  async cancelOrder(orderId: string): Promise<void> {
+    if (!this.accountId) throw new Error("No brokerage account linked");
+    await this.edgeCall("cancelOrder", {
+      accountId: this.accountId,
+      order: { brokerage_order_id: orderId },
+    });
   }
 }
 
@@ -305,6 +355,28 @@ function mapSnapTradeOrderType(type?: string): BrokerOrder["type"] {
     case "stop_limit":
     case "stoplimit": return "stop_limit";
     default: return "market";
+  }
+}
+
+/** Map our order type to SnapTrade's order_type string */
+function mapOrderType(type: string): string {
+  switch (type) {
+    case "market": return "Market";
+    case "limit": return "Limit";
+    case "stop": return "Stop";
+    case "stop_limit": return "StopLimit";
+    default: return "Market";
+  }
+}
+
+/** Map our timeInForce to SnapTrade's time_in_force string */
+function mapTimeInForce(tif: string): string {
+  switch (tif) {
+    case "day": return "Day";
+    case "gtc": return "GTC";
+    case "ioc": return "IOC";
+    case "fok": return "FOK";
+    default: return "Day";
   }
 }
 

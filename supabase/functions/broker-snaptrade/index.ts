@@ -121,11 +121,12 @@ Deno.serve(async (req) => {
     }
 
     const body = await req.json();
-    const { action, userId, userSecret, accountId } = body as {
+    const { action, userId, userSecret, accountId, order } = body as {
       action?: string;
       userId?: string;
       userSecret?: string;
       accountId?: string;
+      order?: Record<string, unknown>;
     };
 
     if (!action) return errorResponse("Missing 'action'", 400, req);
@@ -200,6 +201,43 @@ Deno.serve(async (req) => {
         const data = await snapRequest("GET", `accounts/${accountId}/orders`, {
           userId,
           userSecret,
+        });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── Place an order ──────────────────────────────────────
+      case "placeOrder": {
+        if (!userId || !userSecret || !accountId || !order) {
+          return errorResponse("Missing userId, userSecret, accountId, or order", 400, req);
+        }
+        // Map our order format to SnapTrade's API format
+        const tradeBody: Record<string, unknown> = {
+          account_id: accountId,
+          action: order.action as string,  // BUY, SELL, BUY_TO_OPEN, etc.
+          order_type: order.order_type as string,  // Market, Limit, Stop, StopLimit
+          time_in_force: order.time_in_force as string,  // Day, GTC, FOK, IOC
+        };
+        if (order.symbol) tradeBody.symbol = order.symbol;
+        if (order.units != null) tradeBody.units = order.units;
+        if (order.price != null) tradeBody.price = order.price;  // limit price
+        if (order.stop != null) tradeBody.stop = order.stop;  // stop price
+        const data = await snapRequest("POST", "trade/place", {
+          userId,
+          userSecret,
+          body: tradeBody,
+        });
+        return jsonResponse(data, 200, req);
+      }
+
+      // ── Cancel an order ───────────────────────────────────────
+      case "cancelOrder": {
+        if (!userId || !userSecret || !accountId || !order?.brokerage_order_id) {
+          return errorResponse("Missing userId, userSecret, accountId, or brokerage_order_id", 400, req);
+        }
+        const data = await snapRequest("POST", `accounts/${accountId}/orders/cancel`, {
+          userId,
+          userSecret,
+          body: { brokerage_order_id: order.brokerage_order_id as string },
         });
         return jsonResponse(data, 200, req);
       }

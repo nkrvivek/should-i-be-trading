@@ -611,7 +611,7 @@ function StrategiesPanel({ positions, orders, onSimulate, onExecute }: {
   onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
 }) {
   const connections = useBrokerStore((s) => s.connections);
-  const canExecute = connections.some((c) => c.slug !== "snaptrade");
+  const canExecute = connections.length > 0;
   const [stratTab, setStratTab] = useState<"analysis" | "suggester" | "covered" | "csp" | "washsale">("analysis");
   const ccEligible = positions.filter((p) => p.side === "long" && p.qty >= 100 && p.assetType === "stock");
   const washSaleViolations = useMemo(() => detectWashSales(orders), [orders]);

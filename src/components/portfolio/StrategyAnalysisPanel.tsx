@@ -286,7 +286,7 @@ export default function StrategyAnalysisPanel({ onSimulate, onExecute }: Props) 
   const manualPositions = useManualPortfolioStore((s) => s.positions);
 
   // Can execute if at least one non-SnapTrade connection exists
-  const canExecute = connections.some((c) => c.slug !== "snaptrade");
+  const canExecute = connections.length > 0;
 
   const allPositions = useMemo(
     () => [...brokerAllPositions(), ...manualPositions],

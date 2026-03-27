@@ -11,7 +11,7 @@ import type { StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
 
 export default function SimulatorContent() {
   const connections = useBrokerStore((s) => s.connections);
-  const canExecute = connections.some((c) => c.slug !== "snaptrade");
+  const canExecute = connections.length > 0;
   const [modal, setModal] = useState<{ symbol: string; price: number; suggestion: StrategySuggestion } | null>(null);
 
   const handleExecute = useCallback((symbol: string, price: number, suggestion: StrategySuggestion) => {

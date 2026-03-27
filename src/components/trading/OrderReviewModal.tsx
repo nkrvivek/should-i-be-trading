@@ -110,8 +110,7 @@ export default function OrderReviewModal({
 }: Props) {
   const { connections, accounts, placeOrder } = useBrokerStore();
 
-  // Filter out SnapTrade connections (no order placement support)
-  const executableConnections = connections.filter((c) => c.slug !== "snaptrade");
+  const executableConnections = connections;
 
   const [selectedConnectionId, setSelectedConnectionId] = useState(
     executableConnections[0]?.id ?? "",

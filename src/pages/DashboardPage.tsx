@@ -91,18 +91,21 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Row 2: Sector Heat Map + Chart */}
+        {/* Row 2: Sector Heat Map + Chart — both same height */}
         <div style={{
           display: "grid",
           gridTemplateColumns: "1fr 1fr",
           gap: 16,
-          height: "calc(100vh - 200px)",
           minHeight: 600,
         }}>
-          <div style={{ height: "100%", overflow: "auto" }}>
-            <SectorHeatMap />
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div style={{ flex: 1, overflow: "auto" }}>
+              <SectorHeatMap />
+            </div>
           </div>
-          <TickerChart />
+          <div style={{ minHeight: 600 }}>
+            <TickerChart />
+          </div>
         </div>
 
         {/* Row 4: Watchlist */}

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { chatWithClaude } from "../../api/anthropicClient";
 import { AiUsageBadge, useAiUsage } from "../ai/AiUsageBadge";
 import { renderMarkdown } from "../../lib/renderMarkdown";

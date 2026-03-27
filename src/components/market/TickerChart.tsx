@@ -108,6 +108,7 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
     : {
         display: "flex",
         flexDirection: "column",
+        height: "100%",
         background: "var(--bg-panel)",
         border: "1px solid var(--border-dim)",
         borderRadius: 4,
@@ -180,9 +181,8 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
         ref={containerRef}
         className="tradingview-widget-container"
         style={{
-          flex: expanded ? 1 : undefined,
-          height: expanded ? undefined : "calc(100vh - 300px)",
-          minHeight: expanded ? undefined : 500,
+          flex: 1,
+          minHeight: expanded ? undefined : 400,
           width: "100%",
           overflow: "hidden",
         }}

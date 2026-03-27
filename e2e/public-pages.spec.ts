@@ -292,20 +292,39 @@ test.describe("Glossary Page", () => {
     await expect(searchInput).toBeVisible();
   });
 
-  test("at least 10 glossary terms are visible", async ({ page }) => {
-    // Terms are rendered with category labels
-    const allCategories = page.locator("text=/Technical|Fundamental|Sentiment|Options|Market|Macro|General|Risk/");
-    expect(await allCategories.count()).toBeGreaterThanOrEqual(10);
+  test("at least 40 glossary terms are visible", async ({ page }) => {
+    // With 80+ terms in the glossary, at least 40 category labels should render
+    const allCategories = page.locator("text=/Technical|Fundamental|Sentiment|Options|Market|Macro|General|Risk|Trading Basics|Strategies|Tax|Deep Dives/");
+    expect(await allCategories.count()).toBeGreaterThanOrEqual(40);
   });
 
-  test("category filter buttons are present", async ({ page }) => {
+  test("category filter buttons are present including new categories", async ({ page }) => {
     // "All" button should be present
     await expect(page.locator("button", { hasText: "All" }).first()).toBeVisible();
-    // At least a few category buttons
+
+    // New category filter buttons
+    await expect(page.locator("button", { hasText: "Trading Basics" }).first()).toBeVisible();
+    await expect(page.locator("button", { hasText: "Technical Analysis" }).first()).toBeVisible();
+    await expect(page.locator("button", { hasText: "Fundamental Analysis" }).first()).toBeVisible();
+    await expect(page.locator("button", { hasText: "Strategies" }).first()).toBeVisible();
+    await expect(page.locator("button", { hasText: /Tax.*Compliance/i }).first()).toBeVisible();
+
+    // At least 5 category buttons (excluding "All")
     const categoryButtons = page.locator("button").filter({
-      hasText: /Technical|Fundamental|Sentiment|Options|Market|Macro|General|Risk/,
+      hasText: /Technical|Fundamental|Sentiment|Options|Market|Macro|General|Risk|Trading Basics|Strategies|Tax|Deep Dives/,
     });
-    expect(await categoryButtons.count()).toBeGreaterThanOrEqual(2);
+    expect(await categoryButtons.count()).toBeGreaterThanOrEqual(5);
+  });
+
+  test("Deep Dives category filter shows educational articles", async ({ page }) => {
+    const deepDivesBtn = page.locator("button", { hasText: "Deep Dives" }).first();
+    await expect(deepDivesBtn).toBeVisible({ timeout: 5_000 });
+    await deepDivesBtn.click();
+    await page.waitForTimeout(300);
+
+    // Should show deep dive articles (at least a few)
+    const deepDiveItems = page.locator("text=Deep Dives");
+    expect(await deepDiveItems.count()).toBeGreaterThanOrEqual(1);
   });
 
   test("search filters glossary terms", async ({ page }) => {

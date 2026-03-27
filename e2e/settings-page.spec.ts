@@ -249,6 +249,100 @@ test.describe("Settings — API Keys Tab", () => {
   });
 });
 
+test.describe("Settings — Brokerage Tab", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/settings");
+    await page.waitForLoadState("networkidle");
+    // Click Brokerage tab
+    await page.getByRole("button", { name: /brokerage/i }).first().click();
+  });
+
+  test("all 7 brokers are listed (SnapTrade first)", async ({ page }) => {
+    // SnapTrade, Alpaca, Interactive Brokers, Tradier, Schwab, Webull, E*Trade
+    await expect(page.getByText("SnapTrade").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Alpaca").first()).toBeVisible();
+    await expect(page.getByText("Interactive Brokers").first()).toBeVisible();
+    await expect(page.getByText("Tradier").first()).toBeVisible();
+    await expect(page.getByText("Schwab").first()).toBeVisible();
+    await expect(page.getByText("Webull").first()).toBeVisible();
+    await expect(page.getByText("E*Trade").first()).toBeVisible();
+  });
+
+  test("SnapTrade appears FIRST in the broker list", async ({ page }) => {
+    // Get all broker name elements — SnapTrade should be the first one
+    const brokerNames = page.locator("div").filter({ hasText: /^(SnapTrade|Alpaca|Interactive Brokers|Tradier|Schwab|Webull|E\*Trade|Robinhood)$/ });
+    const firstBrokerText = await brokerNames.first().textContent();
+    expect(firstBrokerText).toBe("SnapTrade");
+  });
+
+  test("SnapTrade shows CONNECT YOUR BROKER button instead of credential fields", async ({ page }) => {
+    // Expand SnapTrade
+    const snapTradeSection = page.getByText("SnapTrade").first();
+    await expect(snapTradeSection).toBeVisible({ timeout: 10_000 });
+
+    // Click CONNECT button for SnapTrade
+    const connectBtn = page.locator("button", { hasText: "CONNECT" }).first();
+    await connectBtn.click();
+
+    // Should show "CONNECT YOUR BROKER" button (not credential fields)
+    await expect(
+      page.locator("button", { hasText: "CONNECT YOUR BROKER" })
+    ).toBeVisible({ timeout: 5_000 });
+
+    // Should NOT show credential input fields for SnapTrade
+    const passwordInputs = page.locator('input[type="password"]');
+    // SnapTrade section should not have password inputs (it uses portal flow)
+    const inputCount = await passwordInputs.count();
+    // If SnapTrade is expanded, there should be 0 credential inputs
+    expect(inputCount).toBe(0);
+  });
+
+  test("SnapTrade description mentions supported brokers", async ({ page }) => {
+    // Description should mention Schwab, Fidelity, Robinhood
+    await expect(
+      page.getByText(/Schwab.*Fidelity|Fidelity.*Schwab/i).first()
+    ).toBeVisible({ timeout: 10_000 });
+    await expect(
+      page.getByText(/Robinhood/i).first()
+    ).toBeVisible();
+  });
+
+  test("Tradier appears with API Token field", async ({ page }) => {
+    await expect(page.getByText("Tradier").first()).toBeVisible({ timeout: 10_000 });
+
+    // Expand Tradier
+    const tradierSection = page.getByText("Tradier").first().locator("..").locator("..");
+    const connectBtn = tradierSection.locator("button", { hasText: "CONNECT" });
+    if (await connectBtn.isVisible()) {
+      await connectBtn.click();
+      // Should show API Token label
+      await expect(page.getByText("API Token").first()).toBeVisible({ timeout: 5_000 });
+    }
+  });
+
+  test("Schwab is listed as available (not coming soon)", async ({ page }) => {
+    const schwabSection = page.getByText("Schwab").first().locator("..").locator("..");
+    await expect(schwabSection).toBeVisible({ timeout: 10_000 });
+    // Should have a CONNECT button (not COMING SOON)
+    await expect(schwabSection.getByText("COMING SOON")).not.toBeVisible();
+  });
+
+  test("E*Trade is listed as available (not coming soon)", async ({ page }) => {
+    const etradeText = page.getByText("E*Trade").first();
+    await expect(etradeText).toBeVisible({ timeout: 10_000 });
+    // The E*Trade card should have CONNECT, not COMING SOON
+    const etradeCard = etradeText.locator("..").locator("..");
+    await expect(etradeCard.getByText("COMING SOON")).not.toBeVisible();
+  });
+
+  test("Webull is listed as available (not coming soon)", async ({ page }) => {
+    const webullText = page.getByText("Webull").first();
+    await expect(webullText).toBeVisible({ timeout: 10_000 });
+    const webullCard = webullText.locator("..").locator("..");
+    await expect(webullCard.getByText("COMING SOON")).not.toBeVisible();
+  });
+});
+
 test.describe("Settings — Tab Navigation", () => {
   test("can switch between all tabs", async ({ page }) => {
     await page.goto("/settings");

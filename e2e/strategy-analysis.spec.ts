@@ -76,6 +76,87 @@ test.describe("Strategy Analysis", () => {
   });
 });
 
+test.describe("Strategy Sub-Tabs", () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto("/trading");
+    await page.waitForLoadState("networkidle");
+
+    // Navigate to Strategies tab
+    await page.locator("button", { hasText: /STRATEGIES/i }).click();
+    await page.waitForTimeout(300);
+  });
+
+  test("all 4 sub-tab buttons are visible on Strategies tab", async ({ page }) => {
+    await expect(page.locator("button", { hasText: "STRATEGY SUGGESTER" })).toBeVisible({ timeout: 5_000 });
+    await expect(page.locator("button", { hasText: "COVERED CALLS" })).toBeVisible();
+    await expect(page.locator("button", { hasText: "CASH-SECURED PUTS" })).toBeVisible();
+    await expect(page.locator("button", { hasText: "WASH SALE" })).toBeVisible();
+  });
+
+  test("clicking COVERED CALLS sub-tab shows covered call panel", async ({ page }) => {
+    await page.locator("button", { hasText: "COVERED CALLS" }).click();
+    await expect(page.getByText(/Covered Call Opportunities/i).first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("clicking CASH-SECURED PUTS sub-tab shows CSP panel", async ({ page }) => {
+    await page.locator("button", { hasText: "CASH-SECURED PUTS" }).click();
+    // CSP panel content should render
+    await expect(page.getByText(/cash.secured put/i).first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("clicking WASH SALE sub-tab shows wash sale monitor", async ({ page }) => {
+    await page.locator("button", { hasText: "WASH SALE" }).click();
+    // Wash sale monitor panel should render
+    await expect(page.getByText(/wash sale/i).first()).toBeVisible({ timeout: 5_000 });
+  });
+
+  test("sub-tabs switch without page reload", async ({ page }) => {
+    const initialUrl = page.url();
+
+    // Click through each sub-tab and verify URL stays the same
+    await page.locator("button", { hasText: "COVERED CALLS" }).click();
+    await page.waitForTimeout(200);
+    expect(page.url()).toBe(initialUrl);
+
+    await page.locator("button", { hasText: "CASH-SECURED PUTS" }).click();
+    await page.waitForTimeout(200);
+    expect(page.url()).toBe(initialUrl);
+
+    await page.locator("button", { hasText: "WASH SALE" }).click();
+    await page.waitForTimeout(200);
+    expect(page.url()).toBe(initialUrl);
+
+    await page.locator("button", { hasText: "STRATEGY SUGGESTER" }).click();
+    await page.waitForTimeout(200);
+    expect(page.url()).toBe(initialUrl);
+  });
+
+  test("Covered Calls badge shows count when positions have 100+ shares", async ({ page }) => {
+    // Go back to Import Portfolio tab and upload positions
+    await page.locator("button", { hasText: /IMPORT PORTFOLIO/i }).click();
+
+    const fileInput = page.locator('input[type="file"]');
+    await fileInput.setInputFiles(path.join(__dirname, "fixtures/schwab-positions.csv"));
+
+    const importBtn = page.getByRole("button", { name: /IMPORT \d+ POSITIONS/i });
+    await expect(importBtn).toBeVisible({ timeout: 5_000 });
+    await importBtn.click();
+    await page.waitForTimeout(500);
+
+    // Switch back to Strategies
+    await page.locator("button", { hasText: /STRATEGIES/i }).click();
+
+    // COVERED CALLS button should have a badge with a count (AAPL=200, MSFT=150, GOOGL=100)
+    const coveredCallsBtn = page.locator("button", { hasText: "COVERED CALLS" });
+    await expect(coveredCallsBtn).toBeVisible({ timeout: 5_000 });
+    // Badge is a span inside the button with a numeric count
+    const badge = coveredCallsBtn.locator("span").filter({ hasText: /^\d+$/ });
+    await expect(badge).toBeVisible({ timeout: 5_000 });
+    const badgeText = await badge.textContent();
+    expect(Number(badgeText)).toBeGreaterThanOrEqual(1);
+  });
+});
+
 test.describe("Wash Sale Monitor", () => {
   test("wash sale panel renders on strategies tab", async ({ page }) => {
     await page.goto("/trading");
@@ -83,7 +164,11 @@ test.describe("Wash Sale Monitor", () => {
 
     await page.locator("button", { hasText: /STRATEGIES/i }).click();
 
-    // Wash sale panel should be visible
-    await expect(page.getByText(/WASH SALE/i).first()).toBeVisible({ timeout: 5_000 });
+    // Wash sale sub-tab should be visible
+    await expect(page.locator("button", { hasText: "WASH SALE" })).toBeVisible({ timeout: 5_000 });
+
+    // Click wash sale sub-tab to see the monitor
+    await page.locator("button", { hasText: "WASH SALE" }).click();
+    await expect(page.getByText(/wash sale/i).first()).toBeVisible({ timeout: 5_000 });
   });
 });

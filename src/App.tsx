@@ -1,16 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, NavLink, Navigate, useNavigate } from "react-router-dom";
-import { DashboardPage } from "./pages/DashboardPage";
-import { LoginPage } from "./pages/LoginPage";
-import { SettingsPage } from "./pages/SettingsPage";
-import { AlertsPage } from "./pages/AlertsPage";
-import { TermsPage } from "./pages/TermsPage";
-import { PrivacyPage } from "./pages/PrivacyPage";
-import { GlossaryPage } from "./pages/GlossaryPage";
-import { PricingPage } from "./pages/PricingPage";
-import { LandingPage } from "./pages/LandingPage";
-import { RiskDisclosurePage } from "./pages/RiskDisclosurePage";
-import { FeaturesPage } from "./pages/FeaturesPage";
 import { AuthProvider } from "./components/auth/AuthProvider";
 import { UpgradePrompt } from "./components/shared/UpgradePrompt";
 import { useAppStore } from "./stores/appStore";
@@ -20,10 +9,27 @@ import { hasFeature } from "./lib/featureGates";
 import type { Feature } from "./lib/featureGates";
 import { AlertBell } from "./components/alerts/AlertBell";
 
-// Lazy imports for hub pages
-import ResearchPage from "./pages/ResearchPage";
-import SignalsPage from "./pages/SignalsPage";
-import TradingPage from "./pages/TradingPage";
+// Lazy-load all pages — keeps initial bundle small
+const DashboardPage = lazy(() => import("./pages/DashboardPage").then(m => ({ default: m.DashboardPage })));
+const LoginPage = lazy(() => import("./pages/LoginPage").then(m => ({ default: m.LoginPage })));
+const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
+const AlertsPage = lazy(() => import("./pages/AlertsPage").then(m => ({ default: m.AlertsPage })));
+const TermsPage = lazy(() => import("./pages/TermsPage").then(m => ({ default: m.TermsPage })));
+const PrivacyPage = lazy(() => import("./pages/PrivacyPage").then(m => ({ default: m.PrivacyPage })));
+const GlossaryPage = lazy(() => import("./pages/GlossaryPage").then(m => ({ default: m.GlossaryPage })));
+const PricingPage = lazy(() => import("./pages/PricingPage").then(m => ({ default: m.PricingPage })));
+const LandingPage = lazy(() => import("./pages/LandingPage").then(m => ({ default: m.LandingPage })));
+const RiskDisclosurePage = lazy(() => import("./pages/RiskDisclosurePage").then(m => ({ default: m.RiskDisclosurePage })));
+const FeaturesPage = lazy(() => import("./pages/FeaturesPage").then(m => ({ default: m.FeaturesPage })));
+const ResearchPage = lazy(() => import("./pages/ResearchPage"));
+const SignalsPage = lazy(() => import("./pages/SignalsPage"));
+const TradingPage = lazy(() => import("./pages/TradingPage"));
+
+const PageLoader = () => (
+  <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh", fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
+    Loading...
+  </div>
+);
 
 export default function App() {
   const { theme } = useAppStore();
@@ -35,6 +41,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public / marketing */}
           <Route path="/welcome" element={<LandingPage />} />
@@ -70,6 +77,7 @@ export default function App() {
           {/* Catch-all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        </Suspense>
       </AuthProvider>
     </BrowserRouter>
   );

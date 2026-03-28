@@ -6,6 +6,7 @@ import { mapLegsToExecutionLegs } from "../../lib/execution/orderMapper";
 import { runPreExecutionChecks } from "../../lib/execution/riskChecks";
 import { executeStrategy } from "../../lib/execution/executionEngine";
 import type { ExecutionPlan, ExecutionLeg, ExecutionResult } from "../../lib/execution/types";
+import { useRiskPrefsStore } from "../../stores/riskPrefsStore";
 
 interface Props {
   symbol: string;
@@ -334,58 +335,11 @@ export default function OrderReviewModal({
 
           {/* Per-Trade Risk Analysis */}
           {selectedAccount && (
-            <div style={{
-              marginTop: 10,
-              padding: "10px 12px",
-              background: "var(--bg-panel-raised, #f8fafc)",
-              borderRadius: 4,
-              border: "1px solid var(--border-dim)",
-            }}>
-              <div style={{ ...monoStyle, fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
-                Trade Risk Analysis
-              </div>
-              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", ...monoStyle, fontSize: 12 }}>
-                {(() => {
-                  const equity = selectedAccount.equity || 1;
-                  const maxLoss = Math.abs(metrics.maxLoss);
-                  const maxProfit = metrics.maxProfit;
-                  const lossPctOfPortfolio = (maxLoss / equity) * 100;
-                  const profitPctOfPortfolio = maxProfit > 0 && isFinite(maxProfit) ? (maxProfit / equity) * 100 : null;
-                  const rr = maxLoss > 0 && isFinite(maxProfit) ? Math.min(maxProfit / maxLoss, 99) : null;
-
-                  return (
-                    <>
-                      <span>
-                        <span style={{ color: "var(--text-muted)" }}>Max Loss vs Portfolio: </span>
-                        <span style={{ fontWeight: 700, color: lossPctOfPortfolio > 10 ? "var(--negative)" : lossPctOfPortfolio > 5 ? "var(--warning)" : "var(--text-primary)" }}>
-                          {isFinite(maxLoss) ? `${lossPctOfPortfolio.toFixed(1)}%` : "Unlimited"}
-                        </span>
-                        <span style={{ color: "var(--text-muted)" }}> (${isFinite(maxLoss) ? maxLoss.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "∞"} of ${equity.toLocaleString(undefined, { maximumFractionDigits: 0 })})</span>
-                      </span>
-                      {profitPctOfPortfolio != null && (
-                        <span>
-                          <span style={{ color: "var(--text-muted)" }}>Potential Gain: </span>
-                          <span style={{ fontWeight: 700, color: "var(--positive)" }}>{profitPctOfPortfolio.toFixed(1)}%</span>
-                        </span>
-                      )}
-                      {rr != null && (
-                        <span>
-                          <span style={{ color: "var(--text-muted)" }}>Risk/Reward: </span>
-                          <span style={{ fontWeight: 700, color: rr >= 2 ? "var(--positive)" : rr >= 1 ? "var(--text-primary)" : "var(--negative)" }}>
-                            {rr.toFixed(1)}x
-                          </span>
-                        </span>
-                      )}
-                      {lossPctOfPortfolio > 10 && (
-                        <span style={{ color: "var(--negative)", fontWeight: 600 }}>
-                          This trade risks &gt;10% of your portfolio
-                        </span>
-                      )}
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
+            <TradeRiskAnalysis
+              equity={selectedAccount.equity}
+              maxLoss={Math.abs(metrics.maxLoss)}
+              maxProfit={metrics.maxProfit}
+            />
           )}
         </div>
 
@@ -797,6 +751,98 @@ export default function OrderReviewModal({
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/** Per-trade risk analysis with user-settable thresholds */
+function TradeRiskAnalysis({ equity, maxLoss, maxProfit }: { equity: number; maxLoss: number; maxProfit: number }) {
+  const { maxLossPercent, targetProfitPercent, setMaxLossPercent, setTargetProfitPercent } = useRiskPrefsStore();
+
+  const safeEquity = equity || 1;
+  const lossPct = (maxLoss / safeEquity) * 100;
+  const profitPct = maxProfit > 0 && isFinite(maxProfit) ? (maxProfit / safeEquity) * 100 : null;
+  const rr = maxLoss > 0 && isFinite(maxProfit) ? Math.min(maxProfit / maxLoss, 99) : null;
+  const exceedsLossLimit = isFinite(maxLoss) && lossPct > maxLossPercent;
+  const meetsTargetProfit = profitPct != null && profitPct >= targetProfitPercent;
+
+  const inputStyle: React.CSSProperties = {
+    width: 48, padding: "2px 4px", textAlign: "center" as const,
+    fontFamily: "var(--font-mono)", fontSize: 12, fontWeight: 600,
+    background: "var(--bg-panel)", border: "1px solid var(--border-dim)",
+    borderRadius: 3, color: "var(--text-primary)", outline: "none",
+  };
+
+  return (
+    <div style={{
+      marginTop: 10, padding: "10px 12px",
+      background: "var(--bg-panel-raised, #f8fafc)",
+      borderRadius: 4, border: "1px solid var(--border-dim)",
+    }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>
+        Trade Risk Analysis
+      </div>
+
+      {/* Metrics row */}
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", fontFamily: "var(--font-mono)", fontSize: 12, marginBottom: 8 }}>
+        <span>
+          <span style={{ color: "var(--text-muted)" }}>Max Loss: </span>
+          <span style={{ fontWeight: 700, color: exceedsLossLimit ? "var(--negative)" : "var(--text-primary)" }}>
+            {isFinite(maxLoss) ? `${lossPct.toFixed(1)}%` : "Unlimited"}
+          </span>
+          <span style={{ color: "var(--text-muted)" }}> of portfolio</span>
+        </span>
+        {profitPct != null && (
+          <span>
+            <span style={{ color: "var(--text-muted)" }}>Gain: </span>
+            <span style={{ fontWeight: 700, color: meetsTargetProfit ? "var(--positive)" : "var(--text-primary)" }}>{profitPct.toFixed(1)}%</span>
+          </span>
+        )}
+        {rr != null && (
+          <span>
+            <span style={{ color: "var(--text-muted)" }}>R/R: </span>
+            <span style={{ fontWeight: 700, color: rr >= 2 ? "var(--positive)" : rr >= 1 ? "var(--text-primary)" : "var(--negative)" }}>{rr.toFixed(1)}x</span>
+          </span>
+        )}
+      </div>
+
+      {/* User threshold inputs */}
+      <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center", fontFamily: "var(--font-mono)", fontSize: 11 }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ color: "var(--text-muted)" }}>My max risk/trade:</span>
+          <input
+            type="number"
+            value={maxLossPercent}
+            onChange={(e) => setMaxLossPercent(Math.max(1, Math.min(50, Number(e.target.value) || 5)))}
+            style={inputStyle}
+            min={1} max={50}
+          />
+          <span style={{ color: "var(--text-muted)" }}>%</span>
+        </span>
+        <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ color: "var(--text-muted)" }}>Target profit:</span>
+          <input
+            type="number"
+            value={targetProfitPercent}
+            onChange={(e) => setTargetProfitPercent(Math.max(1, Math.min(100, Number(e.target.value) || 10)))}
+            style={inputStyle}
+            min={1} max={100}
+          />
+          <span style={{ color: "var(--text-muted)" }}>%</span>
+        </span>
+      </div>
+
+      {/* Warnings */}
+      {exceedsLossLimit && (
+        <div style={{ marginTop: 8, fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--negative)", padding: "4px 8px", background: "rgba(232,93,108,0.08)", borderRadius: 3 }}>
+          This trade risks {lossPct.toFixed(1)}% of your portfolio — exceeds your {maxLossPercent}% limit
+        </div>
+      )}
+      {meetsTargetProfit && (
+        <div style={{ marginTop: 4, fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--positive)", padding: "4px 8px", background: "rgba(5,173,152,0.08)", borderRadius: 3 }}>
+          Potential gain of {profitPct!.toFixed(1)}% meets your {targetProfitPercent}% target
+        </div>
+      )}
     </div>
   );
 }

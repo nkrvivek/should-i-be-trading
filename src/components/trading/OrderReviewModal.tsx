@@ -331,6 +331,62 @@ export default function OrderReviewModal({
                 : "N/A"}
             </span>
           </div>
+
+          {/* Per-Trade Risk Analysis */}
+          {selectedAccount && (
+            <div style={{
+              marginTop: 10,
+              padding: "10px 12px",
+              background: "var(--bg-panel-raised, #f8fafc)",
+              borderRadius: 4,
+              border: "1px solid var(--border-dim)",
+            }}>
+              <div style={{ ...monoStyle, fontSize: 11, fontWeight: 600, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>
+                Trade Risk Analysis
+              </div>
+              <div style={{ display: "flex", gap: 16, flexWrap: "wrap", ...monoStyle, fontSize: 12 }}>
+                {(() => {
+                  const equity = selectedAccount.equity || 1;
+                  const maxLoss = Math.abs(metrics.maxLoss);
+                  const maxProfit = metrics.maxProfit;
+                  const lossPctOfPortfolio = (maxLoss / equity) * 100;
+                  const profitPctOfPortfolio = maxProfit > 0 && isFinite(maxProfit) ? (maxProfit / equity) * 100 : null;
+                  const rr = maxLoss > 0 && isFinite(maxProfit) ? Math.min(maxProfit / maxLoss, 99) : null;
+
+                  return (
+                    <>
+                      <span>
+                        <span style={{ color: "var(--text-muted)" }}>Max Loss vs Portfolio: </span>
+                        <span style={{ fontWeight: 700, color: lossPctOfPortfolio > 10 ? "var(--negative)" : lossPctOfPortfolio > 5 ? "var(--warning)" : "var(--text-primary)" }}>
+                          {isFinite(maxLoss) ? `${lossPctOfPortfolio.toFixed(1)}%` : "Unlimited"}
+                        </span>
+                        <span style={{ color: "var(--text-muted)" }}> (${isFinite(maxLoss) ? maxLoss.toLocaleString(undefined, { maximumFractionDigits: 0 }) : "∞"} of ${equity.toLocaleString(undefined, { maximumFractionDigits: 0 })})</span>
+                      </span>
+                      {profitPctOfPortfolio != null && (
+                        <span>
+                          <span style={{ color: "var(--text-muted)" }}>Potential Gain: </span>
+                          <span style={{ fontWeight: 700, color: "var(--positive)" }}>{profitPctOfPortfolio.toFixed(1)}%</span>
+                        </span>
+                      )}
+                      {rr != null && (
+                        <span>
+                          <span style={{ color: "var(--text-muted)" }}>Risk/Reward: </span>
+                          <span style={{ fontWeight: 700, color: rr >= 2 ? "var(--positive)" : rr >= 1 ? "var(--text-primary)" : "var(--negative)" }}>
+                            {rr.toFixed(1)}x
+                          </span>
+                        </span>
+                      )}
+                      {lossPctOfPortfolio > 10 && (
+                        <span style={{ color: "var(--negative)", fontWeight: 600 }}>
+                          This trade risks &gt;10% of your portfolio
+                        </span>
+                      )}
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Legs Table */}

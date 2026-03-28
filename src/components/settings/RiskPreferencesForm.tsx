@@ -74,19 +74,8 @@ const TOLERANCE_OPTIONS: { value: RiskTolerance; label: string }[] = [
   { value: "aggressive", label: "AGGRESSIVE" },
 ];
 
-const LOSS_OPTIONS = [2, 5, 10, 20];
-const PROFIT_OPTIONS = [5, 10, 20, 50];
-
 export function RiskPreferencesForm() {
-  const {
-    riskTolerance,
-    maxLossPercent,
-    targetProfitPercent,
-    setRiskTolerance,
-    setMaxLossPercent,
-    setTargetProfitPercent,
-    resetDefaults,
-  } = useRiskPrefsStore();
+  const { riskTolerance, setRiskTolerance, resetDefaults } = useRiskPrefsStore();
 
   return (
     <div
@@ -99,7 +88,8 @@ export function RiskPreferencesForm() {
     >
       <div style={sectionHeaderStyle}>Risk Profile</div>
       <div style={subtextStyle}>
-        Strategy suggestions and the catalog filter to match your preferences
+        Filters strategy suggestions and the catalog to match your risk appetite.
+        Per-trade risk/reward analysis is shown in the order review before execution.
       </div>
 
       {/* Risk Appetite */}
@@ -120,52 +110,6 @@ export function RiskPreferencesForm() {
               style={style}
             >
               {opt.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Max Acceptable Loss */}
-      <div style={labelStyle}>Max Acceptable Loss</div>
-      <div style={groupStyle}>
-        {LOSS_OPTIONS.map((val, i) => {
-          const active = maxLossPercent === val;
-          const style =
-            i === 0
-              ? firstToggleBtnStyle(active)
-              : i === LOSS_OPTIONS.length - 1
-                ? lastToggleBtnStyle(active)
-                : midToggleBtnStyle(active);
-          return (
-            <button
-              key={val}
-              onClick={() => setMaxLossPercent(val)}
-              style={style}
-            >
-              {val}%
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Target Profit */}
-      <div style={labelStyle}>Target Profit</div>
-      <div style={groupStyle}>
-        {PROFIT_OPTIONS.map((val, i) => {
-          const active = targetProfitPercent === val;
-          const style =
-            i === 0
-              ? firstToggleBtnStyle(active)
-              : i === PROFIT_OPTIONS.length - 1
-                ? lastToggleBtnStyle(active)
-                : midToggleBtnStyle(active);
-          return (
-            <button
-              key={val}
-              onClick={() => setTargetProfitPercent(val)}
-              style={style}
-            >
-              {val}%
             </button>
           );
         })}

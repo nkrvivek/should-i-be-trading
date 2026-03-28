@@ -15,7 +15,7 @@ import { Panel } from "../components/layout/Panel";
 import { FearGreedGauge } from "../components/dashboard/FearGreedGauge";
 import { QuickMarketStats } from "../components/dashboard/QuickMarketStats";
 import { useAlertEvaluator } from "../hooks/useAlertEvaluator";
-import { PortfolioRiskWidget } from "../components/portfolio/PortfolioRiskWidget";
+// PortfolioRiskWidget lives on Trading > Portfolio tab only
 
 export function DashboardPage() {
   const { status } = useMarketHours();
@@ -109,10 +109,7 @@ export function DashboardPage() {
           </div>
         </div>
 
-        {/* Row 3: Portfolio Risk Score */}
-        <PortfolioRiskWidget />
-
-        {/* Row 4: Watchlist */}
+        {/* Row 3: Watchlist */}
         <WatchlistManager />
 
         {/* Row 5: Signal Timeline */}

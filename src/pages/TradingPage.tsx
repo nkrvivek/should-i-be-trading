@@ -276,7 +276,9 @@ export default function TradingPage() {
 
       {brokerReady && activeTab === "portfolio" && (
         <>
-          <PortfolioRiskWidget />
+          <div style={{ marginBottom: 16 }}>
+            <PortfolioRiskWidget />
+          </div>
           <PositionsTable positions={positions} onViewStrategies={() => setTab("strategies")} />
         </>
       )}

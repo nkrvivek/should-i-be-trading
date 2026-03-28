@@ -37,6 +37,7 @@ const TIERS: Tier[] = [
       "82-term glossary with 9 deep-dive articles",
       "Dark / light theme",
       "Risk profile preferences (appetite, loss/profit targets)",
+      "Portfolio risk score (A-F grade with 5-pillar analysis)",
     ],
     tier: "free",
   },

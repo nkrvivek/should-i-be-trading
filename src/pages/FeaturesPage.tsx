@@ -825,6 +825,35 @@ const FEATURES: FeatureSection[] = [
 │  Reset to Defaults                           │
 └──────────────────────────────────────────────┘`,
   },
+  {
+    title: "Portfolio Risk Score",
+    tier: "FREE",
+    description: "Real-time composite risk score analyzing your entire portfolio across five institutional-grade pillars. Get an A-F grade with actionable warnings and suggestions.",
+    details: [
+      "Concentration analysis — flags positions exceeding safe thresholds",
+      "Sector diversification scoring across 8+ sectors",
+      "Drawdown risk monitoring with user risk tolerance integration",
+      "Position sizing uniformity analysis (standard deviation)",
+      "Hedge detection — puts, inverse ETFs, cash-like positions",
+      "Actionable suggestions to improve portfolio risk profile",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  PORTFOLIO RISK SCORE                        │
+│                                              │
+│     B         73/100                         │
+│              Moderate risk                   │
+│                                              │
+│  Concentration   ▓▓▓▓▓▓▓▓░░  82             │
+│  Diversification ▓▓▓▓▓▓░░░░  65             │
+│  Drawdown Risk   ▓▓▓▓▓▓▓▓▓░  90             │
+│  Position Sizing ▓▓▓▓▓▓░░░░  58             │
+│  Hedging         ▓▓▓▓▓░░░░░  50             │
+│                                              │
+│  ! Low sector diversification (2 sectors)    │
+│  - Add Healthcare, Energy for diversity      │
+│  - Consider protective puts for downside     │
+└──────────────────────────────────────────────┘`,
+  },
 ];
 
 const TIER_COLORS: Record<string, string> = {

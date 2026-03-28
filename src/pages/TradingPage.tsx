@@ -7,6 +7,7 @@ import FlowAnalysisPanel from "../components/trading/FlowAnalysisPanel";
 import StrategySuggester from "../components/trading/StrategySuggester";
 import StrategyAnalysisPanel from "../components/portfolio/StrategyAnalysisPanel";
 import WashSalePanel from "../components/portfolio/WashSalePanel";
+import { PortfolioRiskWidget } from "../components/portfolio/PortfolioRiskWidget";
 import OrderReviewModal from "../components/trading/OrderReviewModal";
 import { detectWashSales } from "../lib/strategy/washSaleDetector";
 import type { OrderRequest } from "../lib/brokers/types";
@@ -273,7 +274,12 @@ export default function TradingPage() {
       {/* Tab content */}
       {brokerReady && isAnyLoading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
 
-      {brokerReady && activeTab === "portfolio" && <PositionsTable positions={positions} onViewStrategies={() => setTab("strategies")} />}
+      {brokerReady && activeTab === "portfolio" && (
+        <>
+          <PortfolioRiskWidget />
+          <PositionsTable positions={positions} onViewStrategies={() => setTab("strategies")} />
+        </>
+      )}
       {brokerReady && activeTab === "orders" && <OrdersPanel orders={orders} onCancel={handleCancelOrder} onPlace={handlePlaceOrder} />}
       {brokerReady && activeTab === "flow" && <FlowAnalysisPanel />}
       {brokerReady && activeTab === "journal" && <JournalPanel />}

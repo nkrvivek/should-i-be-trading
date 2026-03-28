@@ -324,6 +324,11 @@ export function LandingPage() {
             description="Set your risk appetite, max acceptable loss, and target profit. Strategies filter automatically to match your trading style."
             tag="FREE"
           />
+          <FeatureCard
+            title="Portfolio Risk Score"
+            description="Real-time composite risk score (A-F) analyzing concentration, diversification, drawdown, position sizing, and hedging across your entire portfolio."
+            tag="FREE"
+          />
         </div>
       </section>
 

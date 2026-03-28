@@ -69,17 +69,21 @@ const COMPLEXITY_COLORS: Record<string, string> = {
 interface Props {
   onExecute?: (symbol: string, price: number, suggestion: StrategySuggestion) => void;
   canExecute?: boolean;
+  initialSimLegs?: SimulatorLeg[];
+  initialSimPrice?: number;
+  initialSimTicker?: string;
 }
 
-export default function StrategiesPage({ onExecute, canExecute }: Props = {}) {
-  const [tab, setTab] = useState<Tab>("library");
+export default function StrategiesPage({ onExecute, canExecute, initialSimLegs, initialSimPrice, initialSimTicker }: Props = {}) {
+  // If initial legs provided (e.g., from Trading > Simulate), start on simulator tab
+  const [tab, setTab] = useState<Tab>(initialSimLegs ? "simulator" : "library");
   const [assetFilter, setAssetFilter] = useState<AssetFilter>("all");
   const [outlookFilter, setOutlookFilter] = useState<OutlookFilter>("all");
 
-  // Simulator state — set when user clicks "Simulate" from library
-  const [simLegs, setSimLegs] = useState<SimulatorLeg[] | undefined>();
-  const [simPrice, setSimPrice] = useState(500);
-  const [simTicker, setSimTicker] = useState("SPY");
+  // Simulator state — set when user clicks "Simulate" from library or navigates with pre-filled legs
+  const [simLegs, setSimLegs] = useState<SimulatorLeg[] | undefined>(initialSimLegs);
+  const [simPrice, setSimPrice] = useState(initialSimPrice ?? 500);
+  const [simTicker, setSimTicker] = useState(initialSimTicker ?? "SPY");
 
   const { score: marketScore } = useMarketScore();
   const riskTolerance = useRiskPrefsStore((s) => s.riskTolerance);

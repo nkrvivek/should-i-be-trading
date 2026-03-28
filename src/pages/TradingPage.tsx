@@ -281,8 +281,9 @@ export default function TradingPage() {
         <StrategiesPanel
           positions={positions}
           orders={orders}
-          onSimulate={(_symbol, _price, _legs) => {
-            console.log("[StrategyAnalyzer] Simulate:", { _symbol, _price, _legs });
+          onSimulate={(symbol, price, legs) => {
+            // Navigate to Simulator tab on Signals page with pre-filled legs
+            navigate("/signals?tab=simulator", { state: { initialLegs: legs, initialPrice: price, initialTicker: symbol } });
           }}
           onExecute={handleOpenExecutionModal}
         />

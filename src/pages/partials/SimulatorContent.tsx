@@ -4,14 +4,18 @@
  */
 
 import { useState, useCallback } from "react";
+import { useLocation } from "react-router-dom";
 import StrategiesPage from "../StrategiesPage";
 import OrderReviewModal from "../../components/trading/OrderReviewModal";
 import { useBrokerStore } from "../../stores/brokerStore";
 import type { StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
+import type { SimulatorLeg } from "../../lib/strategy/payoff";
 
 export default function SimulatorContent() {
   const connections = useBrokerStore((s) => s.connections);
   const canExecute = connections.length > 0;
+  const location = useLocation();
+  const navState = location.state as { initialLegs?: SimulatorLeg[]; initialPrice?: number; initialTicker?: string } | null;
   const [modal, setModal] = useState<{ symbol: string; price: number; suggestion: StrategySuggestion } | null>(null);
 
   const handleExecute = useCallback((symbol: string, price: number, suggestion: StrategySuggestion) => {
@@ -20,7 +24,13 @@ export default function SimulatorContent() {
 
   return (
     <>
-      <StrategiesPage onExecute={handleExecute} canExecute={canExecute} />
+      <StrategiesPage
+        onExecute={handleExecute}
+        canExecute={canExecute}
+        initialSimLegs={navState?.initialLegs}
+        initialSimPrice={navState?.initialPrice}
+        initialSimTicker={navState?.initialTicker}
+      />
       {modal && (
         <OrderReviewModal
           symbol={modal.symbol}

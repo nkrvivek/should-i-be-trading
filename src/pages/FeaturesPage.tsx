@@ -795,6 +795,36 @@ const FEATURES: FeatureSection[] = [
 │  [MANAGE CONNECTIONS]  [COMBINED ANALYSIS]  │
 └──────────────────────────────────────────────┘`,
   },
+  {
+    title: "Risk Profile Preferences",
+    tier: "FREE",
+    description: "Set your risk appetite, max acceptable loss, and target profit. Strategy suggestions and the catalog automatically filter to match your trading style and comfort level.",
+    details: [
+      "Three risk appetite levels: Conservative, Moderate, Aggressive",
+      "Configurable max acceptable loss percentage (2%, 5%, 10%, 20%)",
+      "Target profit percentage selection (5%, 10%, 20%, 50%)",
+      "Strategy Analyzer filters suggestions by your risk profile",
+      "Strategy Library catalog filters by complexity and risk type",
+      "Persisted in local storage — your settings follow you across sessions",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  RISK PROFILE                               │
+│                                              │
+│  Strategies filter to match your preferences │
+│                                              │
+│  RISK APPETITE                               │
+│  [CONSERVATIVE]  [MODERATE]  [AGGRESSIVE]   │
+│                    ^^^^^^^^                  │
+│  MAX ACCEPTABLE LOSS                         │
+│  [2%]  [5%]  [10%]  [20%]                   │
+│         ^^^                                  │
+│  TARGET PROFIT                               │
+│  [5%]  [10%]  [20%]  [50%]                  │
+│         ^^^^                                 │
+│                                              │
+│  Reset to Defaults                           │
+└──────────────────────────────────────────────┘`,
+  },
 ];
 
 const TIER_COLORS: Record<string, string> = {

@@ -319,6 +319,11 @@ export function LandingPage() {
             description="Searchable glossary with 82 trading terms and 9 deep-dive articles covering options strategies, market regimes, technical analysis, and risk management. Built-in education for every skill level."
             tag="FREE"
           />
+          <FeatureCard
+            title="Risk Profile Preferences"
+            description="Set your risk appetite, max acceptable loss, and target profit. Strategies filter automatically to match your trading style."
+            tag="FREE"
+          />
         </div>
       </section>
 

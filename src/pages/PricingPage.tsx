@@ -36,6 +36,7 @@ const TIERS: Tier[] = [
       "News sentiment feed (market-wide)",
       "82-term glossary with 9 deep-dive articles",
       "Dark / light theme",
+      "Risk profile preferences (appetite, loss/profit targets)",
     ],
     tier: "free",
   },

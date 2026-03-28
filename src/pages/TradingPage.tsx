@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
@@ -56,6 +57,7 @@ export default function TradingPage() {
     placeOrder,
   } = useBrokerStore();
 
+  const navigate = useNavigate();
   const hasConnections = connections.length > 0;
   const hasAnyAccount = Object.keys(accounts).length > 0;
   const brokerReady = hasConnections && hasAnyAccount;
@@ -183,6 +185,21 @@ export default function TradingPage() {
               >
                 REFRESH
               </button>
+              <button
+                onClick={() => navigate("/settings?tab=brokerage")}
+                style={{
+                  ...monoStyle,
+                  fontSize: 13,
+                  padding: "4px 12px",
+                  border: "1px solid var(--signal-core)",
+                  borderRadius: 4,
+                  background: "none",
+                  color: "var(--signal-core)",
+                  cursor: "pointer",
+                }}
+              >
+                + BROKER
+              </button>
             </>
           ) : hasConnections && isAnyLoading ? (
             <span style={{ ...monoStyle, fontSize: 13, color: "var(--warning, #f59e0b)", animation: "pulse 1.4s ease-in-out infinite" }}>
@@ -192,7 +209,23 @@ export default function TradingPage() {
             <span style={{ ...monoStyle, fontSize: 13, color: "var(--text-muted, #94a3b8)" }}>
               BROKER OFFLINE
             </span>
-          ) : null}
+          ) : (
+            <button
+              onClick={() => navigate("/settings?tab=brokerage")}
+              style={{
+                ...monoStyle,
+                fontSize: 13,
+                padding: "4px 12px",
+                border: "1px solid var(--signal-core)",
+                borderRadius: 4,
+                background: "none",
+                color: "var(--signal-core)",
+                cursor: "pointer",
+              }}
+            >
+              + BROKER
+            </button>
+          )}
         </div>
       </div>
 

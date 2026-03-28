@@ -10,6 +10,8 @@ import {
 import type { SimulatorLeg } from "../lib/strategy/payoff";
 import type { StrategySuggestion } from "../lib/portfolio/strategyAnalyzer";
 import { useMarketScore } from "../hooks/useMarketScore";
+import { useRiskPrefsStore } from "../stores/riskPrefsStore";
+import { filterCatalog } from "../lib/portfolio/riskFilter";
 
 type Tab = "library" | "simulator";
 type AssetFilter = AssetClass | "all";
@@ -80,6 +82,13 @@ export default function StrategiesPage({ onExecute, canExecute }: Props = {}) {
   const [simTicker, setSimTicker] = useState("SPY");
 
   const { score: marketScore } = useMarketScore();
+  const riskTolerance = useRiskPrefsStore((s) => s.riskTolerance);
+  const maxLossPercent = useRiskPrefsStore((s) => s.maxLossPercent);
+  const targetProfitPercent = useRiskPrefsStore((s) => s.targetProfitPercent);
+  const riskPrefs = useMemo(
+    () => ({ riskTolerance, maxLossPercent, targetProfitPercent }),
+    [riskTolerance, maxLossPercent, targetProfitPercent],
+  );
   const currentSignal = marketScore?.signal ?? "CAUTION";
   const currentVix = marketScore?.categories?.find(
     (c: { name: string; score: number }) => c.name.toLowerCase().includes("volatil"),
@@ -92,6 +101,8 @@ export default function StrategiesPage({ onExecute, canExecute }: Props = {}) {
     if (assetFilter !== "all") list = list.filter((s) => s.assetClass === assetFilter);
     if (outlookFilter !== "all") list = list.filter((s) => s.outlook === outlookFilter);
 
+    list = filterCatalog(list, riskPrefs);
+
     // Sort: matching regime first
     list.sort((a, b) => {
       const aMatch = a.regimeSignals.includes(currentSignal) ? 0 : 1;
@@ -100,7 +111,7 @@ export default function StrategiesPage({ onExecute, canExecute }: Props = {}) {
     });
 
     return list;
-  }, [assetFilter, outlookFilter, currentSignal]);
+  }, [assetFilter, outlookFilter, currentSignal, riskPrefs]);
 
   const handleSimulate = useCallback(
     (template: StrategyTemplate) => {
@@ -201,6 +212,19 @@ export default function StrategiesPage({ onExecute, canExecute }: Props = {}) {
             )}
             <span style={{ color: "var(--text-muted)", fontFamily: "var(--font-sans)", fontSize: 11 }}>
               — Highlighted strategies match current conditions
+            </span>
+            <span
+              style={{
+                marginLeft: "auto",
+                padding: "2px 8px",
+                borderRadius: 999,
+                fontWeight: 500,
+                fontSize: 11,
+                color: "var(--text-secondary)",
+                border: "1px solid var(--border-dim)",
+              }}
+            >
+              RISK: {riskTolerance.toUpperCase()}
             </span>
           </div>
 

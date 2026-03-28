@@ -1,7 +1,9 @@
 import { useMemo } from "react";
 import { useBrokerStore } from "../../stores/brokerStore";
 import { useManualPortfolioStore } from "../../lib/portfolio/manualPortfolioStore";
+import { useRiskPrefsStore } from "../../stores/riskPrefsStore";
 import { analyzePositions } from "../../lib/portfolio/strategyAnalyzer";
+import { filterSuggestions } from "../../lib/portfolio/riskFilter";
 import type { PositionAnalysis, StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
 import type { SimulatorLeg } from "../../lib/strategy/payoff";
 
@@ -284,6 +286,9 @@ export default function StrategyAnalysisPanel({ onSimulate, onExecute }: Props) 
   const connections = useBrokerStore((s) => s.connections);
   const brokerAllPositions = useBrokerStore((s) => s.allPositions);
   const manualPositions = useManualPortfolioStore((s) => s.positions);
+  const riskTolerance = useRiskPrefsStore((s) => s.riskTolerance);
+  const maxLossPercent = useRiskPrefsStore((s) => s.maxLossPercent);
+  const targetProfitPercent = useRiskPrefsStore((s) => s.targetProfitPercent);
 
   // Can execute if at least one non-SnapTrade connection exists
   const canExecute = connections.length > 0;
@@ -293,9 +298,18 @@ export default function StrategyAnalysisPanel({ onSimulate, onExecute }: Props) 
     [brokerAllPositions, manualPositions],
   );
 
+  const riskPrefs = useMemo(
+    () => ({ riskTolerance, maxLossPercent, targetProfitPercent }),
+    [riskTolerance, maxLossPercent, targetProfitPercent],
+  );
+
   const analyses = useMemo(
-    () => analyzePositions(allPositions),
-    [allPositions],
+    () =>
+      analyzePositions(allPositions).map((a) => ({
+        ...a,
+        suggestions: filterSuggestions(a.suggestions, riskPrefs),
+      })),
+    [allPositions, riskPrefs],
   );
 
   const totalSuggestions = analyses.reduce(
@@ -337,6 +351,24 @@ export default function StrategyAnalysisPanel({ onSimulate, onExecute }: Props) 
             {totalSuggestions} suggestion{totalSuggestions !== 1 ? "s" : ""}
           </span>
         </div>
+      </div>
+
+      <div
+        style={{
+          padding: "6px 16px",
+          fontFamily: "var(--font-sans)",
+          fontSize: 11,
+          color: "var(--text-muted)",
+          borderBottom: "1px solid var(--border-dim)",
+        }}
+      >
+        Filtered by your risk profile ({riskTolerance}){" "}
+        <a
+          href="/settings?tab=profile"
+          style={{ color: "var(--signal-core)", textDecoration: "none" }}
+        >
+          Change in Settings
+        </a>
       </div>
 
       {analyses.length === 0 ? (

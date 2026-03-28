@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { ProfileForm } from "../components/settings/ProfileForm";
+import { RiskPreferencesForm } from "../components/settings/RiskPreferencesForm";
 import { ApiKeyForm } from "../components/settings/ApiKeyForm";
 import BrokerageSettings from "../components/settings/BrokerageSettings";
 import { TierManager } from "../components/settings/TierManager";
@@ -19,7 +20,12 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 export function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<Tab>("plan");
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tab = params.get("tab") as Tab | null;
+    const valid: Tab[] = ["plan", "api_keys", "brokerage", "notifications", "profile"];
+    return tab && valid.includes(tab) ? tab : "plan";
+  });
   const { user } = useAuthStore();
 
   const handleLogout = async () => {
@@ -74,7 +80,13 @@ export function SettingsPage() {
 
         {/* Tab content */}
         {activeTab === "plan" && <TierManager />}
-        {activeTab === "profile" && <ProfileForm />}
+        {activeTab === "profile" && (
+          <>
+            <ProfileForm />
+            <div style={{ height: 1, background: "var(--border-dim)", margin: "24px 0" }} />
+            <RiskPreferencesForm />
+          </>
+        )}
         {activeTab === "api_keys" && <ApiKeyForm />}
         {activeTab === "brokerage" && <BrokerageSettings />}
         {activeTab === "notifications" && <NotificationSettings />}

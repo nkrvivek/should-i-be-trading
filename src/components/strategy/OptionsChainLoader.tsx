@@ -82,6 +82,8 @@ export function OptionsChainLoader({ ticker, onPriceUpdate, onAddLeg }: Props) {
     .filter((o) => o.option_type === (showCalls ? "call" : "put"))
     .sort((a, b) => a.strike - b.strike);
 
+  const [lastAdded, setLastAdded] = useState<string | null>(null);
+
   const handleAddContract = (opt: TradierOption, action: "buy" | "sell") => {
     const leg: SimulatorLeg = {
       action,
@@ -92,6 +94,19 @@ export function OptionsChainLoader({ ticker, onPriceUpdate, onAddLeg }: Props) {
     };
     const iv = opt.greeks?.mid_iv ?? 0.30;
     onAddLeg(leg, iv);
+
+    // Visual feedback: flash the row and show confirmation
+    const key = `${opt.symbol}-${action}`;
+    setLastAdded(key);
+    setTimeout(() => setLastAdded(null), 1500);
+
+    // Scroll to Strategy Legs section so user sees the added leg
+    setTimeout(() => {
+      const legsHeader = document.querySelector('[data-legs-table]');
+      if (legsHeader) {
+        legsHeader.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }, 100);
   };
 
   if (!configured) {
@@ -261,9 +276,24 @@ export function OptionsChainLoader({ ticker, onPriceUpdate, onAddLeg }: Props) {
                         {opt.volume?.toLocaleString() ?? "—"}
                       </td>
                       <td style={{ padding: "0 4px", textAlign: "center" }}>
-                        <div style={{ display: "flex", gap: 4, justifyContent: "center" }}>
-                          <ActionBtn label="BUY" color="var(--positive)" onClick={() => handleAddContract(opt, "buy")} />
-                          <ActionBtn label="SELL" color="var(--negative)" onClick={() => handleAddContract(opt, "sell")} />
+                        <div style={{ display: "flex", gap: 4, justifyContent: "center", alignItems: "center" }}>
+                          <ActionBtn
+                            label="BUY"
+                            color="var(--positive)"
+                            onClick={() => handleAddContract(opt, "buy")}
+                            isActive={lastAdded === `${opt.symbol}-buy`}
+                          />
+                          <ActionBtn
+                            label="SELL"
+                            color="var(--negative)"
+                            onClick={() => handleAddContract(opt, "sell")}
+                            isActive={lastAdded === `${opt.symbol}-sell`}
+                          />
+                          {(lastAdded === `${opt.symbol}-buy` || lastAdded === `${opt.symbol}-sell`) && (
+                            <span style={{ fontSize: 9, color: "var(--signal-core)", fontFamily: "var(--font-mono)", fontWeight: 600, animation: "fadeIn 0.2s" }}>
+                              ADDED
+                            </span>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -330,24 +360,24 @@ function ToggleBtn({ active, onClick, label, color }: { active: boolean; onClick
   );
 }
 
-function ActionBtn({ label, color, onClick }: { label: string; color: string; onClick: () => void }) {
+function ActionBtn({ label, color, onClick, isActive }: { label: string; color: string; onClick: () => void; isActive?: boolean }) {
   return (
     <button
       onClick={onClick}
       style={{
-        padding: "1px 6px",
+        padding: "2px 8px",
         fontFamily: "var(--font-mono)",
         fontSize: 10,
         fontWeight: 700,
-        color,
-        background: "transparent",
+        color: isActive ? "#fff" : color,
+        background: isActive ? color : "transparent",
         border: `1px solid ${color}`,
         borderRadius: 3,
         cursor: "pointer",
-        opacity: 0.8,
+        transition: "all 0.15s ease",
       }}
     >
-      {label}
+      {isActive ? "ADDED" : label}
     </button>
   );
 }

@@ -50,10 +50,10 @@ export default function SignalsPage() {
 
   return (
     <TerminalShell cri={cri}>
-      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: 0, height: "calc(100vh - 96px)" }}>
+      <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: 0 }}>
         <TabBar tabs={TABS} />
 
-        <div style={{ flex: 1, overflow: "auto", padding: "12px 0" }}>
+        <div style={{ padding: "12px 0" }}>
           {visitedTabs.has("regime") && (
             <div style={{ display: activeTab === "regime" ? "block" : "none" }}>
               <Suspense fallback={loading}><RegimeContent /></Suspense>

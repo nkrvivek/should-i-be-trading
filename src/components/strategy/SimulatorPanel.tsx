@@ -201,6 +201,7 @@ export function SimulatorPanel({
 
       {/* Legs editor */}
       <div
+        data-legs-table
         style={{
           background: "var(--bg-panel)",
           border: "1px solid var(--border-dim)",

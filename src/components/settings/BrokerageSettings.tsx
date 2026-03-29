@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { BROKER_REGISTRY } from "../../lib/brokers/registry";
 import { createBrokerInstance } from "../../lib/brokers/registry";
@@ -30,6 +30,7 @@ export default function BrokerageSettings() {
   const [credentials, setCredentials] = useState<Record<string, string>>({});
   const [connectError, setConnectError] = useState("");
   const [snapTradeLoading, setSnapTradeLoading] = useState(false);
+  const pendingSnapRef = useRef<(() => Promise<void>) | null>(null);
 
   const isAnyLoading = Object.values(loadingMap).some(Boolean);
   const firstError = Object.values(errorsMap).find((e) => e != null) ?? null;
@@ -72,28 +73,56 @@ export default function BrokerageSettings() {
         "width=800,height=700,scrollbars=yes,resizable=yes",
       );
 
-      // Poll for popup close, then add connection
+      // Finalize connection after portal flow completes
+      const finalizeConnection = async () => {
+        try {
+          await instance.connect(snapCreds);
+          const updatedCreds = instance.getCredentials();
+          const displayName = instance.getDisplayName?.() ?? "SnapTrade";
+          await addConnection("snaptrade", updatedCreds, displayName);
+        } catch {
+          // User may not have completed the flow
+        }
+        setSnapTradeLoading(false);
+        setExpandedBroker(null);
+        pendingSnapRef.current = null;
+      };
+
       if (popup) {
-        const pollTimer = setInterval(async () => {
+        // Store ref so the "Connection Complete" button can trigger finalization
+        pendingSnapRef.current = finalizeConnection;
+
+        // Poll for popup close
+        const pollTimer = setInterval(() => {
           if (popup.closed) {
             clearInterval(pollTimer);
-            try {
-              // Re-connect the instance to discover newly linked accounts + institution name
-              await instance.connect(snapCreds);
-              const updatedCreds = instance.getCredentials();
-              const displayName = instance.getDisplayName?.() ?? "SnapTrade";
-              await addConnection("snaptrade", updatedCreds, displayName);
-            } catch {
-              // User may not have completed the flow
+            if (pendingSnapRef.current) {
+              pendingSnapRef.current();
             }
-            setSnapTradeLoading(false);
-            setExpandedBroker(null);
           }
         }, 1000);
+
+        // Also listen for postMessage from SnapTrade (some flows send a message instead of closing)
+        const messageHandler = (event: MessageEvent) => {
+          if (event.data === "SUCCESS" || event.data?.status === "SUCCESS" || event.data?.connectionComplete) {
+            window.removeEventListener("message", messageHandler);
+            clearInterval(pollTimer);
+            try { popup.close(); } catch { /* cross-origin */ }
+            if (pendingSnapRef.current) {
+              pendingSnapRef.current();
+            }
+          }
+        };
+        window.addEventListener("message", messageHandler);
+
         // Safety: clear after 5 minutes
         setTimeout(() => {
           clearInterval(pollTimer);
-          setSnapTradeLoading(false);
+          window.removeEventListener("message", messageHandler);
+          if (pendingSnapRef.current) {
+            setSnapTradeLoading(false);
+            pendingSnapRef.current = null;
+          }
         }, 5 * 60 * 1000);
       } else {
         window.location.href = portalUrl;
@@ -277,12 +306,39 @@ export default function BrokerageSettings() {
                   >
                     {snapTradeLoading ? "OPENING PORTAL..." : connectedSlugs.has("snaptrade") ? "ADD ANOTHER ACCOUNT" : "CONNECT YOUR BROKER"}
                   </button>
-                  <p style={{ ...monoStyle, fontSize: 12, color: "var(--text-secondary)", marginTop: 12, lineHeight: 1.6 }}>
-                    Supports Schwab, Fidelity, E*Trade, Robinhood, Webull, Interactive Brokers, and 20+ more
-                  </p>
-                  <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
-                    A secure window will open to connect your brokerage. No API keys needed.
-                  </p>
+                  {snapTradeLoading && pendingSnapRef.current && (
+                    <button
+                      onClick={() => {
+                        if (pendingSnapRef.current) pendingSnapRef.current();
+                      }}
+                      style={{
+                        ...monoStyle,
+                        display: "block",
+                        margin: "12px auto 0",
+                        fontSize: 13,
+                        fontWeight: 600,
+                        padding: "10px 32px",
+                        background: "var(--accent-bg, #05AD98)",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: 4,
+                        cursor: "pointer",
+                        letterSpacing: "0.04em",
+                      }}
+                    >
+                      I FINISHED CONNECTING — CLICK HERE
+                    </button>
+                  )}
+                  {!snapTradeLoading && (
+                    <p style={{ ...monoStyle, fontSize: 12, color: "var(--text-secondary)", marginTop: 12, lineHeight: 1.6 }}>
+                      Supports Schwab, Fidelity, E*Trade, Robinhood, Webull, Interactive Brokers, and 20+ more
+                    </p>
+                  )}
+                  {!snapTradeLoading && (
+                    <p style={{ fontSize: 12, color: "var(--text-secondary)", marginTop: 4 }}>
+                      A secure window will open to connect your brokerage. No API keys needed.
+                    </p>
+                  )}
                   {connectError && (
                     <div style={{ marginTop: 8, color: "var(--fault)", ...monoStyle, fontSize: 13 }}>{connectError}</div>
                   )}

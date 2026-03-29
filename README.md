@@ -18,6 +18,12 @@ Connect your brokerage in 30 seconds. No API keys needed.
 
 [**Get Started**](https://sibt.ai) · [**Features**](https://sibt.ai/features) · [**Pricing**](https://sibt.ai/pricing) · [**Glossary**](https://sibt.ai/learn)
 
+<br />
+
+<img src="docs/dashboard-dark.png" alt="SIBT Dashboard — Market Quality Score, Traffic Light Verdict, Daily Briefing" width="100%" />
+
+<sub>Dashboard showing Market Quality Score (27/100), NO TRADE verdict, 5-pillar breakdown, VIX regime, and AI daily briefing</sub>
+
 ---
 
 </div>

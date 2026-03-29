@@ -141,10 +141,22 @@ Deno.serve(async (req) => {
       // ── Register a new SnapTrade user ───────────────────────
       case "register": {
         const snapUserId = `sibt-${auth.userId}`;
-        const data = await snapRequest("POST", "snapTrade/registerUser", {
-          body: { userId: snapUserId },
-        });
-        return jsonResponse(data, 200, req);
+        try {
+          const data = await snapRequest("POST", "snapTrade/registerUser", {
+            body: { userId: snapUserId },
+          });
+          return jsonResponse(data, 200, req);
+        } catch (regErr) {
+          // User already exists (code 1010) — reset their secret to get fresh credentials
+          const msg = regErr instanceof Error ? regErr.message : "";
+          if (msg.includes("already exist") || msg.includes("1010")) {
+            const resetData = await snapRequest("POST", "snapTrade/resetUserSecret", {
+              body: { userId: snapUserId },
+            });
+            return jsonResponse(resetData, 200, req);
+          }
+          throw regErr;
+        }
       }
 
       // ── Generate Connection Portal URL ──────────────────────

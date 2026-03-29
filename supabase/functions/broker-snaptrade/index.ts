@@ -151,6 +151,7 @@ Deno.serve(async (req) => {
           const msg = regErr instanceof Error ? regErr.message : "";
           if (msg.includes("already exist") || msg.includes("1010")) {
             const resetData = await snapRequest("POST", "snapTrade/resetUserSecret", {
+              userId: snapUserId,
               body: { userId: snapUserId },
             });
             return jsonResponse(resetData, 200, req);

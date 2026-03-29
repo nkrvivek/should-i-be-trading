@@ -1,12 +1,26 @@
+<div align="center">
+
 # SIBT — Should I Be Trading?
 
-A market intelligence dashboard that answers one question: **should I be trading right now?**
+### Institutional-grade trading intelligence for retail traders
 
-Computes a proprietary SIBT Score from VIX, trend structure, sector breadth, momentum, macro data, and 15+ technical/fundamental/sentiment signals. Delivers a clear traffic light verdict: **TRADE / CAUTION / NO TRADE**.
+[![Live](https://img.shields.io/badge/LIVE-sibt.ai-05AD98?style=for-the-badge&logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjgiIHI9IjQiIGZpbGw9IndoaXRlIi8+PHBhdGggZD0iTTQgMjFjMC00IDQtNyA4LTdzOCAzIDggNyIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://sibt.ai)
+[![License](https://img.shields.io/badge/License-AGPL--3.0-blue?style=for-the-badge)](LICENSE)
+[![Tests](https://img.shields.io/badge/Tests-148_passing-05AD98?style=for-the-badge&logo=vitest&logoColor=white)](tests/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](tsconfig.json)
+[![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react&logoColor=black)](package.json)
 
-Self-service platform. Connect your brokerage or bring your own API keys. No investment advice — just tools, data, and an AI confidant.
+**One question. One score. One verdict.**
 
-**Live at [sibt.ai](https://sibt.ai)**
+Computes a proprietary Market Quality Score from VIX, trend structure, sector breadth, momentum, and macro data. Delivers a clear traffic light: **TRADE** | **CAUTION** | **NO TRADE**.
+
+Connect your brokerage in 30 seconds. No API keys needed.
+
+[**Get Started**](https://sibt.ai) · [**Features**](https://sibt.ai/features) · [**Pricing**](https://sibt.ai/pricing) · [**Glossary**](https://sibt.ai/learn)
+
+---
+
+</div>
 
 ## Key Features
 
@@ -54,18 +68,33 @@ Self-service platform. Connect your brokerage or bring your own API keys. No inv
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Vite, React 19, TypeScript |
-| State | Zustand |
-| Auth | Supabase Auth (Google OAuth) |
-| Database | Supabase Postgres (RLS) |
-| Edge Functions | Supabase Deno |
-| Market Data | FRED, Finnhub, FMP, SEC EDGAR |
-| Brokerage | SnapTrade, Alpaca, Interactive Brokers, Tradier |
-| AI | Anthropic Claude, Exa Search |
-| Charts | TradingView (free embed) |
-| Payments | Stripe |
-| Hosting | Cloudflare Pages |
-| E2E Testing | Playwright (210+ tests) |
+| **Frontend** | Vite, React 19, TypeScript |
+| **State** | Zustand (persisted stores) |
+| **Auth** | Supabase Auth (Google, X/Twitter OAuth) |
+| **Database** | Supabase Postgres (RLS) |
+| **Edge Functions** | Supabase Deno (20+ functions) |
+| **Market Data** | FRED, Finnhub, FMP, SEC EDGAR |
+| **Brokerage** | SnapTrade (25+ brokers), Alpaca, Interactive Brokers, Tradier |
+| **AI** | Anthropic Claude, Exa Search |
+| **Charts** | TradingView (free embed) |
+| **Payments** | Stripe (subscriptions + trials) |
+| **Hosting** | Cloudflare Pages |
+| **Testing** | Vitest (148 unit tests) + Playwright (20 E2E specs) |
+
+<div align="center">
+
+### Powered By
+
+[![FRED](https://img.shields.io/badge/FRED-Federal_Reserve-003366?style=flat-square)](https://fred.stlouisfed.org)
+[![Finnhub](https://img.shields.io/badge/Finnhub-Market_Data-000?style=flat-square)](https://finnhub.io)
+[![FMP](https://img.shields.io/badge/FMP-Fundamentals-1a73e8?style=flat-square)](https://financialmodelingprep.com)
+[![Anthropic](https://img.shields.io/badge/Anthropic-Claude_AI-d4a574?style=flat-square)](https://anthropic.com)
+[![SnapTrade](https://img.shields.io/badge/SnapTrade-25+_Brokers-05AD98?style=flat-square)](https://snaptrade.com)
+[![Supabase](https://img.shields.io/badge/Supabase-Auth_+_DB-3ECF8E?style=flat-square&logo=supabase&logoColor=white)](https://supabase.com)
+[![Cloudflare](https://img.shields.io/badge/Cloudflare-Pages-F38020?style=flat-square&logo=cloudflare&logoColor=white)](https://pages.cloudflare.com)
+[![Stripe](https://img.shields.io/badge/Stripe-Payments-635BFF?style=flat-square&logo=stripe&logoColor=white)](https://stripe.com)
+
+</div>
 
 ## Getting Started
 
@@ -79,16 +108,24 @@ npm run dev     # http://localhost:5173
 npm run build   # Production build
 ```
 
+## Supported Brokerages
+
+Connect in 30 seconds via SnapTrade — no API keys needed:
+
+> **Schwab** · **Fidelity** · **Robinhood** · **E\*Trade** · **Webull** · **Vanguard** · **Interactive Brokers** · **Chase** · **Wells Fargo** · **Alpaca** · **Tradier** · **Empower** · and 20+ more
+
 ## Testing
 
 ```bash
-npm test                  # Unit tests (Vitest)
-npx playwright test       # E2E tests (210+ tests, headless)
+npm test                  # 148 unit tests (Vitest)
+npx playwright test       # 20 E2E specs (Playwright, headless)
 npm run test:e2e:ui       # Interactive Playwright UI
 npm run test:e2e:headed   # Watch in browser
 ```
 
-E2E tests cover: navigation, CSV upload (multi-broker auto-detect, security sanitization), AI usage tracking, strategy analysis, strategy execution flow, multi-brokerage connections, wash sale monitoring, auth gates, trial flows, alerts, and responsive layout.
+Unit tests cover: payoff calculations, order mapping, risk checks, execution engine, strategy analyzer, portfolio risk scoring, risk filtering, market scoring, and formatting utilities.
+
+E2E tests cover: auth flows, CSV upload, strategy execution, multi-brokerage, settings, alerts, public pages, and responsive layout.
 
 ## Architecture
 
@@ -124,8 +161,16 @@ E2E tests cover: navigation, CSV upload (multi-broker auto-detect, security sani
 
 ## Disclaimer
 
-SIBT is an analytical tool for market data visualization, regime analysis, and portfolio tracking. It does **not** provide investment advice, recommendations, or financial planning services. All trading decisions are made solely by the user. Trading involves substantial risk of loss.
+> SIBT is an analytical tool for market data visualization, regime analysis, and portfolio tracking. It does **not** provide investment advice, recommendations, or financial planning services. All trading decisions are made solely by the user. Trading involves substantial risk of loss.
 
 ## License
 
 AGPL-3.0 — See [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+**[sibt.ai](https://sibt.ai)** · Built for retail traders who refuse to trade blind.
+
+</div>

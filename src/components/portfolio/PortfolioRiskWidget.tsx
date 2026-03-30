@@ -5,8 +5,10 @@
 
 import { useMemo } from "react";
 import { useBrokerStore } from "../../stores/brokerStore";
+import { useManualPortfolioStore } from "../../lib/portfolio/manualPortfolioStore";
 import { useRiskPrefsStore } from "../../stores/riskPrefsStore";
 import { computePortfolioRiskScore } from "../../lib/portfolio/portfolioRiskScore";
+import type { BrokerPosition } from "../../lib/brokers/types";
 
 const GRADE_COLORS: Record<string, string> = {
   A: "#05AD98",
@@ -36,13 +38,30 @@ const headerStyle: React.CSSProperties = {
 export function PortfolioRiskWidget() {
   const allPositions = useBrokerStore((s) => s.allPositions);
   const allAccounts = useBrokerStore((s) => s.allAccounts);
+  const manualPositions = useManualPortfolioStore((s) => s.positions);
   const riskTolerance = useRiskPrefsStore((s) => s.riskTolerance);
   const maxLossPercent = useRiskPrefsStore((s) => s.maxLossPercent);
   const targetProfitPercent = useRiskPrefsStore((s) => s.targetProfitPercent);
 
-  const positions = allPositions();
+  const brokerPositions = allPositions();
   const accounts = allAccounts();
-  const totalEquity = accounts.reduce((sum, a) => sum + a.equity, 0);
+
+  // Merge broker + manual positions for risk scoring
+  const manualAsBroker: BrokerPosition[] = manualPositions.map((p) => ({
+    symbol: p.symbol,
+    qty: p.qty,
+    side: p.side,
+    avgEntryPrice: p.avgEntryPrice,
+    currentPrice: p.currentPrice,
+    marketValue: p.marketValue,
+    unrealizedPL: p.unrealizedPL,
+    unrealizedPLPercent: p.avgEntryPrice > 0 ? (p.unrealizedPL / (p.avgEntryPrice * p.qty)) * 100 : 0,
+    assetType: "stock" as const,
+  }));
+
+  const positions = [...brokerPositions, ...manualAsBroker];
+  const manualEquity = manualAsBroker.reduce((s, p) => s + p.marketValue, 0);
+  const totalEquity = accounts.reduce((sum, a) => sum + a.equity, 0) + manualEquity;
 
   const riskPrefs = useMemo(
     () => ({ riskTolerance, maxLossPercent, targetProfitPercent }),

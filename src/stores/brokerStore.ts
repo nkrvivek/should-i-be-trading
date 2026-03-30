@@ -41,6 +41,11 @@ export function setBrokerEncryptionKey(uid: string | null) {
   }
 }
 
+/** Check if encrypted data exists but can't be read (no passphrase yet) */
+function hasEncryptedDataPending(): boolean {
+  return !getPassphrase() && localStorage.getItem(ENCRYPTED_KEY) !== null;
+}
+
 async function loadConnections(): Promise<StoredConnection[]> {
   const passphrase = getPassphrase();
 
@@ -371,6 +376,19 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
     },
 
     reconnectAll: async () => {
+      // If encrypted data exists but auth hasn't set the passphrase yet,
+      // wait briefly for it (AuthProvider runs async getSession on mount)
+      if (hasEncryptedDataPending()) {
+        await new Promise<void>((resolve) => {
+          let attempts = 0;
+          const check = () => {
+            if (!hasEncryptedDataPending() || ++attempts > 20) resolve();
+            else setTimeout(check, 150);
+          };
+          check();
+        });
+      }
+
       const stored = await loadConnections();
       if (stored.length === 0) return;
 

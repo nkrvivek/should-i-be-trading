@@ -267,8 +267,13 @@ function scoreHedging(
 
   let score = 0;
 
+  // Detect put options by looking for 'P' after digits in the option symbol.
+  // OCC format: AAPL  250718P00200000 — 'P' after date digits.
+  // Compact format: SPY230P400 — 'P' after partial date digits.
+  // Avoid false positives from ticker characters (AAPL, JPM) by requiring
+  // at least 2 preceding digits before the P.
   const hasPuts = positions.some(
-    (p) => p.assetType === "option" && p.symbol.toLowerCase().includes("p"),
+    (p) => p.assetType === "option" && /\d{2,}P/i.test(p.symbol),
   );
   const hasInverseETFs = positions.some((p) =>
     INVERSE_ETFS.includes(p.symbol.toUpperCase()),

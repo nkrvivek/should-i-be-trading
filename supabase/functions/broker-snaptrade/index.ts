@@ -150,20 +150,15 @@ Deno.serve(async (req) => {
           });
           return jsonResponse(data, 200, req);
         } catch (regErr) {
-          // User already exists (code 1010) — delete and re-register
+          // User already exists (code 1010) — reset userSecret instead of deleting.
+          // Deleting would wipe all previously linked brokerage accounts.
           const msg = regErr instanceof Error ? regErr.message : "";
           if (msg.includes("already exist") || msg.includes("1010")) {
-            // Delete existing user (only needs userId, no userSecret)
-            await snapRequest("DELETE", "snapTrade/deleteUser", {
+            const resetData = await snapRequest("POST", "snapTrade/resetUserSecret", {
               userId: snapUserId,
-            });
-            // Brief pause for deletion to propagate
-            await new Promise((r) => setTimeout(r, 1000));
-            // Re-register
-            const reregData = await snapRequest("POST", "snapTrade/registerUser", {
               body: { userId: snapUserId },
             });
-            return jsonResponse(reregData, 200, req);
+            return jsonResponse(resetData, 200, req);
           }
           throw regErr;
         }

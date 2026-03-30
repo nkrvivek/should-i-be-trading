@@ -248,8 +248,12 @@ function renderStrategySections(
             {onSimulate && (
               <button
                 onClick={() => {
-                  const avgStrike = parsed.legs.reduce((s, l) => s + l.strike, 0) / parsed.legs.length;
-                  onSimulate(parsed.ticker, avgStrike || 100, parsed.legs);
+                  // Use option strikes only (stock legs have strike=0)
+                  const optionLegs = parsed.legs.filter((l) => l.strike > 0);
+                  const underlyingPrice = optionLegs.length > 0
+                    ? optionLegs.reduce((s, l) => s + l.strike, 0) / optionLegs.length
+                    : context?.positions?.find((p) => p.symbol === parsed.ticker)?.currentPrice ?? 100;
+                  onSimulate(parsed.ticker, underlyingPrice, parsed.legs);
                 }}
                 style={{
                   ...mono,

@@ -63,6 +63,17 @@ export async function getUserCredential(
     throw new Error(`Your ${provider} credential is marked invalid. Please update it in Settings.`);
   }
 
+  // Decrypt via database function if encryption is configured
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  if (serviceKey) {
+    try {
+      const svc = createClient(supabaseUrl, serviceKey);
+      const { data: decrypted } = await svc.rpc("decrypt_credential", { encrypted_text: data.credential_data });
+      if (decrypted) return decrypted as string;
+    } catch { /* decrypt_credential not available or no encryption key — use raw */ }
+  }
+
   return data.credential_data;
 }
 

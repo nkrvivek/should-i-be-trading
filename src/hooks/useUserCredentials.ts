@@ -53,13 +53,17 @@ export function useUserCredentials() {
     async (provider: CredentialProvider, credentialData: string) => {
       if (!user) throw new Error("Not authenticated");
 
+      // Encrypt via database function if available, else store raw
+      const { data: encrypted } = await supabase.rpc("encrypt_credential", { raw_text: credentialData });
+      const storedData = (encrypted as string) ?? credentialData;
+
       const { error } = await supabase
         .from("user_credentials")
         .upsert(
           {
             user_id: user.id,
             provider,
-            credential_data: credentialData,
+            credential_data: storedData,
             is_valid: true, // will be validated by edge function
             last_validated_at: new Date().toISOString(),
           },

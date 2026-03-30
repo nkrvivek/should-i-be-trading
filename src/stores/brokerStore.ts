@@ -77,33 +77,46 @@ async function loadConnections(): Promise<StoredConnection[]> {
           credentials: old.credentials,
           displayName: info?.name ?? old.slug,
         }];
+        // Write migrated data to plaintext key before removing old keys
+        localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(connections));
         localStorage.removeItem(OLD_CREDS_KEY);
         localStorage.removeItem(OLD_ACTIVE_KEY);
       }
     } catch { /* */ }
   }
 
-  // Migrate plaintext to encrypted storage
+  // Migrate plaintext to encrypted storage — only remove plaintext after confirmed write
   if (connections.length > 0 && passphrase) {
-    await saveConnections(connections);
-    localStorage.removeItem(CONNECTIONS_KEY); // Remove plaintext
+    const saved = await saveConnections(connections);
+    if (saved) {
+      localStorage.removeItem(CONNECTIONS_KEY);
+    }
   }
 
   return connections;
 }
 
-async function saveConnections(connections: StoredConnection[]) {
+/** Returns true if the save succeeded, false on failure */
+async function saveConnections(connections: StoredConnection[]): Promise<boolean> {
   const passphrase = getPassphrase();
   try {
     if (passphrase) {
       const encrypted = await encrypt(JSON.stringify(connections), passphrase);
       localStorage.setItem(ENCRYPTED_KEY, encrypted);
-      localStorage.removeItem(CONNECTIONS_KEY); // Ensure no plaintext copy
+      // Only remove plaintext after encrypted write confirmed
+      localStorage.removeItem(CONNECTIONS_KEY);
     } else {
       // No auth context yet — store plaintext (will encrypt on next load)
       localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(connections));
     }
-  } catch { /* */ }
+    return true;
+  } catch {
+    // Fallback: ensure data is at least saved in plaintext rather than lost
+    try {
+      localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(connections));
+    } catch { /* quota exceeded or private mode — nothing we can do */ }
+    return false;
+  }
 }
 
 /* ------------------------------------------------------------------ */

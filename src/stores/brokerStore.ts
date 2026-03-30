@@ -7,6 +7,7 @@ import type {
   BrokerConnectionInterface,
 } from "../lib/brokers/types";
 import { createBrokerInstance, BROKER_REGISTRY } from "../lib/brokers/registry";
+import { encrypt, decrypt } from "../lib/crypto";
 
 /* ------------------------------------------------------------------ */
 /*  Persistence helpers                                                */
@@ -15,6 +16,7 @@ import { createBrokerInstance, BROKER_REGISTRY } from "../lib/brokers/registry";
 const OLD_CREDS_KEY = "sibt_broker_creds";
 const OLD_ACTIVE_KEY = "sibt_active_broker";
 const CONNECTIONS_KEY = "sibt_broker_connections";
+const ENCRYPTED_KEY = "sibt_broker_connections_enc";
 
 interface StoredConnection {
   id: string;
@@ -23,38 +25,84 @@ interface StoredConnection {
   displayName: string;
 }
 
-function loadConnections(): StoredConnection[] {
-  try {
-    const raw = localStorage.getItem(CONNECTIONS_KEY);
-    if (raw) return JSON.parse(raw);
-  } catch { /* */ }
-
-  // Migrate from old single-broker format
-  try {
-    const oldRaw = localStorage.getItem(OLD_CREDS_KEY);
-    const oldSlug = localStorage.getItem(OLD_ACTIVE_KEY);
-    if (oldRaw && oldSlug) {
-      const old = JSON.parse(oldRaw) as { slug: string; credentials: Record<string, string> };
-      const info = BROKER_REGISTRY.find((b) => b.slug === old.slug);
-      const migrated: StoredConnection[] = [{
-        id: `${old.slug}-migrated`,
-        slug: old.slug,
-        credentials: old.credentials,
-        displayName: info?.name ?? old.slug,
-      }];
-      localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(migrated));
-      localStorage.removeItem(OLD_CREDS_KEY);
-      localStorage.removeItem(OLD_ACTIVE_KEY);
-      return migrated;
-    }
-  } catch { /* */ }
-
-  return [];
+/** Get encryption passphrase from the current user session */
+function getPassphrase(): string | null {
+  // Dynamic import to avoid circular dependency
+  const authState = (window as Record<string, unknown>).__sibt_auth_uid as string | undefined;
+  return authState || null;
 }
 
-function saveConnections(connections: StoredConnection[]) {
+/** Set the auth UID for encryption (called from AuthProvider) */
+export function setBrokerEncryptionKey(uid: string | null) {
+  if (uid) {
+    (window as Record<string, unknown>).__sibt_auth_uid = uid;
+  } else {
+    delete (window as Record<string, unknown>).__sibt_auth_uid;
+  }
+}
+
+async function loadConnections(): Promise<StoredConnection[]> {
+  const passphrase = getPassphrase();
+
+  // Try loading encrypted data first
+  if (passphrase) {
+    try {
+      const encRaw = localStorage.getItem(ENCRYPTED_KEY);
+      if (encRaw) {
+        const decrypted = await decrypt(encRaw, passphrase);
+        return JSON.parse(decrypted);
+      }
+    } catch { /* decryption failed — fall through to plaintext migration */ }
+  }
+
+  // Fall through: load plaintext and migrate to encrypted
+  let connections: StoredConnection[] = [];
+
   try {
-    localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(connections));
+    const raw = localStorage.getItem(CONNECTIONS_KEY);
+    if (raw) connections = JSON.parse(raw);
+  } catch { /* */ }
+
+  if (connections.length === 0) {
+    // Migrate from old single-broker format
+    try {
+      const oldRaw = localStorage.getItem(OLD_CREDS_KEY);
+      const oldSlug = localStorage.getItem(OLD_ACTIVE_KEY);
+      if (oldRaw && oldSlug) {
+        const old = JSON.parse(oldRaw) as { slug: string; credentials: Record<string, string> };
+        const info = BROKER_REGISTRY.find((b) => b.slug === old.slug);
+        connections = [{
+          id: `${old.slug}-migrated`,
+          slug: old.slug,
+          credentials: old.credentials,
+          displayName: info?.name ?? old.slug,
+        }];
+        localStorage.removeItem(OLD_CREDS_KEY);
+        localStorage.removeItem(OLD_ACTIVE_KEY);
+      }
+    } catch { /* */ }
+  }
+
+  // Migrate plaintext to encrypted storage
+  if (connections.length > 0 && passphrase) {
+    await saveConnections(connections);
+    localStorage.removeItem(CONNECTIONS_KEY); // Remove plaintext
+  }
+
+  return connections;
+}
+
+async function saveConnections(connections: StoredConnection[]) {
+  const passphrase = getPassphrase();
+  try {
+    if (passphrase) {
+      const encrypted = await encrypt(JSON.stringify(connections), passphrase);
+      localStorage.setItem(ENCRYPTED_KEY, encrypted);
+      localStorage.removeItem(CONNECTIONS_KEY); // Ensure no plaintext copy
+    } else {
+      // No auth context yet — store plaintext (will encrypt on next load)
+      localStorage.setItem(CONNECTIONS_KEY, JSON.stringify(connections));
+    }
   } catch { /* */ }
 }
 
@@ -173,15 +221,18 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
       // the same underlying account (e.g. same SnapTrade userId), refresh it
       // instead of creating a duplicate.
       const { connections } = get();
-      const existing = connections.find((c) => {
-        if (c.slug !== slug) return false;
-        // For SnapTrade: same userId = same account
+      const allStored = await loadConnections();
+      let existing: BrokerConnection | undefined;
+      for (const c of connections) {
+        if (c.slug !== slug) continue;
         if (slug === "snaptrade" && credentials.snapUserId) {
-          const stored = loadConnections().find((s) => s.id === c.id);
-          return stored?.credentials?.snapUserId === credentials.snapUserId;
+          const stored = allStored.find((s) => s.id === c.id);
+          if (stored?.credentials?.snapUserId === credentials.snapUserId) {
+            existing = c;
+            break;
+          }
         }
-        return false;
-      });
+      }
       if (existing) {
         // Just refresh the existing connection instead of adding a duplicate
         await get().refresh(existing.id);
@@ -212,9 +263,9 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
 
         // Save credentials — use updated creds if broker refreshed them (e.g. SnapTrade re-registration)
         const finalCreds = instance.getCredentials?.() ?? credentials;
-        const stored = loadConnections();
+        const stored = await loadConnections();
         stored.push({ id, slug, credentials: finalCreds, displayName: resolvedName });
-        saveConnections(stored);
+        await saveConnections(stored);
 
         set((s) => {
           const newState = {
@@ -257,8 +308,8 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
       });
 
       // Update localStorage
-      const stored = loadConnections().filter((c) => c.id !== connectionId);
-      saveConnections(stored);
+      const stored = (await loadConnections()).filter((c) => c.id !== connectionId);
+      await saveConnections(stored);
     },
 
     refresh: async (connectionId) => {
@@ -281,7 +332,7 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
           try {
             // If not connected, try reconnecting
             if (!conn.instance.isConnected) {
-              const stored = loadConnections().find((c) => c.id === conn.id);
+              const stored = (await loadConnections()).find((c) => c.id === conn.id);
               await conn.instance.connect(stored?.credentials ?? {});
             }
 
@@ -307,7 +358,7 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
     },
 
     reconnectAll: async () => {
-      const stored = loadConnections();
+      const stored = await loadConnections();
       if (stored.length === 0) return;
 
       // Deduplicate stored connections — keep first entry per slug+account key
@@ -323,7 +374,7 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
       }
       // Persist cleaned list if duplicates were removed
       if (deduped.length < stored.length) {
-        saveConnections(deduped);
+        await saveConnections(deduped);
       }
 
       for (const entry of deduped) {
@@ -356,12 +407,12 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
 
           // Persist refreshed credentials and display name
           const refreshedCreds = instance.getCredentials?.() ?? entry.credentials;
-          const allStored = loadConnections();
-          const idx = allStored.findIndex((c) => c.id === entry.id);
+          const currentStored = await loadConnections();
+          const idx = currentStored.findIndex((c) => c.id === entry.id);
           if (idx >= 0) {
-            allStored[idx].credentials = refreshedCreds;
-            allStored[idx].displayName = resolvedName;
-            saveConnections(allStored);
+            currentStored[idx].credentials = refreshedCreds;
+            currentStored[idx].displayName = resolvedName;
+            await saveConnections(currentStored);
           }
 
           set((s) => {

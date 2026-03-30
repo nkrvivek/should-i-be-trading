@@ -8,6 +8,7 @@ import { isSupabaseConfigured } from "./lib/supabase";
 import { hasFeature } from "./lib/featureGates";
 import type { Feature } from "./lib/featureGates";
 import { AlertBell } from "./components/alerts/AlertBell";
+import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 
 // Lazy-load all pages — keeps initial bundle small
 const DashboardPage = lazy(() => import("./pages/DashboardPage").then(m => ({ default: m.DashboardPage })));
@@ -41,6 +42,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public / marketing */}
@@ -55,10 +57,10 @@ export default function App() {
           <Route path="/glossary" element={<Navigate to="/learn" replace />} />
 
           {/* Core 5 hub pages */}
-          <Route path="/" element={<SmartHome />} />
-          <Route path="/research" element={<ResearchPage />} />
-          <Route path="/signals" element={<SignalsPage />} />
-          <Route path="/trading" element={<GatedPage feature="terminal"><TradingPage /></GatedPage>} />
+          <Route path="/" element={<ErrorBoundary><SmartHome /></ErrorBoundary>} />
+          <Route path="/research" element={<ErrorBoundary><ResearchPage /></ErrorBoundary>} />
+          <Route path="/signals" element={<ErrorBoundary><SignalsPage /></ErrorBoundary>} />
+          <Route path="/trading" element={<ErrorBoundary><GatedPage feature="terminal"><TradingPage /></GatedPage></ErrorBoundary>} />
 
           {/* Gated utility */}
           <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
@@ -78,6 +80,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
         </Suspense>
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );

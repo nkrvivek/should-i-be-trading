@@ -70,7 +70,7 @@ export async function getUserCredential(
 const ALLOWED_ORIGINS = [
   "https://sibt.ai",
   "https://www.sibt.ai",
-  "https://should-i-be-trading.vercel.app",
+  "https://should-i-be-trading.pages.dev",
 ];
 
 /** Build CORS headers with origin check. Falls back to first allowed origin. */

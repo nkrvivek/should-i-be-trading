@@ -66,7 +66,7 @@ export function TickerChart({ defaultSymbol = "SPY" }: Props) {
     const script = document.createElement("script");
     script.src = "https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js";
     script.async = true;
-    script.innerHTML = JSON.stringify({
+    script.textContent = JSON.stringify({
       autosize: true,
       symbol: symbol,
       interval: "D",

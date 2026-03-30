@@ -82,99 +82,21 @@ async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ a
   const dailyLimit = DAILY_LIMITS[tier] ?? DAILY_LIMITS.free;
 
   try {
-    // Ensure the row exists (no-op if already present)
-    await supabase
-      .from("ai_usage")
-      .upsert(
-        { user_id: userId, usage_date: today, request_count: 0, updated_at: new Date().toISOString() },
-        { onConflict: "user_id,usage_date", ignoreDuplicates: true },
-      );
+    // Atomic increment via database function — no race conditions
+    const { data, error } = await supabase.rpc("increment_ai_usage", {
+      p_user_id: userId,
+      p_usage_date: today,
+      p_daily_limit: dailyLimit,
+    });
 
-    // Supabase JS client doesn't support `SET col = col + 1` directly,
-    // so we use a CAS (compare-and-swap) approach:
-    // 1. Read current count
-    // 2. UPDATE ... SET request_count = currentCount + 1
-    //    WHERE request_count = currentCount AND request_count < limit
-    // If step 2 returns 0 rows, another request slipped in — retry once.
+    if (error) throw error;
 
-    // Read current value
-    const { data: current } = await supabase
-      .from("ai_usage")
-      .select("request_count")
-      .eq("user_id", userId)
-      .eq("usage_date", today)
-      .single();
-
-    const currentCount = current?.request_count ?? 0;
-    if (currentCount >= dailyLimit) {
-      return { allowed: false, used: currentCount, limit: dailyLimit };
+    const count = data as number;
+    if (count < 0) {
+      // Negative = denied (limit reached)
+      return { allowed: false, used: Math.abs(count), limit: dailyLimit };
     }
-
-    // Atomic conditional increment: only succeeds if count hasn't changed AND is under limit
-    const { data: incremented } = await supabase
-      .from("ai_usage")
-      .update({
-        request_count: currentCount + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId)
-      .eq("usage_date", today)
-      .eq("request_count", currentCount) // Optimistic lock: must match exactly
-      .lt("request_count", dailyLimit)   // Must still be under limit
-      .select("request_count")
-      .single();
-
-    if (incremented) {
-      return { allowed: true, used: incremented.request_count, limit: dailyLimit };
-    }
-
-    // CAS failed — another concurrent request modified the row. Retry once.
-    const { data: retry } = await supabase
-      .from("ai_usage")
-      .select("request_count")
-      .eq("user_id", userId)
-      .eq("usage_date", today)
-      .single();
-
-    const retryCount = retry?.request_count ?? 0;
-    if (retryCount >= dailyLimit) {
-      return { allowed: false, used: retryCount, limit: dailyLimit };
-    }
-
-    // Second attempt at atomic increment
-    const { data: retryIncrement } = await supabase
-      .from("ai_usage")
-      .update({
-        request_count: retryCount + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("user_id", userId)
-      .eq("usage_date", today)
-      .eq("request_count", retryCount)
-      .lt("request_count", dailyLimit)
-      .select("request_count")
-      .single();
-
-    if (retryIncrement) {
-      return { allowed: true, used: retryIncrement.request_count, limit: dailyLimit };
-    }
-
-    // Both CAS attempts failed — concurrent contention is high.
-    // Re-read final state and deny if at or over limit (safe default).
-    const { data: finalCheck } = await supabase
-      .from("ai_usage")
-      .select("request_count")
-      .eq("user_id", userId)
-      .eq("usage_date", today)
-      .single();
-
-    const finalCount = finalCheck?.request_count ?? 0;
-    if (finalCount >= dailyLimit) {
-      return { allowed: false, used: finalCount, limit: dailyLimit };
-    }
-
-    // Under limit but CAS keeps failing — deny to maintain accurate quota
-    return { allowed: false, used: finalCount, limit: dailyLimit };
+    return { allowed: true, used: count, limit: dailyLimit };
   } catch {
     // If usage tracking fails, still allow the request
     return { allowed: true, used: 0, limit: dailyLimit };

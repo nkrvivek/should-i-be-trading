@@ -1,4 +1,3 @@
-import { AlpacaBroker } from "./alpaca";
 import { IBKRBroker } from "./ibkr";
 import { TradierBroker } from "./tradier";
 import { SchwabBroker } from "./schwab";
@@ -22,23 +21,10 @@ export const BROKER_REGISTRY: BrokerInfo[] = [
     name: "SnapTrade",
     slug: "snaptrade",
     icon: "🔗",
-    description: "Connect any brokerage instantly — Schwab, Fidelity, Robinhood, E*Trade, Webull & more. No API keys needed.",
+    description: "Connect any brokerage instantly — Schwab, Fidelity, Robinhood, E*Trade, Webull, Alpaca & more. No API keys needed.",
     isPaperAvailable: false,
     status: "available",
     credentialFields: [],
-  },
-  {
-    name: "Alpaca",
-    slug: "alpaca",
-    icon: "🦙",
-    description: "Commission-free API-first broker. Paper trading included.",
-    isPaperAvailable: true,
-    status: "available",
-    credentialFields: [
-      { key: "apiKey", label: "API Key", type: "text", placeholder: "PK..." },
-      { key: "secretKey", label: "Secret Key", type: "password", placeholder: "Your secret key" },
-      { key: "mode", label: "Mode", type: "select", placeholder: "paper" },
-    ],
   },
   {
     name: "Interactive Brokers",
@@ -128,8 +114,6 @@ export function createBrokerInstance(slug: string): BrokerConnectionInterface | 
   switch (slug) {
     case "snaptrade":
       return new SnapTradeBroker();
-    case "alpaca":
-      return new AlpacaBroker();
     case "ibkr":
       return new IBKRBroker();
     case "tradier":

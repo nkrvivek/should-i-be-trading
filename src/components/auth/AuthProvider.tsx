@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { supabase, isSupabaseConfigured } from "../../lib/supabase";
 import { useAuthStore } from "../../stores/authStore";
 import { clearTokenCache } from "../../api/edgeHeaders";
+import { setBrokerEncryptionKey } from "../../stores/brokerStore";
 
 type Props = { children: ReactNode };
 
@@ -47,6 +48,7 @@ export function AuthProvider({ children }: Props) {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setBrokerEncryptionKey(session?.user?.id ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchCredentials(session.user.id);
@@ -61,6 +63,7 @@ export function AuthProvider({ children }: Props) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
+      setBrokerEncryptionKey(session?.user?.id ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
         fetchCredentials(session.user.id);

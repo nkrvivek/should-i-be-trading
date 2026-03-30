@@ -67,7 +67,10 @@ async function snapRequest(
   const requestData = opts.body ?? null;
   const timestamp = Math.floor(Date.now() / 1000).toString();
 
-  // Build query params — timestamp MUST be a query param per SnapTrade API
+  // Build query params — SnapTrade API requires userId/userSecret as query params.
+  // NOTE: userSecret in query params is a known risk (appears in server logs).
+  // This is a SnapTrade API design constraint — mitigated by edge function proxy
+  // (userSecret never appears in browser URL bar or client-side logs).
   const qp = new URLSearchParams({ clientId, timestamp });
   if (opts.userId) qp.set("userId", opts.userId);
   if (opts.userSecret) qp.set("userSecret", opts.userSecret);

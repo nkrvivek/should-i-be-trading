@@ -26,7 +26,7 @@ create table public.user_credentials (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users on delete cascade not null,
   provider text not null check (provider in ('ibkr', 'unusual_whales', 'anthropic', 'exa', 'finnhub', 'alpha_vantage')),
-  credential_data text not null, -- encrypted via application layer
+  credential_data text not null, -- TODO: encrypt via pgcrypto or Supabase Vault
   is_valid boolean default true,
   last_validated_at timestamptz,
   created_at timestamptz default now(),

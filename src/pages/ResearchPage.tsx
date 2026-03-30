@@ -27,6 +27,7 @@ const FundamentalsContent = lazy(() => import("./partials/FundamentalsContent"))
 const InstitutionalContent = lazy(() => import("./partials/InstitutionalContent"));
 const NewsContent = lazy(() => import("./partials/NewsContent"));
 const TechnicalContent = lazy(() => import("./partials/TechnicalContent"));
+const SocialContent = lazy(() => import("./partials/SocialContent"));
 
 const TABS: TabDef[] = [
   { id: "chat", label: "AI Chat" },
@@ -36,6 +37,7 @@ const TABS: TabDef[] = [
   { id: "institutional", label: "13F Tracker" },
   { id: "earnings", label: "Earnings" },
   { id: "insider", label: "Insider" },
+  { id: "social", label: "Social", badge: "NEW", badgeColor: "var(--signal-core)" },
 ];
 
 const loading = (
@@ -132,6 +134,12 @@ export default function ResearchPage() {
           {activeTab === "insider" && (
             <Suspense fallback={loading}>
               <InsiderContent />
+            </Suspense>
+          )}
+
+          {activeTab === "social" && (
+            <Suspense fallback={loading}>
+              <SocialContent />
             </Suspense>
           )}
         </div>

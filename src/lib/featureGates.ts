@@ -20,7 +20,9 @@ export type Feature =
   | "strategy_simulator"
   | "technical_signals"
   | "csv_upload"
-  | "snaptrade";
+  | "snaptrade"
+  | "social_sentiment"
+  | "market_activity";
 
 const FEATURE_MAP: Record<Feature, UserTier[]> = {
   regime_dashboard: ["free", "starter", "pro", "enterprise"],
@@ -43,6 +45,8 @@ const FEATURE_MAP: Record<Feature, UserTier[]> = {
   technical_signals: ["starter", "pro", "enterprise"],
   csv_upload: ["starter", "pro", "enterprise"],
   snaptrade: ["pro", "enterprise"],
+  social_sentiment: ["starter", "pro", "enterprise"],
+  market_activity: ["starter", "pro", "enterprise"],
 };
 
 export function hasFeature(tier: UserTier | undefined, feature: Feature): boolean {

@@ -16,6 +16,7 @@ const featureLabels: Partial<Record<Feature, string>> = {
   alerts: "Alerts",
   backtester_basic: "Strategy Backtester (3M)",
   backtester_full: "Strategy Backtester (1Y)",
+  social_sentiment: "Social Sentiment",
   automation: "Automated Trading",
   charts_advanced: "Advanced Charts",
 };

@@ -28,16 +28,16 @@ interface StoredConnection {
 /** Get encryption passphrase from the current user session */
 function getPassphrase(): string | null {
   // Dynamic import to avoid circular dependency
-  const authState = (window as Record<string, unknown>).__sibt_auth_uid as string | undefined;
+  const authState = (window as unknown as Record<string, unknown>).__sibt_auth_uid as string | undefined;
   return authState || null;
 }
 
 /** Set the auth UID for encryption (called from AuthProvider) */
 export function setBrokerEncryptionKey(uid: string | null) {
   if (uid) {
-    (window as Record<string, unknown>).__sibt_auth_uid = uid;
+    (window as unknown as Record<string, unknown>).__sibt_auth_uid = uid;
   } else {
-    delete (window as Record<string, unknown>).__sibt_auth_uid;
+    delete (window as unknown as Record<string, unknown>).__sibt_auth_uid;
   }
 }
 

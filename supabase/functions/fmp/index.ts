@@ -30,6 +30,9 @@ const ENDPOINTS: Record<string, { path: string; requiresSymbol: boolean; v3?: bo
   "search":             { path: "/search",                 requiresSymbol: false },
   "historical-price":   { path: "/historical-price-full",  requiresSymbol: true, v3: true, symbolInPath: true },
   "quote":              { path: "/quote",                  requiresSymbol: true, v3: true, symbolInPath: true },
+  "actives":            { path: "/stock_market/actives",   requiresSymbol: false, v3: true, symbolInPath: false },
+  "gainers":            { path: "/stock_market/gainers",   requiresSymbol: false, v3: true, symbolInPath: false },
+  "losers":             { path: "/stock_market/losers",    requiresSymbol: false, v3: true, symbolInPath: false },
 };
 
 // ── Simple in-memory cache (per Deno isolate) ───────────────────
@@ -43,6 +46,7 @@ function getCacheTTL(endpoint: string): number {
   if (["earnings", "earnings-calendar"].includes(endpoint)) return 6 * 3600 * 1000;
   if (["historical-price"].includes(endpoint)) return 3600 * 1000;
   if (["quote"].includes(endpoint)) return 5 * 60 * 1000;
+  if (["actives", "gainers", "losers"].includes(endpoint)) return 5 * 60 * 1000;
   return 3600 * 1000;
 }
 

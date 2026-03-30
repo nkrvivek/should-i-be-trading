@@ -19,6 +19,7 @@ const MacroContent = lazy(() => import("./partials/MacroContent"));
 const CotContent = lazy(() => import("./partials/CotContent"));
 const BacktestContent = lazy(() => import("./partials/BacktestContent"));
 const SimulatorContent = lazy(() => import("./partials/SimulatorContent"));
+const ActivityContent = lazy(() => import("./partials/ActivityContent"));
 
 const TABS: TabDef[] = [
   { id: "regime", label: "Regime" },
@@ -26,6 +27,7 @@ const TABS: TabDef[] = [
   { id: "cot", label: "COT", badge: "NEW", badgeColor: "var(--signal-core)" },
   { id: "backtest", label: "Backtest" },
   { id: "simulator", label: "Simulator" },
+  { id: "activity", label: "Activity", badge: "NEW", badgeColor: "var(--signal-core)" },
 ];
 
 const loading = (
@@ -77,6 +79,11 @@ export default function SignalsPage() {
           {visitedTabs.has("simulator") && (
             <div style={{ display: activeTab === "simulator" ? "block" : "none" }}>
               <Suspense fallback={loading}><SimulatorContent /></Suspense>
+            </div>
+          )}
+          {visitedTabs.has("activity") && (
+            <div style={{ display: activeTab === "activity" ? "block" : "none" }}>
+              <Suspense fallback={loading}><ActivityContent /></Suspense>
             </div>
           )}
         </div>

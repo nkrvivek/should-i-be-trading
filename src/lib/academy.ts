@@ -7,6 +7,33 @@ export type LearningTrack = {
   lessons: LearningLesson[];
 };
 
+export type LessonSection = {
+  title: string;
+  body: string;
+  videoUrl?: string;
+  tip?: string;
+};
+
+export type LessonCheckpoint = {
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string;
+};
+
+export type LessonContent = {
+  sections: LessonSection[];
+  keyTakeaways: string[];
+  checkpoint: LessonCheckpoint;
+};
+
+export type PracticeAction = {
+  label: string;
+  route: string;
+  state?: Record<string, unknown>;
+  description: string;
+};
+
 export type LearningLesson = {
   slug: string;
   title: string;
@@ -18,6 +45,8 @@ export type LearningLesson = {
   outcomes: string[];
   simulatorRoute?: string;
   followUpRoute?: string;
+  content?: LessonContent;
+  practiceActions?: PracticeAction[];
 };
 
 export const LEARNING_TRACKS: LearningTrack[] = [
@@ -277,6 +306,14 @@ export const LEARNING_TRACKS: LearningTrack[] = [
     ],
   },
 ];
+
+import { ACADEMY_LESSON_CONTENT, ACADEMY_PRACTICE_ACTIONS } from "./academyContent";
+for (const track of LEARNING_TRACKS) {
+  for (const lesson of track.lessons) {
+    lesson.content = ACADEMY_LESSON_CONTENT[lesson.slug];
+    lesson.practiceActions = ACADEMY_PRACTICE_ACTIONS[lesson.slug];
+  }
+}
 
 export const ALL_LEARNING_LESSONS = LEARNING_TRACKS.flatMap((track) =>
   track.lessons.map((lesson) => ({

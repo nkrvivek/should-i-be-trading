@@ -3,6 +3,8 @@ import { ALL_LEARNING_LESSONS, LEARNING_TRACKS, type LearningLesson } from "../.
 import { computeLearningStats } from "../../lib/learningProgress";
 import { SIBT_BADGE_PATHS } from "../../lib/learningBadges";
 import { useLearningAcademy } from "../../hooks/useLearningAcademy";
+import { isTrackUnlocked, isLessonUnlocked, getUnlockRequirement } from "../../lib/academyUnlock";
+import { LessonViewer } from "./LessonViewer";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
@@ -14,8 +16,13 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
     [progress],
   );
 
+  const [viewingLesson, setViewingLesson] = useState<string | null>(null);
+
   const nextLesson = useMemo(
-    () => ALL_LEARNING_LESSONS.find((lesson) => !progress.completedLessons[lesson.slug]) ?? ALL_LEARNING_LESSONS[0],
+    () => ALL_LEARNING_LESSONS.find((lesson) =>
+      !progress.completedLessons[lesson.slug] &&
+      isLessonUnlocked(lesson.trackSlug, lesson.slug, progress.completedLessons)
+    ) ?? ALL_LEARNING_LESSONS[0],
     [progress.completedLessons],
   );
   const nextTrack = useMemo(
@@ -41,6 +48,32 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
     const completed = activeTrack.lessons.filter((lesson) => progress.completedLessons[lesson.slug]).length;
     return { completed, total: activeTrack.lessons.length };
   }, [activeTrack, progress.completedLessons]);
+
+  // LessonViewer mode
+  if (viewingLesson) {
+    const viewTrack = LEARNING_TRACKS.find((t) => t.lessons.some((l) => l.slug === viewingLesson));
+    const viewLesson = viewTrack?.lessons.find((l) => l.slug === viewingLesson);
+    if (viewTrack && viewLesson) {
+      const lessonIdx = viewTrack.lessons.indexOf(viewLesson);
+      const nextInTrack = viewTrack.lessons[lessonIdx + 1];
+      const hasNext = nextInTrack && isLessonUnlocked(viewTrack.slug, nextInTrack.slug, progress.completedLessons);
+      return (
+        <LessonViewer
+          lesson={viewLesson}
+          trackSlug={viewTrack.slug}
+          isCompleted={Boolean(progress.completedLessons[viewLesson.slug])}
+          onComplete={() => void markLessonComplete(viewLesson.slug)}
+          onBack={() => {
+            setViewingLesson(null);
+            setSelectedTrackSlug(viewTrack.slug);
+            setSelectedLessonSlug(viewLesson.slug);
+          }}
+          onNextLesson={hasNext ? () => setViewingLesson(nextInTrack.slug) : undefined}
+        />
+      );
+    }
+    setViewingLesson(null);
+  }
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18, marginBottom: 28 }}>
@@ -84,10 +117,12 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
               {LEARNING_TRACKS.map((track) => {
                 const completed = track.lessons.filter((lesson) => progress.completedLessons[lesson.slug]).length;
                 const isActive = track.slug === activeTrack.slug;
+                const trackLocked = !isTrackUnlocked(track.slug, progress.completedLessons);
                 return (
                   <button
                     key={track.slug}
                     onClick={() => {
+                      if (trackLocked) return;
                       setSelectedTrackSlug(track.slug);
                       const firstIncomplete = track.lessons.find((lesson) => !progress.completedLessons[lesson.slug]);
                       setSelectedLessonSlug(firstIncomplete?.slug ?? track.lessons[0]?.slug ?? "");
@@ -96,17 +131,22 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                       textAlign: "left",
                       padding: 12,
                       borderRadius: 8,
-                      border: `1px solid ${isActive ? "var(--signal-core)" : "var(--border-dim)"}`,
-                      background: isActive ? "rgba(5, 173, 152, 0.08)" : "var(--bg-panel-raised)",
-                      cursor: "pointer",
+                      border: `1px solid ${isActive && !trackLocked ? "var(--signal-core)" : "var(--border-dim)"}`,
+                      background: isActive && !trackLocked ? "rgba(5, 173, 152, 0.08)" : "var(--bg-panel-raised)",
+                      cursor: trackLocked ? "not-allowed" : "pointer",
+                      opacity: trackLocked ? 0.5 : 1,
                     }}
                   >
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-                      <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{track.title}</span>
+                      <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                        {trackLocked ? "\uD83D\uDD12 " : ""}{track.title}
+                      </span>
                       <span style={levelPillStyle(track.level)}>{track.level.toUpperCase()}</span>
                     </div>
                     <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>
-                      {track.audience}
+                      {trackLocked
+                        ? getUnlockRequirement(track.slug, track.lessons[0]?.slug ?? "", progress.completedLessons) ?? track.audience
+                        : track.audience}
                     </div>
                     <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>
                       {completed}/{track.lessons.length} lessons complete
@@ -149,10 +189,15 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
               {activeTrack.lessons.map((lesson, index) => {
                 const isActive = lesson.slug === activeLesson.slug;
                 const isComplete = Boolean(progress.completedLessons[lesson.slug]);
+                const lessonLocked = !isLessonUnlocked(activeTrack.slug, lesson.slug, progress.completedLessons);
+                const lockHint = getUnlockRequirement(activeTrack.slug, lesson.slug, progress.completedLessons);
                 return (
                   <button
                     key={lesson.slug}
-                    onClick={() => setSelectedLessonSlug(lesson.slug)}
+                    onClick={() => {
+                      if (lessonLocked) return;
+                      setSelectedLessonSlug(lesson.slug);
+                    }}
                     style={{
                       display: "grid",
                       gridTemplateColumns: "34px minmax(0, 1fr) auto",
@@ -161,9 +206,10 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                       textAlign: "left",
                       padding: 12,
                       borderRadius: 8,
-                      border: `1px solid ${isActive ? "var(--signal-core)" : "var(--border-dim)"}`,
-                      background: isActive ? "rgba(5, 173, 152, 0.08)" : "var(--bg-panel-raised)",
-                      cursor: "pointer",
+                      border: `1px solid ${isActive && !lessonLocked ? "var(--signal-core)" : "var(--border-dim)"}`,
+                      background: isActive && !lessonLocked ? "rgba(5, 173, 152, 0.08)" : "var(--bg-panel-raised)",
+                      cursor: lessonLocked ? "not-allowed" : "pointer",
+                      opacity: lessonLocked ? 0.5 : 1,
                     }}
                   >
                     <div style={{
@@ -174,11 +220,12 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      background: isComplete ? "rgba(5, 173, 152, 0.15)" : "rgba(148, 163, 184, 0.15)",
+                      background: isComplete ? "rgba(5, 173, 152, 0.15)" : lessonLocked ? "rgba(148, 163, 184, 0.08)" : "rgba(148, 163, 184, 0.15)",
                       color: isComplete ? "var(--signal-core)" : "var(--text-muted)",
                       fontWeight: 700,
+                      fontSize: lessonLocked ? 14 : undefined,
                     }}>
-                      {isComplete ? "✓" : index + 1}
+                      {isComplete ? "\u2713" : lessonLocked ? "\uD83D\uDD12" : index + 1}
                     </div>
                     <div>
                       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 4 }}>
@@ -186,7 +233,7 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                         <span style={stagePillStyle(lesson.format)}>{academyStageLabel(lesson.format)}</span>
                       </div>
                       <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                        {lesson.description}
+                        {lessonLocked && lockHint ? lockHint : lesson.description}
                       </div>
                     </div>
                     <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
@@ -236,12 +283,18 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                 </ul>
               </div>
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <button
-                  onClick={() => void markLessonComplete(activeLesson.slug)}
-                  style={progress.completedLessons[activeLesson.slug] ? secondarySmallBtn : primarySmallBtn}
-                >
-                  {progress.completedLessons[activeLesson.slug] ? "SESSION COMPLETE" : "MARK SESSION COMPLETE"}
-                </button>
+                {isLessonUnlocked(activeTrack.slug, activeLesson.slug, progress.completedLessons) ? (
+                  <button
+                    onClick={() => setViewingLesson(activeLesson.slug)}
+                    style={progress.completedLessons[activeLesson.slug] ? secondarySmallBtn : primarySmallBtn}
+                  >
+                    {progress.completedLessons[activeLesson.slug] ? "REVIEW LESSON" : "START LESSON"}
+                  </button>
+                ) : (
+                  <span style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>
+                    {getUnlockRequirement(activeTrack.slug, activeLesson.slug, progress.completedLessons) ?? "Locked"}
+                  </span>
+                )}
                 {activeLesson.simulatorRoute && (
                   <a href={activeLesson.simulatorRoute} style={linkChipStyle}>
                     PRACTICE IN SIMULATOR
@@ -289,8 +342,8 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
           </div>
           {nextLesson && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={() => void markLessonComplete(nextLesson.slug)} style={primarySmallBtn}>
-                MARK SESSION COMPLETE
+              <button onClick={() => setViewingLesson(nextLesson.slug)} style={primarySmallBtn}>
+                START LESSON
               </button>
               {nextLesson.simulatorRoute && <a href={nextLesson.simulatorRoute} style={linkChipStyle}>OPEN SIMULATOR</a>}
               {nextLesson.followUpRoute && <a href={nextLesson.followUpRoute} style={linkChipStyle}>OPEN WORKFLOW</a>}
@@ -370,46 +423,60 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
           Full Track Library
         </div>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
-          {LEARNING_TRACKS.map((track) => (
-            <div key={track.slug} style={academyPanelStyle}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
-                <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>{track.title}</div>
-                <span style={levelPillStyle(track.level)}>{track.level.toUpperCase()}</span>
+          {LEARNING_TRACKS.map((track) => {
+            const trackLocked = !isTrackUnlocked(track.slug, progress.completedLessons);
+            return (
+              <div key={track.slug} style={{ ...academyPanelStyle, opacity: trackLocked ? 0.5 : 1 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                  <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+                    {trackLocked ? "\uD83D\uDD12 " : ""}{track.title}
+                  </div>
+                  <span style={levelPillStyle(track.level)}>{track.level.toUpperCase()}</span>
+                </div>
+                <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
+                  {track.description}
+                </p>
+                <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>
+                  {track.lessons.length} lessons{trackLocked ? ` • ${getUnlockRequirement(track.slug, track.lessons[0]?.slug ?? "", progress.completedLessons) ?? "Locked"}` : ""}
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                  {track.lessons.map((lesson) => {
+                    const isComplete = Boolean(progress.completedLessons[lesson.slug]);
+                    const lessonLocked = !isLessonUnlocked(track.slug, lesson.slug, progress.completedLessons);
+                    return (
+                      <div key={lesson.slug} style={{ border: "1px solid var(--border-dim)", borderRadius: 6, padding: 10, background: "var(--bg-panel-raised)", opacity: lessonLocked ? 0.5 : 1 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
+                          <div style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                            {lessonLocked ? "\uD83D\uDD12 " : ""}{lesson.title}
+                          </div>
+                          <span style={riskPillStyle(lesson.riskLevel)}>{lesson.riskLevel.toUpperCase()}</span>
+                        </div>
+                        <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55, marginBottom: 8 }}>
+                          {lesson.description}
+                        </div>
+                        <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
+                          {lesson.durationMinutes} min • {lesson.format.toUpperCase()} • {lesson.market.toUpperCase()}
+                        </div>
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                          {lessonLocked ? (
+                            <span style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>
+                              {getUnlockRequirement(track.slug, lesson.slug, progress.completedLessons) ?? "Locked"}
+                            </span>
+                          ) : (
+                            <button onClick={() => setViewingLesson(lesson.slug)} style={isComplete ? secondarySmallBtn : primarySmallBtn}>
+                              {isComplete ? "REVIEW LESSON" : "START LESSON"}
+                            </button>
+                          )}
+                          {!lessonLocked && lesson.simulatorRoute && <a href={lesson.simulatorRoute} style={linkChipStyle}>SIMULATOR</a>}
+                          {!lessonLocked && lesson.followUpRoute && <a href={lesson.followUpRoute} style={linkChipStyle}>OPEN TOOL</a>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginTop: 0 }}>
-                {track.description}
-              </p>
-              <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>
-                {track.lessons.length} lessons
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {track.lessons.map((lesson) => {
-                  const isComplete = Boolean(progress.completedLessons[lesson.slug]);
-                  return (
-                    <div key={lesson.slug} style={{ border: "1px solid var(--border-dim)", borderRadius: 6, padding: 10, background: "var(--bg-panel-raised)" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
-                        <div style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{lesson.title}</div>
-                        <span style={riskPillStyle(lesson.riskLevel)}>{lesson.riskLevel.toUpperCase()}</span>
-                      </div>
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55, marginBottom: 8 }}>
-                        {lesson.description}
-                      </div>
-                      <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
-                        {lesson.durationMinutes} min • {lesson.format.toUpperCase()} • {lesson.market.toUpperCase()}
-                      </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                        <button onClick={() => void markLessonComplete(lesson.slug)} style={isComplete ? secondarySmallBtn : primarySmallBtn}>
-                          {isComplete ? "COMPLETED" : "MARK COMPLETE"}
-                        </button>
-                        {lesson.simulatorRoute && <a href={lesson.simulatorRoute} style={linkChipStyle}>SIMULATOR</a>}
-                        {lesson.followUpRoute && <a href={lesson.followUpRoute} style={linkChipStyle}>OPEN TOOL</a>}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 

@@ -5,12 +5,6 @@ import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
 import { useMarketScore } from "../hooks/useMarketScore";
 import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
-import FlowAnalysisPanel from "../components/trading/FlowAnalysisPanel";
-import StrategySuggester from "../components/trading/StrategySuggester";
-import StrategyAnalysisPanel from "../components/portfolio/StrategyAnalysisPanel";
-import WashSalePanel from "../components/portfolio/WashSalePanel";
-import { PortfolioRiskWidget } from "../components/portfolio/PortfolioRiskWidget";
-import OrderReviewModal from "../components/trading/OrderReviewModal";
 import { TradeVerdictBadgeWithScore } from "../components/trading/TradeVerdictBadge";
 import { detectWashSales } from "../lib/strategy/washSaleDetector";
 import type { OrderRequest } from "../lib/brokers/types";
@@ -19,6 +13,12 @@ import type { StrategySuggestion } from "../lib/portfolio/strategyAnalyzer";
 
 const CsvUploadPanel = lazy(() => import("../components/portfolio/CsvUploadPanel"));
 const ManualPortfolioTable = lazy(() => import("../components/portfolio/ManualPortfolioTable"));
+const FlowAnalysisPanel = lazy(() => import("../components/trading/FlowAnalysisPanel"));
+const StrategySuggester = lazy(() => import("../components/trading/StrategySuggester"));
+const StrategyAnalysisPanel = lazy(() => import("../components/portfolio/StrategyAnalysisPanel"));
+const WashSalePanel = lazy(() => import("../components/portfolio/WashSalePanel"));
+const PortfolioRiskWidget = lazy(() => import("../components/portfolio/PortfolioRiskWidget").then((m) => ({ default: m.PortfolioRiskWidget })));
+const OrderReviewModal = lazy(() => import("../components/trading/OrderReviewModal"));
 
 const panelStyle: React.CSSProperties = {
   background: "var(--bg-panel, #fff)",
@@ -37,6 +37,12 @@ const headerStyle: React.CSSProperties = {
   color: "var(--text-secondary, #64748b)",
   marginBottom: 12,
 };
+
+const tabLoader = (
+  <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>
+    Loading...
+  </div>
+);
 
 const monoStyle: React.CSSProperties = {
   fontFamily: "'IBM Plex Mono', monospace",
@@ -338,24 +344,32 @@ export default function TradingPage() {
       {brokerReady && activeTab === "portfolio" && (
         <>
           <div style={{ marginBottom: 16 }}>
-            <PortfolioRiskWidget />
+            <Suspense fallback={tabLoader}>
+              <PortfolioRiskWidget />
+            </Suspense>
           </div>
           <PositionsTable positions={positions} onViewStrategies={() => setTab("strategies")} />
         </>
       )}
       {brokerReady && activeTab === "orders" && <OrdersPanel orders={orders} onCancel={handleCancelOrder} onPlace={handlePlaceOrder} />}
-      {brokerReady && activeTab === "flow" && <FlowAnalysisPanel />}
+      {brokerReady && activeTab === "flow" && (
+        <Suspense fallback={tabLoader}>
+          <FlowAnalysisPanel />
+        </Suspense>
+      )}
       {brokerReady && activeTab === "journal" && <JournalPanel />}
       {activeTab === "strategies" && (
-        <StrategiesPanel
-          positions={positions}
-          orders={orders}
-          onSimulate={(symbol, price, legs) => {
-            // Navigate to Simulator tab on Signals page with pre-filled legs
-            navigate("/signals?tab=simulator", { state: { initialLegs: legs, initialPrice: price, initialTicker: symbol } });
-          }}
-          onExecute={handleOpenExecutionModal}
-        />
+        <Suspense fallback={tabLoader}>
+          <StrategiesPanel
+            positions={positions}
+            orders={orders}
+            onSimulate={(symbol, price, legs) => {
+              // Navigate to Simulator tab on Signals page with pre-filled legs
+              navigate("/signals?tab=simulator", { state: { initialLegs: legs, initialPrice: price, initialTicker: symbol } });
+            }}
+            onExecute={handleOpenExecutionModal}
+          />
+        </Suspense>
       )}
 
       {activeTab === "import" && (
@@ -376,14 +390,16 @@ export default function TradingPage() {
 
       {/* Execution Modal */}
       {executionModal && (
-        <OrderReviewModal
-          symbol={executionModal.symbol}
-          currentPrice={executionModal.price}
-          suggestion={executionModal.suggestion}
-          onClose={handleCloseExecutionModal}
-          onComplete={handleExecutionComplete}
-          onViewOrders={handleViewOrdersAfterExecution}
-        />
+        <Suspense fallback={null}>
+          <OrderReviewModal
+            symbol={executionModal.symbol}
+            currentPrice={executionModal.price}
+            suggestion={executionModal.suggestion}
+            onClose={handleCloseExecutionModal}
+            onComplete={handleExecutionComplete}
+            onViewOrders={handleViewOrdersAfterExecution}
+          />
+        </Suspense>
       )}
     </div>
     </TerminalShell>

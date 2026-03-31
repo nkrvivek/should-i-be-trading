@@ -237,5 +237,9 @@ export function useBacktest(period: "3M" | "6M" | "1Y" = "3M") {
     };
   }, []);
 
+  useEffect(() => {
+    void fetchBacktest();
+  }, [fetchBacktest]);
+
   return { result, loading, error, dataAvailable, refresh: fetchBacktest };
 }

@@ -10,21 +10,45 @@ import type { Feature } from "./lib/featureGates";
 import { AlertBell } from "./components/alerts/AlertBell";
 import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 
+const loadDashboardPage = () => import("./pages/DashboardPage").then(m => ({ default: m.DashboardPage }));
+const loadLoginPage = () => import("./pages/LoginPage").then(m => ({ default: m.LoginPage }));
+const loadSettingsPage = () => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage }));
+const loadAlertsPage = () => import("./pages/AlertsPage").then(m => ({ default: m.AlertsPage }));
+const loadTermsPage = () => import("./pages/TermsPage").then(m => ({ default: m.TermsPage }));
+const loadPrivacyPage = () => import("./pages/PrivacyPage").then(m => ({ default: m.PrivacyPage }));
+const loadGlossaryPage = () => import("./pages/GlossaryPage").then(m => ({ default: m.GlossaryPage }));
+const loadPricingPage = () => import("./pages/PricingPage").then(m => ({ default: m.PricingPage }));
+const loadLandingPage = () => import("./pages/LandingPage").then(m => ({ default: m.LandingPage }));
+const loadRiskDisclosurePage = () => import("./pages/RiskDisclosurePage").then(m => ({ default: m.RiskDisclosurePage }));
+const loadFeaturesPage = () => import("./pages/FeaturesPage").then(m => ({ default: m.FeaturesPage }));
+const loadResearchPage = () => import("./pages/ResearchPage");
+const loadSignalsPage = () => import("./pages/SignalsPage");
+const loadTradingPage = () => import("./pages/TradingPage");
+
 // Lazy-load all pages — keeps initial bundle small
-const DashboardPage = lazy(() => import("./pages/DashboardPage").then(m => ({ default: m.DashboardPage })));
-const LoginPage = lazy(() => import("./pages/LoginPage").then(m => ({ default: m.LoginPage })));
-const SettingsPage = lazy(() => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage })));
-const AlertsPage = lazy(() => import("./pages/AlertsPage").then(m => ({ default: m.AlertsPage })));
-const TermsPage = lazy(() => import("./pages/TermsPage").then(m => ({ default: m.TermsPage })));
-const PrivacyPage = lazy(() => import("./pages/PrivacyPage").then(m => ({ default: m.PrivacyPage })));
-const GlossaryPage = lazy(() => import("./pages/GlossaryPage").then(m => ({ default: m.GlossaryPage })));
-const PricingPage = lazy(() => import("./pages/PricingPage").then(m => ({ default: m.PricingPage })));
-const LandingPage = lazy(() => import("./pages/LandingPage").then(m => ({ default: m.LandingPage })));
-const RiskDisclosurePage = lazy(() => import("./pages/RiskDisclosurePage").then(m => ({ default: m.RiskDisclosurePage })));
-const FeaturesPage = lazy(() => import("./pages/FeaturesPage").then(m => ({ default: m.FeaturesPage })));
-const ResearchPage = lazy(() => import("./pages/ResearchPage"));
-const SignalsPage = lazy(() => import("./pages/SignalsPage"));
-const TradingPage = lazy(() => import("./pages/TradingPage"));
+const DashboardPage = lazy(loadDashboardPage);
+const LoginPage = lazy(loadLoginPage);
+const SettingsPage = lazy(loadSettingsPage);
+const AlertsPage = lazy(loadAlertsPage);
+const TermsPage = lazy(loadTermsPage);
+const PrivacyPage = lazy(loadPrivacyPage);
+const GlossaryPage = lazy(loadGlossaryPage);
+const PricingPage = lazy(loadPricingPage);
+const LandingPage = lazy(loadLandingPage);
+const RiskDisclosurePage = lazy(loadRiskDisclosurePage);
+const FeaturesPage = lazy(loadFeaturesPage);
+const ResearchPage = lazy(loadResearchPage);
+const SignalsPage = lazy(loadSignalsPage);
+const TradingPage = lazy(loadTradingPage);
+
+const routePrefetchers: Record<string, () => Promise<unknown>> = {
+  "/": loadDashboardPage,
+  "/research": loadResearchPage,
+  "/signals": loadSignalsPage,
+  "/trading": loadTradingPage,
+  "/learn": loadGlossaryPage,
+  "/settings": loadSettingsPage,
+};
 
 const PageLoader = () => (
   <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "50vh", fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
@@ -134,6 +158,8 @@ export function AppNav() {
           to={to}
           end={to === "/"}
           className="app-nav-link"
+          onMouseEnter={() => { void routePrefetchers[to]?.(); }}
+          onFocus={() => { void routePrefetchers[to]?.(); }}
           style={({ isActive }) => ({
             padding: "5px 12px",
             fontFamily: "var(--font-mono)",

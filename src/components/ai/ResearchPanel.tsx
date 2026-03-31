@@ -8,8 +8,7 @@ export function ResearchPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Available if user has local env key OR Supabase is configured (edge function has server-side key)
-  const hasAccess = !!import.meta.env.VITE_EXA_API_KEY || isSupabaseConfigured();
+  const hasAccess = isSupabaseConfigured();
 
   const handleSearch = async (e?: React.SyntheticEvent) => {
     e?.preventDefault();
@@ -121,7 +120,7 @@ export function ResearchPanel() {
           <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
             {hasAccess
               ? "Search for market news, company research, or trading topics via Exa."
-              : "Configure your Exa API key in Settings to enable research. Get a free key at exa.ai"}
+              : "Sign in to enable authenticated Exa research through the server-side proxy."}
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 import type { UserTier } from "../stores/authStore";
+import { getAiRequestLimit } from "./aiLimits";
 
 export type Feature =
   | "regime_dashboard"
@@ -78,8 +79,5 @@ export function maxWatchlists(tier: UserTier | undefined): number {
 
 /** Max AI requests per day by tier (when using server-side key) */
 export function maxAiRequests(tier: UserTier | undefined): number {
-  if (tier === "enterprise") return 100;
-  if (tier === "pro") return 25;
-  if (tier === "starter") return 15;
-  return 5;
+  return getAiRequestLimit(tier ?? "free");
 }

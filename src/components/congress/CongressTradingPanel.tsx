@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { Panel } from "../layout/Panel";
-import { hasUWToken, fetchUWCongressTrades, type UWCongressTrade } from "../../api/uwClient";
+import type { UWCongressTrade } from "../../api/uwClient";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { getEdgeHeaders } from "../../api/edgeHeaders";
 
@@ -29,9 +29,25 @@ type RapidAPITrade = {
   value_at_purchase: string;
 };
 
-const RAPIDAPI_URL = "https://politician-trade-tracker1.p.rapidapi.com/get_latest_trades";
 const CACHE_KEY = "sibt_congress_cache_v3";
 const CACHE_TTL = 60 * 60 * 1000; // 1 hour
+
+function readCachedCongressTrades(): { trades: NormalizedTrade[]; source: "uw" | "rapidapi" | "" } {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return { trades: [], source: "" };
+    const { data, source, ts } = JSON.parse(raw);
+    if (Date.now() - ts < CACHE_TTL && Array.isArray(data)) {
+      return {
+        trades: data as NormalizedTrade[],
+        source: source === "uw" || source === "rapidapi" ? source : "",
+      };
+    }
+  } catch {
+    // ignore invalid cache
+  }
+  return { trades: [], source: "" };
+}
 
 function normalizeUWTrade(t: UWCongressTrade): NormalizedTrade | null {
   if (!t.ticker) return null;
@@ -96,31 +112,43 @@ function partyBadge(party: string): string {
 }
 
 export function CongressTradingPanel() {
-  const [trades, setTrades] = useState<NormalizedTrade[]>([]);
+  const [cachedTrades] = useState(() => readCachedCongressTrades());
+  const [trades, setTrades] = useState<NormalizedTrade[]>(cachedTrades.trades);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "buy" | "sell">("all");
-  const [source, setSource] = useState<"uw" | "rapidapi" | "">("")
+  const [source, setSource] = useState<"uw" | "rapidapi" | "">(cachedTrades.source);
   const [page, setPage] = useState(0);
+
+  const cacheResults = useCallback((data: NormalizedTrade[], src: string) => {
+    try {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, source: src, ts: Date.now() }));
+    } catch { /* ignore */ }
+  }, []);
 
   const fetchTrades = useCallback(async () => {
     setLoading(true);
     setError(null);
 
-    // Strategy 1: UW (Pro users with UW_TOKEN)
-    if (hasUWToken()) {
+    // Strategy 1: User-owned UW credential through server-side proxy
+    if (isSupabaseConfigured()) {
       try {
-        const raw = await fetchUWCongressTrades();
-        const normalized = raw.map(normalizeUWTrade).filter(Boolean) as NormalizedTrade[];
-        if (normalized.length > 0) {
-          setTrades(normalized);
-          setSource("uw");
-          cacheResults(normalized, "uw");
-          setLoading(false);
-          return;
+        const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/proxy-uw?path=${encodeURIComponent("/congress/recent-trades")}`;
+        const edgeHeaders = await getEdgeHeaders();
+        const res = await fetch(edgeUrl, { headers: edgeHeaders });
+        if (res.ok) {
+          const data: { data?: UWCongressTrade[] } = await res.json();
+          const normalized = (data.data ?? []).map(normalizeUWTrade).filter(Boolean) as NormalizedTrade[];
+          if (normalized.length > 0) {
+            setTrades(normalized);
+            setSource("uw");
+            cacheResults(normalized, "uw");
+            setLoading(false);
+            return;
+          }
         }
       } catch (e) {
-        console.warn("UW congress fetch failed, falling back:", e);
+        console.warn("UW congress proxy failed, falling back:", e);
       }
     }
 
@@ -148,55 +176,17 @@ export function CongressTradingPanel() {
       }
     }
 
-    // Strategy 3: Direct RapidAPI (if user has their own key in env)
-    const rapidApiKey = import.meta.env.VITE_RAPIDAPI_KEY;
-    if (rapidApiKey) {
-      try {
-        const res = await fetch(RAPIDAPI_URL, {
-          headers: {
-            "Content-Type": "application/json",
-            "x-rapidapi-host": "politician-trade-tracker1.p.rapidapi.com",
-            "x-rapidapi-key": rapidApiKey,
-          },
-        });
-        if (!res.ok) throw new Error(`RapidAPI error: ${res.status}`);
-        const data: RapidAPITrade[] = await res.json();
-        const normalized = data.map(normalizeRapidAPITrade).filter(Boolean) as NormalizedTrade[];
-        setTrades(normalized);
-        setSource("rapidapi");
-        cacheResults(normalized, "rapidapi");
-        setLoading(false);
-        return;
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "Failed to fetch congressional trades");
-      }
-    }
-
-    setError("Congressional trading data unavailable. Sign up for automatic access or add a UW_TOKEN in Settings for premium data.");
+    setError("Congressional trading data unavailable. Sign in for automatic access or add an Unusual Whales key in Settings for premium coverage.");
     setLoading(false);
-  }, []);
+  }, [cacheResults]);
 
-  function cacheResults(data: NormalizedTrade[], src: string) {
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ data, source: src, ts: Date.now() }));
-    } catch { /* ignore */ }
-  }
-
-  // Load cache on mount
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const { data, source: src, ts } = JSON.parse(raw);
-        if (Date.now() - ts < CACHE_TTL) {
-          setTrades(data);
-          setSource(src);
-          return;
-        }
-      }
-    } catch { /* ignore */ }
-    fetchTrades();
-  }, [fetchTrades]);
+    if (cachedTrades.trades.length > 0) return;
+    const timer = setTimeout(() => {
+      void fetchTrades();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [cachedTrades.trades.length, fetchTrades]);
 
   const filtered = filter === "all" ? trades : trades.filter((t) => t.tradeType === filter);
   const PAGE_SIZE = 25;

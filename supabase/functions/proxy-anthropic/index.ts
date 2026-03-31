@@ -1,6 +1,13 @@
 import { authenticateRequest, getUserCredential, getCorsHeaders, errorResponse } from "../_shared/auth.ts";
 import { sanitizeError } from "../_shared/sanitize.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  AI_MODEL_OVERRIDES,
+  AI_REQUEST_LIMITS,
+  getAiRequestLimit,
+  getAiTokenCap,
+  type AiLimitTier,
+} from "../../../src/lib/aiLimits.ts";
 
 /**
  * Anthropic proxy with rate limiting for demo/trial users.
@@ -15,18 +22,6 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
  *   Pro: 25 requests/day, max_tokens capped at 2048
  *   Enterprise: 100 requests/day, no cap
  */
-
-const DAILY_LIMITS: Record<string, number> = {
-  free: 5, trial: 5, pro: 25, enterprise: 100,
-};
-
-const TOKEN_CAPS: Record<string, number> = {
-  free: 1024, trial: 1024, pro: 2048, enterprise: 4096,
-};
-
-const MODEL_OVERRIDES: Record<string, string> = {
-  free: "claude-sonnet-4-6", trial: "claude-sonnet-4-6",
-};
 
 async function getServiceClient() {
   return createClient(
@@ -76,10 +71,10 @@ async function getUserTier(userId: string): Promise<string> {
   }
 }
 
-async function checkAndIncrementUsage(userId: string, tier: string): Promise<{ allowed: boolean; used: number; limit: number }> {
+async function checkAndIncrementUsage(userId: string, tier: AiLimitTier): Promise<{ allowed: boolean; used: number; limit: number }> {
   const supabase = await getServiceClient();
   const today = new Date().toISOString().split("T")[0];
-  const dailyLimit = DAILY_LIMITS[tier] ?? DAILY_LIMITS.free;
+  const dailyLimit = getAiRequestLimit(tier);
 
   try {
     // Atomic increment via database function — no race conditions
@@ -149,9 +144,12 @@ Deno.serve(async (req) => {
     const body = await req.json();
 
     // 2. Rate limit if using server key
-    let resolvedTier: string | null = null;
+    let resolvedTier: AiLimitTier | null = null;
     if (usingServerKey) {
-      resolvedTier = await getUserTier(ctx.userId);
+      const tier = await getUserTier(ctx.userId);
+      resolvedTier = tier === "starter" || tier === "pro" || tier === "enterprise" || tier === "trial" || tier === "free"
+        ? tier
+        : "free";
       const usage = await checkAndIncrementUsage(ctx.userId, resolvedTier);
 
       if (!usage.allowed) {
@@ -163,13 +161,13 @@ Deno.serve(async (req) => {
       }
 
       // Cap max_tokens
-      const maxTokensCap = TOKEN_CAPS[resolvedTier] ?? TOKEN_CAPS.free;
+      const maxTokensCap = getAiTokenCap(resolvedTier);
       if (body.max_tokens && body.max_tokens > maxTokensCap) {
         body.max_tokens = maxTokensCap;
       }
 
       // Force cheaper model for free/trial
-      const modelOverride = MODEL_OVERRIDES[resolvedTier];
+      const modelOverride = AI_MODEL_OVERRIDES[resolvedTier];
       if (modelOverride) {
         body.model = modelOverride;
       }
@@ -199,7 +197,7 @@ Deno.serve(async (req) => {
     // Return usage stats in response headers so frontend can display remaining quota
     const usageHeaders: Record<string, string> = { ...getCorsHeaders(req) };
     if (usingServerKey && resolvedTier) {
-      const limit = DAILY_LIMITS[resolvedTier] ?? DAILY_LIMITS.free;
+      const limit = AI_REQUEST_LIMITS[resolvedTier] ?? AI_REQUEST_LIMITS.free;
       const today = new Date().toISOString().split("T")[0];
       try {
         const supabase = await getServiceClient();

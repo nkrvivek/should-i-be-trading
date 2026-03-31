@@ -1,7 +1,6 @@
 /**
  * Exa API client.
- * In dev, uses VITE_EXA_API_KEY with Vite proxy.
- * In prod, goes through Supabase Edge Function (proxy-exa) using stored credentials.
+ * Uses the Supabase Edge Function proxy (proxy-exa) with authenticated user context.
  */
 
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
@@ -18,15 +17,11 @@ export type ExaSearchResponse = {
   results: ExaResult[];
 };
 
-// In dev, Vite proxies /exa-api/* to https://api.exa.ai
-const EXA_BASE = "/exa-api";
-
 export async function exaSearch(
   query: string,
   numResults = 5,
   maxCharacters = 1000,
 ): Promise<ExaSearchResponse> {
-  const apiKey = import.meta.env.VITE_EXA_API_KEY;
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -37,31 +32,7 @@ export async function exaSearch(
     contents: { text: { maxCharacters } },
   };
 
-  if (apiKey) {
-    // Direct API call (local dev with Vite proxy)
-    const response = await fetch(`${EXA_BASE}/search`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(30_000),
-    });
-
-    if (!response.ok) {
-      let detail = `Exa API ${response.status}`;
-      try {
-        const b = await response.json();
-        detail = b.error || b.message || detail;
-      } catch { /* not JSON */ }
-      throw new Error(detail);
-    }
-
-    const data = await response.json();
-    return { results: data.results ?? [] };
-
-  } else if (isSupabaseConfigured() && supabaseUrl && supabaseAnonKey) {
+  if (isSupabaseConfigured() && supabaseUrl && supabaseAnonKey) {
     // Production: Supabase Edge Function proxy (uses stored credential)
     const { data: sessionData } = await supabase.auth.getSession();
     const userToken = sessionData.session?.access_token;
@@ -95,7 +66,7 @@ export async function exaSearch(
     return { results: data.results ?? [] };
 
   } else {
-    throw new Error("Add your Exa API key in Settings to use research features.");
+    throw new Error("Sign in to use research features.");
   }
 }
 

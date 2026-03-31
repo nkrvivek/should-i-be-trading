@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useAuthStore } from "../../stores/authStore";
 import { useBrokerStore } from "../../stores/brokerStore";
 import { renderMarkdown } from "../../lib/renderMarkdown";
-import { supabase } from "../../lib/supabase";
+import { chatWithClaude } from "../../api/anthropicClient";
 import type { SimulatorLeg } from "../../lib/strategy/payoff";
 import type { StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
 
@@ -88,56 +88,13 @@ Rules:
 IMPORTANT: This is educational analysis only, not investment advice.`;
 
     try {
-      // Try direct API key first
-      const apiKey = localStorage.getItem("sibt_anthropic_key") || import.meta.env.VITE_ANTHROPIC_API_KEY;
-
-      if (apiKey) {
-        const res = await fetch("/api/anthropic/v1/messages", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-api-key": apiKey, "anthropic-version": "2023-06-01" },
-          body: JSON.stringify({
-            model: "claude-sonnet-4-20250514",
-            max_tokens: 2048,
-            messages: [{ role: "user", content: prompt }],
-          }),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const text = data.content?.[0]?.text ?? "No response";
-          setResponse(text);
-          setParsedStrategies(parseStrategyJsonBlocks(text));
-          setLoading(false);
-          return;
-        }
-      }
-
-      // Fall back to Supabase edge function
-      const session = await supabase.auth.getSession();
-      const token = session.data?.session?.access_token;
-      if (!token) throw new Error("Sign in to use Strategy Suggester");
-
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-      const res = await fetch(`${supabaseUrl}/functions/v1/proxy-anthropic`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "apikey": anonKey,
-          "x-user-token": token,
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 2048,
-          messages: [{ role: "user", content: prompt }],
-        }),
-      });
-
-      if (!res.ok) throw new Error(`API ${res.status}`);
-      const data = await res.json();
-      const text = data.content?.[0]?.text ?? "No response";
-      setResponse(text);
-      setParsedStrategies(parseStrategyJsonBlocks(text));
+      const data = await chatWithClaude(
+        [{ role: "user", content: prompt }],
+        "You are SIBT's Strategy Suggester. Produce educational, defined-risk strategy ideas only.",
+        "claude-sonnet-4-6",
+      );
+      setResponse(data.content);
+      setParsedStrategies(parseStrategyJsonBlocks(data.content));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Strategy generation failed");
     }

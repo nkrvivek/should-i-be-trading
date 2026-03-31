@@ -5,6 +5,7 @@
  */
 
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { getAiRequestLimit } from "../lib/aiLimits";
 
 export type ChatMessage = {
   role: "user" | "assistant";
@@ -25,7 +26,7 @@ export type AiUsageInfo = {
   loaded: boolean;
 };
 
-let _lastUsage: AiUsageInfo = { used: 0, limit: 5, isOwnKey: false, loaded: false };
+let _lastUsage: AiUsageInfo = { used: 0, limit: getAiRequestLimit("free"), isOwnKey: false, loaded: false };
 const _listeners = new Set<() => void>();
 let _fetchedForSession = false;
 
@@ -50,14 +51,6 @@ export async function fetchCurrentAiUsage(): Promise<void> {
   _fetchedForSession = true;
 
   try {
-    // Check if user has own API key first
-    const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
-    if (apiKey) {
-      _lastUsage = { used: 0, limit: Infinity, isOwnKey: true, loaded: true };
-      _notifyUsageChange();
-      return;
-    }
-
     const { supabase, isSupabaseConfigured } = await import("../lib/supabase");
     if (!isSupabaseConfigured()) return;
 
@@ -110,8 +103,11 @@ export async function fetchCurrentAiUsage(): Promise<void> {
       tier = profile?.tier ?? "free";
     }
 
-    const limits: Record<string, number> = { free: 5, trial: 5, starter: 15, pro: 25, enterprise: 100 };
-    const limit = limits[tier] ?? 5;
+    const limit = getAiRequestLimit(
+      tier === "starter" || tier === "pro" || tier === "enterprise" || tier === "trial" || tier === "free"
+        ? tier
+        : "free",
+    );
 
     _lastUsage = { used: usage?.request_count ?? 0, limit, isOwnKey: false, loaded: true };
     _notifyUsageChange();
@@ -127,7 +123,6 @@ export async function chatWithClaude(
   systemPrompt: string,
   model = "claude-sonnet-4-6",
 ): Promise<ChatResponse> {
-  const apiKey = import.meta.env.VITE_ANTHROPIC_API_KEY;
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
@@ -140,31 +135,7 @@ export async function chatWithClaude(
 
   let responseData: Record<string, unknown>;
 
-  if (apiKey) {
-    // Direct API call (local dev with Vite proxy)
-    _lastUsage = { used: 0, limit: Infinity, isOwnKey: true, loaded: true };
-    _notifyUsageChange();
-
-    const response = await fetch("/anthropic/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-        "anthropic-dangerous-direct-browser-access": "true",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const text = await response.text();
-      let msg = `Claude API ${response.status}`;
-      try { msg = JSON.parse(text).error?.message || msg; } catch { msg = text.slice(0, 200) || msg; }
-      throw new Error(msg);
-    }
-    responseData = await response.json();
-
-  } else if (isSupabaseConfigured() && supabaseUrl && supabaseAnonKey) {
+  if (isSupabaseConfigured() && supabaseUrl && supabaseAnonKey) {
     // Production: Supabase Edge Function proxy
     const { data: sessionData } = await supabase.auth.getSession();
     const userToken = sessionData.session?.access_token;
@@ -207,7 +178,7 @@ export async function chatWithClaude(
     responseData = await response.json();
 
   } else {
-    throw new Error("Add your Anthropic API key in Settings to use AI features.");
+    throw new Error("Sign in to use AI features.");
   }
 
   const text = (responseData as { content?: { text: string }[] }).content?.[0]?.text;

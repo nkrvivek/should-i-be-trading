@@ -1,8 +1,10 @@
 /**
  * Unified credential resolution.
  *
- * Priority order:
- * 1. Supabase user_credentials (via authStore)
+ * Production priority:
+ * 1. Supabase user_credentials (via authenticated edge functions)
+ *
+ * Development fallback:
  * 2. localStorage fallback (sibt_cred_{provider})
  * 3. Vite env variable (VITE_{PROVIDER}_API_KEY)
  *
@@ -24,6 +26,7 @@ const ENV_MAP: Partial<Record<CredentialProvider, string>> = {
 
 /** Save credential to localStorage (always called alongside Supabase save) */
 export function saveLocalCredential(provider: CredentialProvider, value: string) {
+  if (!import.meta.env.DEV) return;
   try {
     localStorage.setItem(`${LOCAL_PREFIX}${provider}`, value);
   } catch { /* ignore */ }
@@ -31,6 +34,7 @@ export function saveLocalCredential(provider: CredentialProvider, value: string)
 
 /** Remove credential from localStorage */
 export function removeLocalCredential(provider: CredentialProvider) {
+  if (!import.meta.env.DEV) return;
   try {
     localStorage.removeItem(`${LOCAL_PREFIX}${provider}`);
   } catch { /* ignore */ }
@@ -38,6 +42,7 @@ export function removeLocalCredential(provider: CredentialProvider) {
 
 /** Get credential from localStorage */
 function getLocalCredential(provider: CredentialProvider): string | null {
+  if (!import.meta.env.DEV) return null;
   try {
     return localStorage.getItem(`${LOCAL_PREFIX}${provider}`) || null;
   } catch {
@@ -47,6 +52,7 @@ function getLocalCredential(provider: CredentialProvider): string | null {
 
 /** Get credential from env */
 function getEnvCredential(provider: CredentialProvider): string | null {
+  if (!import.meta.env.DEV) return null;
   const key = ENV_MAP[provider];
   if (!key) return null;
   const val = import.meta.env[key];
@@ -58,19 +64,20 @@ function getEnvCredential(provider: CredentialProvider): string | null {
  * Works everywhere — with or without Supabase, with or without env vars.
  */
 export function getCredential(provider: CredentialProvider): string | null {
-  // 1. localStorage (set by Settings UI)
+  // Dev-only local fallback
   const local = getLocalCredential(provider);
   if (local) return local;
 
-  // 2. Also check legacy key patterns
+  // Dev-only legacy key patterns
   if (provider === "finnhub") {
+    if (!import.meta.env.DEV) return null;
     try {
       const legacy = localStorage.getItem("sibt_finnhub_key");
       if (legacy) return legacy;
     } catch { /* ignore */ }
   }
 
-  // 3. Env variable
+  // Dev-only env variable
   const env = getEnvCredential(provider);
   if (env) return env;
 

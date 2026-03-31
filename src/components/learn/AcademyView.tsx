@@ -197,7 +197,14 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
               })}
             </div>
 
-            <div style={{ ...academyPanelStyle, background: "linear-gradient(180deg, rgba(15,23,42,0.45), rgba(15,23,42,0.7))" }}>
+            <div
+              style={{
+                ...academyPanelStyle,
+                background: "var(--bg-panel)",
+                borderColor: "rgba(5, 173, 152, 0.28)",
+                boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
+              }}
+            >
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
                 <div>
                   <div style={{ ...mono, fontSize: 12, color: "var(--signal-core)", fontWeight: 700, marginBottom: 4 }}>
@@ -245,7 +252,15 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                     OPEN TRADING WORKFLOW
                   </a>
                 )}
-                <button onClick={onOpenGlossary} style={{ ...linkChipStyle, background: "transparent", cursor: "pointer" }}>
+                <button
+                  onClick={onOpenGlossary}
+                  style={{
+                    ...linkChipStyle,
+                    background: "var(--bg-panel)",
+                    color: "var(--text-primary)",
+                    cursor: "pointer",
+                  }}
+                >
                   REVIEW GLOSSARY TERMS
                 </button>
               </div>

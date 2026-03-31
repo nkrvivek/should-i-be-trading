@@ -4,13 +4,10 @@ import { TerminalShell } from "../components/layout/TerminalShell";
 import { ALL_LEARNING_LESSONS, LEARNING_TRACKS } from "../lib/academy";
 import { GLOSSARY, GLOSSARY_CATEGORIES, type GlossaryEntry } from "../lib/glossary";
 import {
-  completeLesson,
   computeLearningStats,
-  getLearningProgress,
-  saveLearningProgress,
-  updateReminderPrefs,
 } from "../lib/learningProgress";
 import { SIBT_BADGE_PATHS } from "../lib/learningBadges";
+import { useLearningAcademy } from "../hooks/useLearningAcademy";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
@@ -30,7 +27,7 @@ export function GlossaryPage() {
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeDifficulty, setActiveDifficulty] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [progress, setProgress] = useState(() => getLearningProgress());
+  const { progress, markLessonComplete, saveReminderPrefs, loading: academyLoading, persistence } = useLearningAcademy();
 
   const stats = useMemo(
     () => computeLearningStats(progress, ALL_LEARNING_LESSONS.length),
@@ -75,10 +72,6 @@ export function GlossaryPage() {
   useEffect(() => {
     setSearch(searchQuery);
   }, [searchQuery]);
-
-  useEffect(() => {
-    saveLearningProgress(progress);
-  }, [progress]);
 
   useEffect(() => {
     if (!deepLinkTerm) return;
@@ -155,10 +148,17 @@ export function GlossaryPage() {
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 10 }}>
                   {nextLesson?.description ?? "You have completed the current curriculum. Keep reviewing badge paths and glossary concepts."}
                 </div>
+                <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>
+                  {academyLoading
+                    ? "Syncing academy progress..."
+                    : persistence === "account"
+                      ? `Synced to account • ${progress.reminders.timezone}`
+                      : `Local-only progress • ${progress.reminders.timezone}`}
+                </div>
                 {nextLesson && (
                   <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                     <button
-                      onClick={() => setProgress((current) => completeLesson(current, nextLesson.slug))}
+                      onClick={() => void markLessonComplete(nextLesson.slug)}
                       style={primarySmallBtn}
                     >
                       MARK SESSION COMPLETE
@@ -182,14 +182,16 @@ export function GlossaryPage() {
                   Reminder Plan
                 </div>
                 <p style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55, marginTop: 0 }}>
-                  Browser reminders can be part of the free tier now. Email streak nudges should be added as a backend phase after review.
+                  {persistence === "account"
+                    ? "Reminder preferences are synced to your account. Email nudges now use the backend reminder pipeline."
+                    : "Reminder preferences are local until you sign in. Email nudges require an account."}
                 </p>
                 <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                   <label style={settingRowStyle}>
                     <span>Cadence</span>
                     <select
                       value={progress.reminders.cadence}
-                      onChange={(event) => setProgress((current) => updateReminderPrefs(current, { cadence: event.target.value as "daily" | "weekly" }))}
+                      onChange={(event) => void saveReminderPrefs({ cadence: event.target.value as "daily" | "weekly" })}
                       style={settingsSelectStyle}
                     >
                       <option value="daily">Daily</option>
@@ -200,7 +202,7 @@ export function GlossaryPage() {
                     <span>Weekly goal</span>
                     <select
                       value={progress.reminders.weeklyTarget}
-                      onChange={(event) => setProgress((current) => updateReminderPrefs(current, { weeklyTarget: Number(event.target.value) }))}
+                      onChange={(event) => void saveReminderPrefs({ weeklyTarget: Number(event.target.value) })}
                       style={settingsSelectStyle}
                     >
                       {[2, 3, 4, 5].map((value) => (
@@ -210,11 +212,49 @@ export function GlossaryPage() {
                       ))}
                     </select>
                   </label>
+                  <label style={settingRowStyle}>
+                    <span>Reminder hour</span>
+                    <select
+                      value={progress.reminders.preferredHour}
+                      onChange={(event) => void saveReminderPrefs({ preferredHour: Number(event.target.value) })}
+                      style={settingsSelectStyle}
+                    >
+                      {[9, 12, 16, 18, 20].map((value) => (
+                        <option key={value} value={value}>
+                          {value}:00
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  {progress.reminders.cadence === "weekly" && (
+                    <label style={settingRowStyle}>
+                      <span>Reminder day</span>
+                      <select
+                        value={progress.reminders.preferredWeekday}
+                        onChange={(event) => void saveReminderPrefs({ preferredWeekday: Number(event.target.value) })}
+                        style={settingsSelectStyle}
+                      >
+                        {[
+                          { label: "Sunday", value: 0 },
+                          { label: "Monday", value: 1 },
+                          { label: "Tuesday", value: 2 },
+                          { label: "Wednesday", value: 3 },
+                          { label: "Thursday", value: 4 },
+                          { label: "Friday", value: 5 },
+                          { label: "Saturday", value: 6 },
+                        ].map((option) => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  )}
                   <label style={checkboxRowStyle}>
                     <input
                       type="checkbox"
                       checked={progress.reminders.browserEnabled}
-                      onChange={(event) => setProgress((current) => updateReminderPrefs(current, { browserEnabled: event.target.checked }))}
+                      onChange={(event) => void saveReminderPrefs({ browserEnabled: event.target.checked })}
                     />
                     <span>Browser learning reminders</span>
                   </label>
@@ -222,9 +262,17 @@ export function GlossaryPage() {
                     <input
                       type="checkbox"
                       checked={progress.reminders.emailOptIn}
-                      onChange={(event) => setProgress((current) => updateReminderPrefs(current, { emailOptIn: event.target.checked }))}
+                      onChange={(event) => void saveReminderPrefs({ emailOptIn: event.target.checked })}
                     />
-                    <span>Email streak nudges when backend delivery is added</span>
+                    <span>Email streak nudges</span>
+                  </label>
+                  <label style={checkboxRowStyle}>
+                    <input
+                      type="checkbox"
+                      checked={progress.reminders.paused}
+                      onChange={(event) => void saveReminderPrefs({ paused: event.target.checked })}
+                    />
+                    <span>Pause all learning reminders</span>
                   </label>
                 </div>
               </div>
@@ -254,7 +302,7 @@ export function GlossaryPage() {
                           <div key={lesson.slug} style={{ border: "1px solid var(--border-dim)", borderRadius: 6, padding: 10, background: "var(--bg-panel-raised)" }}>
                             <div style={{ display: "flex", justifyContent: "space-between", gap: 10, marginBottom: 4 }}>
                               <div style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
-                                {lesson.title}
+                              {lesson.title}
                               </div>
                               <span style={riskPillStyle(lesson.riskLevel)}>
                                 {lesson.riskLevel.toUpperCase()}
@@ -268,7 +316,7 @@ export function GlossaryPage() {
                             </div>
                             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                               <button
-                                onClick={() => setProgress((current) => completeLesson(current, lesson.slug))}
+                                onClick={() => void markLessonComplete(lesson.slug)}
                                 style={isComplete ? secondarySmallBtn : primarySmallBtn}
                               >
                                 {isComplete ? "COMPLETED" : "MARK COMPLETE"}

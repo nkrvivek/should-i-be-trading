@@ -17,7 +17,8 @@
     "marketing:screenshots:app": "npx playwright test --project=chromium e2e/marketing-product-screenshots.spec.ts",
     "smoke:edge": "node scripts/smoke-edge-functions.mjs",
     "email:preview": "npx tsx scripts/sync-email-templates.ts --preview",
-    "email:sync": "sh -c 'curl -s -X POST ${VITE_SUPABASE_URL}/functions/v1/sync-email-templates -H \"x-admin-secret: ${ADMIN_SECRET}\" -H \"Content-Type: application/json\" -d \"{}\"'"
+    "email:sync": "sh -c 'curl -s -X POST ${VITE_SUPABASE_URL}/functions/v1/sync-email-templates -H \"x-admin-secret: ${ADMIN_SECRET}\" -H \"Content-Type: application/json\" -d \"{}\"'",
+    "learning:reminders:dry-run": "sh -c \"curl -s -X POST ${VITE_SUPABASE_URL}/functions/v1/send-learning-reminders -H 'x-admin-secret: ${ADMIN_SECRET}' -H 'Content-Type: application/json' -d '{\\\"dryRun\\\":true}'\""
   },
   "dependencies": {
     "@fontsource/ibm-plex-mono": "^5.2.7",

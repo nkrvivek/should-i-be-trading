@@ -5,6 +5,10 @@ export type LearningReminderPrefs = {
   emailOptIn: boolean;
   cadence: LearningReminderCadence;
   weeklyTarget: number;
+  timezone: string;
+  preferredHour: number;
+  preferredWeekday: number;
+  paused: boolean;
 };
 
 export type LearningProgressState = {
@@ -31,6 +35,10 @@ export const DEFAULT_LEARNING_PROGRESS: LearningProgressState = {
     emailOptIn: false,
     cadence: "daily",
     weeklyTarget: 3,
+    timezone: "UTC",
+    preferredHour: 18,
+    preferredWeekday: 1,
+    paused: false,
   },
 };
 
@@ -44,10 +52,20 @@ export function getLearningProgress(): LearningProgressState {
     return {
       completedLessons: parsed.completedLessons ?? {},
       sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
-      reminders: { ...DEFAULT_LEARNING_PROGRESS.reminders, ...(parsed.reminders ?? {}) },
+      reminders: {
+        ...DEFAULT_LEARNING_PROGRESS.reminders,
+        timezone: getBrowserTimezone(),
+        ...(parsed.reminders ?? {}),
+      },
     };
   } catch {
-    return DEFAULT_LEARNING_PROGRESS;
+    return {
+      ...DEFAULT_LEARNING_PROGRESS,
+      reminders: {
+        ...DEFAULT_LEARNING_PROGRESS.reminders,
+        timezone: getBrowserTimezone(),
+      },
+    };
   }
 }
 
@@ -156,4 +174,12 @@ function toLocalDayKey(date: Date): string {
   const month = `${date.getMonth() + 1}`.padStart(2, "0");
   const day = `${date.getDate()}`.padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function getBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+  } catch {
+    return "UTC";
+  }
 }

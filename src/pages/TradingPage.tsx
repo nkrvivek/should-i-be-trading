@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
+import { useMarketScore } from "../hooks/useMarketScore";
+import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import FlowAnalysisPanel from "../components/trading/FlowAnalysisPanel";
 import StrategySuggester from "../components/trading/StrategySuggester";
 import StrategyAnalysisPanel from "../components/portfolio/StrategyAnalysisPanel";
@@ -45,6 +47,9 @@ type TabId = "import" | "strategies" | "portfolio" | "orders" | "flow" | "journa
 const BROKER_TABS: TabId[] = ["portfolio", "orders", "flow", "journal"];
 
 export default function TradingPage() {
+  useMarketScore();
+  useRegimeMonitor();
+
   const {
     connections,
     accounts,

@@ -3,12 +3,14 @@ import {
   type CompositeScoreInputs,
   type CompositeTradeScore,
 } from "../lib/compositeTradeScore";
+import { estimateStockScoreFromMetrics } from "../lib/estimatedStockScore";
 import { getSectorEtfForSymbol } from "../lib/sectorMapping";
 import { getCachedInsiderData } from "./useInsiderTrading";
 import { getCachedMarketActivity } from "./useMarketActivity";
 import { getCachedMarketScore } from "./useMarketScore";
 import { getCachedRegimeMonitor } from "./useRegimeMonitor";
 import { getCachedSocialScore } from "./useSocialSentiment";
+import { getCachedStockMetrics } from "./useStockMetrics";
 import { getCachedStockScore } from "./useStockScore";
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
@@ -36,6 +38,10 @@ function buildInputs(symbol: string, overrides: Partial<CompositeScoreInputs> = 
   const market = getCachedMarketScore();
   const regime = getCachedRegimeMonitor();
   const stockScore = getCachedStockScore(symbol);
+  const stockMetrics = getCachedStockMetrics(symbol);
+  const estimatedStockScore = stockScore ? null : (stockMetrics && !Array.isArray(stockMetrics)
+    ? estimateStockScoreFromMetrics(stockMetrics)
+    : null);
   const insider = getCachedInsiderData(symbol);
   const social = getCachedSocialScore(symbol);
 
@@ -44,7 +50,7 @@ function buildInputs(symbol: string, overrides: Partial<CompositeScoreInputs> = 
     regimeComposite: overrides.regimeComposite ?? regime?.compositeScore,
     fsiScore: overrides.fsiScore ?? regime?.fsi.score,
     sectorEtfChange: overrides.sectorEtfChange ?? resolveSectorEtfChange(symbol, market?.sectorChanges),
-    stockScoreComposite: overrides.stockScoreComposite ?? stockScore?.composite,
+    stockScoreComposite: overrides.stockScoreComposite ?? stockScore?.composite ?? estimatedStockScore?.composite,
     insiderSignalScore: overrides.insiderSignalScore ?? insider?.signalScore,
     earningsScore: overrides.earningsScore,
     socialScore: overrides.socialScore ?? social?.overall,

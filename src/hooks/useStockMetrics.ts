@@ -26,12 +26,61 @@ export type StockMetrics = {
 
 const ALL_TICKERS = Object.keys(SECTOR_MAP);
 const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_KEY = "sibt_stock_metrics_cache";
 
 let cachedMetrics: StockMetrics[] | null = null;
 let cacheTimestamp = 0;
 
+function readCachedMetrics(): { data: StockMetrics[]; ts: number } | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+
+    const parsed = JSON.parse(raw) as { data?: StockMetrics[]; ts?: number; universeSize?: number };
+    if (!Array.isArray(parsed?.data) || typeof parsed.ts !== "number") return null;
+    if (parsed.universeSize !== ALL_TICKERS.length) return null;
+    if (Date.now() - parsed.ts >= CACHE_TTL) return null;
+
+    return { data: parsed.data, ts: parsed.ts };
+  } catch {
+    return null;
+  }
+}
+
+function writeCachedMetrics(data: StockMetrics[]) {
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify({
+      data,
+      ts: Date.now(),
+      universeSize: ALL_TICKERS.length,
+    }));
+  } catch {
+    // ignore cache errors
+  }
+}
+
+export function getCachedStockMetrics(symbol?: string): StockMetrics[] | StockMetrics | null {
+  const data = cachedMetrics ?? readCachedMetrics()?.data ?? null;
+  if (!data) return null;
+
+  if (!symbol) return data;
+
+  return data.find((entry) => entry.symbol === symbol.trim().toUpperCase()) ?? null;
+}
+
 export function useStockMetrics() {
-  const [metrics, setMetrics] = useState<StockMetrics[]>(cachedMetrics ?? []);
+  const [metrics, setMetrics] = useState<StockMetrics[]>(() => {
+    const cached = cachedMetrics ?? readCachedMetrics()?.data ?? null;
+    if (cached) {
+      cachedMetrics = cached;
+      return cached;
+    }
+    return [];
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState({ done: 0, total: ALL_TICKERS.length });
@@ -39,6 +88,12 @@ export function useStockMetrics() {
 
   const fetchMetrics = useCallback(async () => {
     // Return cache if fresh
+    const localCache = readCachedMetrics();
+    if (!cachedMetrics && localCache) {
+      cachedMetrics = localCache.data;
+      cacheTimestamp = localCache.ts;
+    }
+
     if (cachedMetrics && Date.now() - cacheTimestamp < CACHE_TTL) {
       setMetrics(cachedMetrics);
       setProgress({ done: ALL_TICKERS.length, total: ALL_TICKERS.length });
@@ -59,11 +114,11 @@ export function useStockMetrics() {
 
     const results: StockMetrics[] = [];
 
-    // Batch 3 at a time with delays to respect rate limits
-    for (let i = 0; i < ALL_TICKERS.length; i += 3) {
+    // Batch 8 at a time with short pauses so 250-symbol universe remains usable.
+    for (let i = 0; i < ALL_TICKERS.length; i += 8) {
       if (abortRef.current) break;
 
-      const batch = ALL_TICKERS.slice(i, i + 3);
+      const batch = ALL_TICKERS.slice(i, i + 8);
       await Promise.all(
         batch.map(async (symbol) => {
           try {
@@ -97,22 +152,22 @@ export function useStockMetrics() {
         }),
       );
 
-      setProgress({ done: Math.min(i + 3, ALL_TICKERS.length), total: ALL_TICKERS.length });
+      setProgress({ done: Math.min(i + 8, ALL_TICKERS.length), total: ALL_TICKERS.length });
 
       // Update incrementally
       setMetrics([...results]);
 
       // Rate limit delay between batches
-      if (i + 3 < ALL_TICKERS.length) {
-        await new Promise((r) => setTimeout(r, 1500));
+      if (i + 8 < ALL_TICKERS.length) {
+        await new Promise((r) => setTimeout(r, 350));
       }
     }
 
     // Batch-fetch current prices via Finnhub quote (already cached at 1min TTL in edge function)
     try {
-      for (let i = 0; i < results.length; i += 5) {
+      for (let i = 0; i < results.length; i += 10) {
         if (abortRef.current) break;
-        const batch = results.slice(i, i + 5);
+        const batch = results.slice(i, i + 10);
         await Promise.all(
           batch.map(async (stock) => {
             try {
@@ -126,12 +181,13 @@ export function useStockMetrics() {
             } catch { /* skip price fetch failures */ }
           }),
         );
-        if (i + 5 < results.length) await new Promise((r) => setTimeout(r, 500));
+        if (i + 10 < results.length) await new Promise((r) => setTimeout(r, 250));
       }
     } catch { /* price fetch pass failed, prices remain null — non-critical */ }
 
     cachedMetrics = results;
     cacheTimestamp = Date.now();
+    writeCachedMetrics(results);
     setMetrics(results);
     setLoading(false);
   }, []);

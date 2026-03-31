@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { useMarketHours } from "../hooks/useMarketHours";
 import { useSignalHistory } from "../hooks/useSignalHistory";
 import { useMarketScore } from "../hooks/useMarketScore";
+import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import { computeVerdict } from "../lib/trafficLight";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { TrafficLight } from "../components/regime/TrafficLight";
@@ -21,6 +22,7 @@ export function DashboardPage() {
   const { status } = useMarketHours();
   const { history, recordVerdict } = useSignalHistory();
   const { score: marketScore, loading: scoreLoading, refresh: refreshScore } = useMarketScore();
+  useRegimeMonitor();
 
   const verdict = useMemo(
     () =>

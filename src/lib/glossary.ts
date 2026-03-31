@@ -97,6 +97,30 @@ export const GLOSSARY: GlossaryEntry[] = [
     difficulty: "advanced",
   },
   {
+    term: "Composite Trade Score",
+    category: "Risk",
+    definition:
+      "A 0-100 SIBT ranking for a single ticker that blends market context and ticker-specific signals into one tradeability score. Market quality, regime, FSI, and sector momentum make up 40% of the score. Stock quality, insider signal, earnings, social sentiment, and short interest make up 60%.",
+    example:
+      "Market block: 40% total weight. Ticker block: 60% total weight. Missing inputs default to a neutral 50 and lower confidence rather than breaking the score.",
+    relatedTerms: [
+      "FSI",
+      "Market Regime",
+      "Short Interest",
+      "Insider Buying",
+      "Social Sentiment",
+    ],
+    difficulty: "intermediate",
+  },
+  {
+    term: "FSI",
+    category: "Risk",
+    definition:
+      "Financial Stress Indicator. In SIBT it summarizes credit and bond-volatility stress. Higher scores mean healthier risk appetite and easier credit conditions; lower scores mean stress is building.",
+    relatedTerms: ["Composite Trade Score", "Market Regime", "Credit Spread"],
+    difficulty: "advanced",
+  },
+  {
     term: "VVIX/VIX Ratio",
     category: "Risk",
     definition:

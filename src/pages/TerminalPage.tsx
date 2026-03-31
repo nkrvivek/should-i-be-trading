@@ -7,6 +7,7 @@ import { useScanner } from "../hooks/useScanner";
 import { useDiscover } from "../hooks/useDiscover";
 import { useMarketHours } from "../hooks/useMarketHours";
 import { useMarketScore } from "../hooks/useMarketScore";
+import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import { computeVerdict } from "../lib/trafficLight";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { Panel } from "../components/layout/Panel";
@@ -35,6 +36,7 @@ export function TerminalPage() {
   const { data: discover, loading: discoverLoading, refresh: refreshDiscover } = useDiscover();
   const { status } = useMarketHours();
   const { score: marketScore } = useMarketScore();
+  useRegimeMonitor();
 
   // Gather all symbols for WS subscription
   const portfolioSymbols = useMemo(

@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { GLOSSARY, GLOSSARY_CATEGORIES, type GlossaryEntry } from "../lib/glossary";
 
@@ -11,7 +12,10 @@ const difficultyColors: Record<string, { bg: string; color: string; label: strin
 };
 
 export function GlossaryPage() {
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get("q") ?? "";
+  const deepLinkTerm = searchParams.get("term") ?? "";
+  const [search, setSearch] = useState(searchQuery);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeDifficulty, setActiveDifficulty] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -45,6 +49,24 @@ export function GlossaryPage() {
       el?.scrollIntoView({ behavior: "smooth", block: "center" });
     }, 100);
   };
+
+  useEffect(() => {
+    setSearch(searchQuery);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    if (!deepLinkTerm) return;
+    const matching = GLOSSARY.find((entry) => entry.term.toLowerCase() === deepLinkTerm.toLowerCase());
+    if (!matching) return;
+    setSearch(matching.term);
+    setActiveCategory(null);
+    setActiveDifficulty(null);
+    setExpanded((prev) => new Set(prev).add(matching.term));
+    setTimeout(() => {
+      const el = document.getElementById(`glossary-${matching.term.replace(/\s+/g, "-").toLowerCase()}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  }, [deepLinkTerm]);
 
   return (
     <TerminalShell cri={null}>

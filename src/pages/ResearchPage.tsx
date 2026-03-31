@@ -24,6 +24,7 @@ import { ScreenerPanel } from "../components/ai/ScreenerPanel";
 const EarningsContent = lazy(() => import("./partials/EarningsContent"));
 const InsiderContent = lazy(() => import("./partials/InsiderContent"));
 const FundamentalsContent = lazy(() => import("./partials/FundamentalsContent"));
+const CompositeContent = lazy(() => import("./partials/CompositeContent"));
 const InstitutionalContent = lazy(() => import("./partials/InstitutionalContent"));
 const NewsContent = lazy(() => import("./partials/NewsContent"));
 const TechnicalContent = lazy(() => import("./partials/TechnicalContent"));
@@ -31,6 +32,7 @@ const SocialContent = lazy(() => import("./partials/SocialContent"));
 
 const TABS: TabDef[] = [
   { id: "chat", label: "AI Chat" },
+  { id: "composite", label: "Composite", badge: "NEW", badgeColor: "var(--signal-core)" },
   { id: "fundamentals", label: "Fundamentals" },
   { id: "technical", label: "Technical", badge: "NEW", badgeColor: "var(--signal-core)" },
   { id: "news", label: "News" },
@@ -104,6 +106,12 @@ export default function ResearchPage() {
           {activeTab === "fundamentals" && (
             <Suspense fallback={loading}>
               <FundamentalsContent />
+            </Suspense>
+          )}
+
+          {activeTab === "composite" && (
+            <Suspense fallback={loading}>
+              <CompositeContent />
             </Suspense>
           )}
 

@@ -11,13 +11,13 @@ const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
 export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) {
   const { progress, markLessonComplete, saveReminderPrefs, loading: academyLoading, persistence } = useLearningAcademy();
+  const persistedState = useMemo(() => getAcademyViewState(), []);
 
   const stats = useMemo(
     () => computeLearningStats(progress, ALL_LEARNING_LESSONS.length),
     [progress],
   );
 
-  const persistedState = getAcademyViewState();
   const [viewingLesson, setViewingLesson] = useState<string | null>(persistedState.viewingLessonSlug);
 
   const nextLesson = useMemo(

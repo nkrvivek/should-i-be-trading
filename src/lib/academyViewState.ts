@@ -38,13 +38,3 @@ export function saveAcademyViewState(state: AcademyViewState) {
   if (typeof window === "undefined") return;
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
-
-export function mergeAcademyViewState(
-  base: AcademyViewState,
-  patch: Partial<AcademyViewState>,
-): AcademyViewState {
-  return {
-    ...base,
-    ...patch,
-  };
-}

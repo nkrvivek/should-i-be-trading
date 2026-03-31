@@ -107,15 +107,19 @@ function computeRedditScore(data: SocialSentimentData["reddit"]): number | null 
 function computeFinTwitScore(data: SocialSentimentData["fintwit"]): number | null {
   if (!data || data.posts.length === 0) return null;
 
-  let positiveCount = 0;
+  let bullishCount = 0;
+  let bearishCount = 0;
   for (const post of data.posts) {
     const text = `${post.title} ${post.snippet}`;
-    if (containsKeyword(text, BULLISH_KEYWORDS)) positiveCount++;
+    if (containsKeyword(text, BULLISH_KEYWORDS)) bullishCount++;
+    if (containsKeyword(text, BEARISH_KEYWORDS)) bearishCount++;
   }
 
-  // relevanceScore (0-1) * ratio of positive posts, scaled to 0-100
-  const ratio = positiveCount / data.posts.length;
-  return Math.round(data.relevanceScore * ratio * 100);
+  const signalCount = bullishCount + bearishCount;
+  if (signalCount === 0) return 50; // neutral when no clear signals
+  // Scale bullish ratio by relevance, centered on 50
+  const ratio = bullishCount / signalCount;
+  return Math.round(50 + (ratio - 0.5) * 2 * data.relevanceScore * 50);
 }
 
 export function computeSocialScore(data: SocialSentimentData): SocialScore {

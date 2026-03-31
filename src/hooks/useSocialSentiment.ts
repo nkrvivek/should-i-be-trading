@@ -30,6 +30,7 @@ const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 const cache = new Map<string, { data: SocialSentimentResult["data"]; expires: number }>();
 
 const BULLISH_KEYWORDS = ["buy", "bull", "calls", "moon", "long", "breakout", "rally"];
+const BEARISH_KEYWORDS = ["sell", "bear", "puts", "short", "crash", "dump", "drop"];
 
 export function useSocialSentiment(symbol: string | null): SocialSentimentResult {
   const [data, setData] = useState<SocialSentimentResult["data"]>(null);
@@ -57,7 +58,8 @@ export function useSocialSentiment(symbol: string | null): SocialSentimentResult
       }
 
       abortRef.current?.abort();
-      abortRef.current = new AbortController();
+      const controller = new AbortController();
+      abortRef.current = controller;
 
       setLoading(true);
       setError(null);
@@ -93,8 +95,11 @@ export function useSocialSentiment(symbol: string | null): SocialSentimentResult
           let bearishCount = 0;
           for (const post of redditPosts) {
             const text = `${post.title} ${post.selftext}`.toLowerCase();
-            if (BULLISH_KEYWORDS.some((kw) => text.includes(kw))) bullishCount++;
-            else bearishCount++;
+            const isBullish = BULLISH_KEYWORDS.some((kw) => text.includes(kw));
+            const isBearish = BEARISH_KEYWORDS.some((kw) => text.includes(kw));
+            if (isBullish && !isBearish) bullishCount++;
+            else if (isBearish && !isBullish) bearishCount++;
+            // neutral posts (neither or both) are not counted
           }
           sentiment.reddit = {
             mentions: redditPosts.length,
@@ -121,15 +126,19 @@ export function useSocialSentiment(symbol: string | null): SocialSentimentResult
           };
         }
 
+        // Bail if this request was superseded by a newer one
+        if (controller.signal.aborted) return;
+
         const score = computeSocialScore(sentiment);
 
         const result = { sentiment, score, trending };
         cache.set(key, { data: result, expires: Date.now() + CACHE_TTL });
         setData(result);
       } catch (err) {
+        if (controller.signal.aborted) return;
         setError(err instanceof Error ? err.message : "Failed to fetch social data");
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     },
     [symbol],

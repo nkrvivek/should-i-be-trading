@@ -34,7 +34,7 @@ async function fetchInsiderTransactions(symbol: string): Promise<InsiderTransact
       name: (t.name as string) ?? "Unknown",
       title: (t.title as string) ?? undefined,
       transactionType: (t.transactionType as string) ?? (t.transactionCode as string) ?? "",
-      value: Math.abs(Number(t.value) || Number(t.change) * Number(t.price) || 0),
+      value: Math.abs(Number(t.value) || Number(t.change) * Number(t.transactionPrice) || 0),
       date: (t.transactionDate as string) ?? (t.filingDate as string) ?? "",
       shares: Math.abs(Number(t.share) || Number(t.change) || 0),
     }));

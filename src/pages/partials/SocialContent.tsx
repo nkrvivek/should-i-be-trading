@@ -20,7 +20,7 @@ export default function SocialContent() {
   const { data, loading, error, refresh } = useSocialSentiment(activeTicker);
 
   if (!hasFeature(tier, "social_sentiment")) {
-    return <UpgradePrompt feature="social_sentiment" />;
+    return <UpgradePrompt feature="social_sentiment" inline />;
   }
 
   const handleSearch = () => {

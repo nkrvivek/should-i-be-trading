@@ -6,6 +6,8 @@ import { TerminalShell } from "../layout/TerminalShell";
 type Props = {
   feature: Feature;
   children?: React.ReactNode;
+  /** When true, renders without TerminalShell wrapper (for use inside existing shells) */
+  inline?: boolean;
 };
 
 const featureLabels: Partial<Record<Feature, string>> = {
@@ -21,13 +23,12 @@ const featureLabels: Partial<Record<Feature, string>> = {
   charts_advanced: "Advanced Charts",
 };
 
-export function UpgradePrompt({ feature, children }: Props) {
+export function UpgradePrompt({ feature, children, inline }: Props) {
   const navigate = useNavigate();
   const requiredTier = getRequiredTier(feature);
   const label = featureLabels[feature] ?? feature;
 
-  return (
-    <TerminalShell cri={null}>
+  const content = (
       <div
         style={{
           display: "flex",
@@ -82,6 +83,8 @@ export function UpgradePrompt({ feature, children }: Props) {
           </button>
         </div>
       </div>
-    </TerminalShell>
   );
+
+  if (inline) return content;
+  return <TerminalShell cri={null}>{content}</TerminalShell>;
 }

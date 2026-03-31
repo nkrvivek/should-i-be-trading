@@ -55,8 +55,8 @@ export function PortfolioRiskWidget() {
     currentPrice: p.currentPrice,
     marketValue: p.marketValue,
     unrealizedPL: p.unrealizedPL,
-    unrealizedPLPercent: p.avgEntryPrice > 0 ? (p.unrealizedPL / (p.avgEntryPrice * p.qty)) * 100 : 0,
-    assetType: "stock" as const,
+    unrealizedPLPercent: p.unrealizedPLPercent,
+    assetType: p.assetType,
   }));
 
   const positions = [...brokerPositions, ...manualAsBroker];

@@ -141,4 +141,47 @@ describe("detectInsiderClusters", () => {
     const clusters = detectInsiderClusters(txs);
     expect(clusters).toHaveLength(1);
   });
+
+  it("very large value cluster → high score", () => {
+    const txs = [
+      tx({ symbol: "MEGA", name: "Alice", date: "2026-03-15", value: 5_000_000 }),
+      tx({ symbol: "MEGA", name: "Bob", date: "2026-03-16", value: 5_000_000 }),
+      tx({ symbol: "MEGA", name: "Carol", date: "2026-03-17", value: 5_000_000 }),
+    ];
+    const clusters = detectInsiderClusters(txs);
+    expect(clusters).toHaveLength(1);
+    // Score should be capped at 100 given 3 insiders * 20 + huge value + tightness bonus
+    expect(clusters[0].clusterScore).toBe(100);
+    expect(clusters[0].totalValue).toBe(15_000_000);
+  });
+
+  it("cluster with tightness = 0 (all same day) → maximum tightness bonus", () => {
+    const txs = [
+      tx({ symbol: "TIGHT", name: "Alice", date: "2026-03-15", value: 100_000 }),
+      tx({ symbol: "TIGHT", name: "Bob", date: "2026-03-15", value: 100_000 }),
+    ];
+    const clusters = detectInsiderClusters(txs);
+    expect(clusters).toHaveLength(1);
+    // daysBetween = 0, so tightness = 1 - 0/7 = 1 → max tightness bonus of 15
+    // Score = 2 * 20 + (200_000 / 100_000) * 10 + 1 * 15 = 40 + 20 + 15 = 75
+    expect(clusters[0].clusterScore).toBe(75);
+    expect(clusters[0].dateRange.start).toBe("2026-03-15");
+    expect(clusters[0].dateRange.end).toBe("2026-03-15");
+  });
+
+  it("mixed buy and sell transactions → only purchases form clusters", () => {
+    const txs = [
+      tx({ symbol: "MIX", name: "Alice", date: "2026-03-15", transactionType: "P", value: 200_000 }),
+      tx({ symbol: "MIX", name: "Bob", date: "2026-03-16", transactionType: "S", value: 500_000 }),
+      tx({ symbol: "MIX", name: "Carol", date: "2026-03-17", transactionType: "P", value: 150_000 }),
+    ];
+    const clusters = detectInsiderClusters(txs);
+    expect(clusters).toHaveLength(1);
+    // Only Alice and Carol (purchases) should form the cluster
+    expect(clusters[0].insiders).toHaveLength(2);
+    const names = clusters[0].insiders.map((i) => i.name).sort();
+    expect(names).toEqual(["Alice", "Carol"]);
+    // Bob's sell transaction should not be counted in totalValue
+    expect(clusters[0].totalValue).toBe(350_000);
+  });
 });

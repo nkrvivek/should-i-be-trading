@@ -8,27 +8,17 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuthStore } from "../../stores/authStore";
 import { hasFeature } from "../../lib/featureGates";
+import { fetchInsiderTransactions as fetchInsiderViaEdge } from "../../api/freeDataClient";
 import { useMarketActivity } from "../../hooks/useMarketActivity";
 import { VolumeLeaders } from "../../components/activity/VolumeLeaders";
 import { InsiderClusterPanel } from "../../components/activity/InsiderClusterPanel";
 import { ShortInterestMonitor } from "../../components/activity/ShortInterestMonitor";
 import { detectInsiderClusters, type InsiderCluster, type InsiderTransaction } from "../../lib/activity/insiderClusters";
-import { isSupabaseConfigured } from "../../lib/supabase";
-import { getEdgeHeaders } from "../../api/edgeHeaders";
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 /** Fetch insider transactions for a symbol via the Finnhub edge function */
 async function fetchInsiderTransactions(symbol: string): Promise<InsiderTransaction[]> {
-  if (!isSupabaseConfigured()) return [];
-  const headers = await getEdgeHeaders();
-  const url = `${SUPABASE_URL}/functions/v1/finnhub?endpoint=stock/insider-transactions&symbol=${symbol}`;
   try {
-    const res = await fetch(url, { headers, signal: AbortSignal.timeout(10_000) });
-    if (!res.ok) return [];
-    const json = await res.json();
-    const txs = json?.data ?? json ?? [];
-    if (!Array.isArray(txs)) return [];
+    const txs = await fetchInsiderViaEdge(symbol);
     return txs.map((t: Record<string, unknown>) => ({
       symbol: symbol.toUpperCase(),
       name: (t.name as string) ?? "Unknown",

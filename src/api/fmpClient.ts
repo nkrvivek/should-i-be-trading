@@ -8,31 +8,97 @@
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
 
+interface FmpRequestCacheEntry<T> {
+  promise: Promise<T>;
+  expires: number;
+}
+
+const requestCache = new Map<string, FmpRequestCacheEntry<unknown>>();
+const DEFAULT_CACHE_TTL_MS = 5 * 60 * 1000;
+
+function normalizeTicker(symbol: string): string {
+  return symbol.toUpperCase().trim();
+}
+
+function getCacheTtlMs(endpoint: unknown): number {
+  switch (endpoint) {
+    case "search":
+      return 30_000;
+    case "historical-price":
+      return 60_000;
+    case "earnings":
+      return 2 * 60 * 1000;
+    default:
+      return DEFAULT_CACHE_TTL_MS;
+  }
+}
+
+function serializeParams(params: Record<string, unknown>): string {
+  return JSON.stringify(
+    Object.keys(params)
+      .sort()
+      .reduce<Record<string, unknown>>((acc, key) => {
+        acc[key] = params[key];
+        return acc;
+      }, {}),
+  );
+}
+
 async function fmpCall<T>(params: Record<string, unknown>): Promise<T> {
   if (!isSupabaseConfigured()) {
     throw new Error("FMP requires Supabase. Configure VITE_SUPABASE_URL.");
   }
 
-  const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fmp`;
-  const headers = await getEdgeHeaders();
-
-  const response = await fetch(url, {
-    method: "POST",
-    headers: {
-      ...headers,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(params),
-    signal: AbortSignal.timeout(15_000),
-  });
-
-  if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `FMP request failed: ${response.status}`);
+  const cacheKey = serializeParams(params);
+  const cached = requestCache.get(cacheKey) as FmpRequestCacheEntry<T> | undefined;
+  const now = Date.now();
+  if (cached && now < cached.expires) {
+    return cached.promise;
   }
 
-  const result = await response.json();
-  return result.data as T;
+  const promise = (async () => {
+    const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fmp`;
+    const headers = await getEdgeHeaders();
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(params),
+      signal: AbortSignal.timeout(15_000),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || `FMP request failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    return result.data as T;
+  })();
+
+  requestCache.set(cacheKey, {
+    promise,
+    expires: now + getCacheTtlMs(params.endpoint),
+  });
+
+  if (requestCache.size > 200) {
+    for (const [key, entry] of requestCache) {
+      if (entry.expires <= now) {
+        requestCache.delete(key);
+      }
+    }
+  }
+
+  return promise.catch((error) => {
+    const current = requestCache.get(cacheKey);
+    if (current?.promise === promise) {
+      requestCache.delete(cacheKey);
+    }
+    throw error;
+  });
 }
 
 /* ─── Types ─────────────────────────────────────────── */
@@ -176,39 +242,39 @@ export interface FmpEarnings {
 /* ─── API Functions ─────────────────────────────────── */
 
 export function getProfile(symbol: string): Promise<FmpProfile[]> {
-  return fmpCall({ endpoint: "profile", symbol });
+  return fmpCall({ endpoint: "profile", symbol: normalizeTicker(symbol) });
 }
 
 export function getIncomeStatement(symbol: string, period: "annual" | "quarter" = "annual", limit = 5): Promise<FmpIncomeStatement[]> {
-  return fmpCall({ endpoint: "income-statement", symbol, period, limit });
+  return fmpCall({ endpoint: "income-statement", symbol: normalizeTicker(symbol), period, limit });
 }
 
 export function getBalanceSheet(symbol: string, period: "annual" | "quarter" = "annual", limit = 5): Promise<FmpBalanceSheet[]> {
-  return fmpCall({ endpoint: "balance-sheet", symbol, period, limit });
+  return fmpCall({ endpoint: "balance-sheet", symbol: normalizeTicker(symbol), period, limit });
 }
 
 export function getRatiosTTM(symbol: string): Promise<FmpRatiosTTM[]> {
-  return fmpCall({ endpoint: "ratios-ttm", symbol });
+  return fmpCall({ endpoint: "ratios-ttm", symbol: normalizeTicker(symbol) });
 }
 
 export function getKeyMetricsTTM(symbol: string): Promise<FmpKeyMetricsTTM[]> {
-  return fmpCall({ endpoint: "key-metrics-ttm", symbol });
+  return fmpCall({ endpoint: "key-metrics-ttm", symbol: normalizeTicker(symbol) });
 }
 
 export function getAnalystEstimates(symbol: string, limit = 4): Promise<FmpAnalystEstimate[]> {
-  return fmpCall({ endpoint: "analyst-estimates", symbol, limit });
+  return fmpCall({ endpoint: "analyst-estimates", symbol: normalizeTicker(symbol), limit });
 }
 
 export function getPriceTarget(symbol: string): Promise<FmpPriceTarget[]> {
-  return fmpCall({ endpoint: "price-target", symbol });
+  return fmpCall({ endpoint: "price-target", symbol: normalizeTicker(symbol) });
 }
 
 export function getEarnings(symbol: string, limit = 8): Promise<FmpEarnings[]> {
-  return fmpCall({ endpoint: "earnings", symbol, limit });
+  return fmpCall({ endpoint: "earnings", symbol: normalizeTicker(symbol), limit });
 }
 
 export function searchSymbol(query: string, limit = 10): Promise<Array<{ symbol: string; name: string; exchangeShortName: string }>> {
-  return fmpCall({ endpoint: "search", query, limit });
+  return fmpCall({ endpoint: "search", query: query.trim(), limit });
 }
 
 export interface FmpHistoricalPrice {
@@ -222,8 +288,15 @@ export interface FmpHistoricalPrice {
   changePercent: number;
 }
 
+export interface FmpFundamentalSnapshot {
+  profile: FmpProfile | null;
+  ratios: FmpRatiosTTM | null;
+  metrics: FmpKeyMetricsTTM | null;
+  priceTarget: FmpPriceTarget | null;
+}
+
 export function getHistoricalPrice(symbol: string, from?: string, to?: string): Promise<{ symbol: string; historical: FmpHistoricalPrice[] }> {
-  return fmpCall({ endpoint: "historical-price", symbol, ...(from ? { from } : {}), ...(to ? { to } : {}) });
+  return fmpCall({ endpoint: "historical-price", symbol: normalizeTicker(symbol), ...(from ? { from } : {}), ...(to ? { to } : {}) });
 }
 
 /**
@@ -231,7 +304,7 @@ export function getHistoricalPrice(symbol: string, from?: string, to?: string): 
  * Bundles profile + ratios + key metrics + price target in parallel.
  * Uses ~4 API calls (cached server-side).
  */
-export async function getFundamentalSnapshot(symbol: string) {
+export async function getFundamentalSnapshot(symbol: string): Promise<FmpFundamentalSnapshot> {
   const [profile, ratios, metrics, priceTarget] = await Promise.all([
     getProfile(symbol),
     getRatiosTTM(symbol),

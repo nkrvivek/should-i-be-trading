@@ -3,9 +3,9 @@
  * Uses Finnhub /stock/metric endpoint via Supabase edge function.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
-import { getEdgeHeaders } from "../api/edgeHeaders";
+import { finnhubFetch } from "../api/dataFetchers";
 import { SECTOR_MAP } from "../lib/sectorMapping";
 
 export type StockMetrics = {
@@ -30,6 +30,9 @@ const CACHE_KEY = "sibt_stock_metrics_cache";
 
 let cachedMetrics: StockMetrics[] | null = null;
 let cacheTimestamp = 0;
+let inflightMetricsPromise: Promise<StockMetrics[]> | null = null;
+let sharedProgress = { done: 0, total: ALL_TICKERS.length };
+const progressListeners = new Set<(progress: { done: number; total: number }) => void>();
 
 function readCachedMetrics(): { data: StockMetrics[]; ts: number } | null {
   if (typeof window === "undefined") return null;
@@ -63,8 +66,132 @@ function writeCachedMetrics(data: StockMetrics[]) {
   }
 }
 
+function emitProgress(progress: { done: number; total: number }) {
+  sharedProgress = progress;
+  for (const listener of progressListeners) {
+    listener(progress);
+  }
+}
+
+function getFreshCachedMetrics(): StockMetrics[] | null {
+  if (cachedMetrics && Date.now() - cacheTimestamp < CACHE_TTL) {
+    return cachedMetrics;
+  }
+
+  const localCache = readCachedMetrics();
+  if (!localCache) return null;
+
+  cachedMetrics = localCache.data;
+  cacheTimestamp = localCache.ts;
+  return localCache.data;
+}
+
+async function fetchMetricsFresh(): Promise<StockMetrics[]> {
+  if (!isSupabaseConfigured()) {
+    throw new Error("Supabase not configured");
+  }
+
+  const results: StockMetrics[] = [];
+  emitProgress({ done: 0, total: ALL_TICKERS.length });
+
+  // Batch 8 at a time with short pauses so 250-symbol universe remains usable.
+  for (let i = 0; i < ALL_TICKERS.length; i += 8) {
+    const batch = ALL_TICKERS.slice(i, i + 8);
+    const batchResults = await Promise.all(
+      batch.map(async (symbol) => {
+        try {
+          const data = await finnhubFetch<{ metric?: Record<string, number | null> }>("stock/metric", {
+            symbol,
+            metric: "all",
+          });
+          const metric = data.metric ?? {};
+
+          return {
+            symbol,
+            sector: SECTOR_MAP[symbol] ?? "Other",
+            pe: metric.peBasicExclExtraTTM ?? metric.peTTM ?? null,
+            forwardPe: metric.peExclExtraAnnual ?? null,
+            dividendYield: metric.dividendYieldIndicatedAnnual != null ? metric.dividendYieldIndicatedAnnual / 100 : null,
+            marketCap: metric.marketCapitalization != null ? metric.marketCapitalization * 1e6 : null,
+            eps: metric.epsBasicExclExtraItemsTTM ?? metric.epsTTM ?? null,
+            revenueGrowthQuarterly: metric.revenueGrowthQuarterlyYoy != null ? metric.revenueGrowthQuarterlyYoy / 100 : null,
+            profitMargin: metric.netProfitMarginTTM != null ? metric.netProfitMarginTTM / 100 : null,
+            beta: metric.beta ?? null,
+            fiftyTwoWeekHigh: metric["52WeekHigh"] ?? null,
+            fiftyTwoWeekLow: metric["52WeekLow"] ?? null,
+            currentPrice: null,
+          } satisfies StockMetrics;
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    for (const entry of batchResults) {
+      if (entry) results.push(entry);
+    }
+
+    emitProgress({ done: Math.min(i + 8, ALL_TICKERS.length), total: ALL_TICKERS.length });
+
+    if (i + 8 < ALL_TICKERS.length) {
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+  }
+
+  // Batch-fetch current prices via Finnhub quote (already cached at 1min TTL in edge function)
+  for (let i = 0; i < results.length; i += 10) {
+    const batch = results.slice(i, i + 10);
+    const prices = await Promise.all(
+      batch.map(async (stock) => {
+        try {
+          const quote = await finnhubFetch<{ c?: number | null }>("quote", { symbol: stock.symbol });
+          return { symbol: stock.symbol, currentPrice: quote?.c ?? null };
+        } catch {
+          return { symbol: stock.symbol, currentPrice: null };
+        }
+      }),
+    );
+
+    const priceMap = new Map(prices.map((price) => [price.symbol, price.currentPrice]));
+    for (const stock of batch) {
+      stock.currentPrice = priceMap.get(stock.symbol) ?? null;
+    }
+
+    if (i + 10 < results.length) {
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  }
+
+  cachedMetrics = results;
+  cacheTimestamp = Date.now();
+  writeCachedMetrics(results);
+  emitProgress({ done: ALL_TICKERS.length, total: ALL_TICKERS.length });
+
+  return results;
+}
+
+async function loadMetrics(force = false): Promise<StockMetrics[]> {
+  if (!force) {
+    const cached = getFreshCachedMetrics();
+    if (cached) {
+      emitProgress({ done: ALL_TICKERS.length, total: ALL_TICKERS.length });
+      return cached;
+    }
+  }
+
+  if (inflightMetricsPromise) {
+    return inflightMetricsPromise;
+  }
+
+  inflightMetricsPromise = fetchMetricsFresh().finally(() => {
+    inflightMetricsPromise = null;
+  });
+
+  return inflightMetricsPromise;
+}
+
 export function getCachedStockMetrics(symbol?: string): StockMetrics[] | StockMetrics | null {
-  const data = cachedMetrics ?? readCachedMetrics()?.data ?? null;
+  const data = getFreshCachedMetrics();
   if (!data) return null;
 
   if (!symbol) return data;
@@ -74,128 +201,45 @@ export function getCachedStockMetrics(symbol?: string): StockMetrics[] | StockMe
 
 export function useStockMetrics() {
   const [metrics, setMetrics] = useState<StockMetrics[]>(() => {
-    const cached = cachedMetrics ?? readCachedMetrics()?.data ?? null;
+    const cached = getFreshCachedMetrics();
     if (cached) {
-      cachedMetrics = cached;
       return cached;
     }
     return [];
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [progress, setProgress] = useState({ done: 0, total: ALL_TICKERS.length });
-  const abortRef = useRef(false);
+  const [progress, setProgress] = useState(sharedProgress);
 
-  const fetchMetrics = useCallback(async () => {
-    // Return cache if fresh
-    const localCache = readCachedMetrics();
-    if (!cachedMetrics && localCache) {
-      cachedMetrics = localCache.data;
-      cacheTimestamp = localCache.ts;
+  const fetchMetrics = useCallback(async (force = false) => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const result = await loadMetrics(force);
+      setMetrics(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load stock metrics");
+    } finally {
+      setLoading(false);
     }
+  }, []);
 
-    if (cachedMetrics && Date.now() - cacheTimestamp < CACHE_TTL) {
-      setMetrics(cachedMetrics);
+  useEffect(() => {
+    progressListeners.add(setProgress);
+    return () => {
+      progressListeners.delete(setProgress);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (metrics.length > 0) {
       setProgress({ done: ALL_TICKERS.length, total: ALL_TICKERS.length });
       return;
     }
 
-    if (!isSupabaseConfigured()) {
-      setError("Supabase not configured");
-      return;
-    }
-
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const headers = await getEdgeHeaders();
-
-    setLoading(true);
-    setError(null);
-    abortRef.current = false;
-
-    const results: StockMetrics[] = [];
-
-    // Batch 8 at a time with short pauses so 250-symbol universe remains usable.
-    for (let i = 0; i < ALL_TICKERS.length; i += 8) {
-      if (abortRef.current) break;
-
-      const batch = ALL_TICKERS.slice(i, i + 8);
-      await Promise.all(
-        batch.map(async (symbol) => {
-          try {
-            const res = await fetch(
-              `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/metric&symbol=${symbol}&metric=all`,
-              { headers },
-            );
-            if (!res.ok) return;
-
-            const data = await res.json();
-            const m = data.metric ?? {};
-
-            results.push({
-              symbol,
-              sector: SECTOR_MAP[symbol] ?? "Other",
-              pe: m.peBasicExclExtraTTM ?? m.peTTM ?? null,
-              forwardPe: m.peExclExtraAnnual ?? null,
-              dividendYield: m.dividendYieldIndicatedAnnual != null ? m.dividendYieldIndicatedAnnual / 100 : null,
-              marketCap: m.marketCapitalization != null ? m.marketCapitalization * 1e6 : null,
-              eps: m.epsBasicExclExtraItemsTTM ?? m.epsTTM ?? null,
-              revenueGrowthQuarterly: m.revenueGrowthQuarterlyYoy != null ? m.revenueGrowthQuarterlyYoy / 100 : null,
-              profitMargin: m.netProfitMarginTTM != null ? m.netProfitMarginTTM / 100 : null,
-              beta: m.beta ?? null,
-              fiftyTwoWeekHigh: m["52WeekHigh"] ?? null,
-              fiftyTwoWeekLow: m["52WeekLow"] ?? null,
-              currentPrice: null, // populated below via quote endpoint
-            });
-          } catch {
-            // Skip failed symbols
-          }
-        }),
-      );
-
-      setProgress({ done: Math.min(i + 8, ALL_TICKERS.length), total: ALL_TICKERS.length });
-
-      // Update incrementally
-      setMetrics([...results]);
-
-      // Rate limit delay between batches
-      if (i + 8 < ALL_TICKERS.length) {
-        await new Promise((r) => setTimeout(r, 350));
-      }
-    }
-
-    // Batch-fetch current prices via Finnhub quote (already cached at 1min TTL in edge function)
-    try {
-      for (let i = 0; i < results.length; i += 10) {
-        if (abortRef.current) break;
-        const batch = results.slice(i, i + 10);
-        await Promise.all(
-          batch.map(async (stock) => {
-            try {
-              const qRes = await fetch(
-                `${supabaseUrl}/functions/v1/finnhub?endpoint=quote&symbol=${stock.symbol}`,
-                { headers },
-              );
-              if (!qRes.ok) return;
-              const qData = await qRes.json();
-              if (qData?.c) stock.currentPrice = qData.c; // Finnhub quote: c = current price
-            } catch { /* skip price fetch failures */ }
-          }),
-        );
-        if (i + 10 < results.length) await new Promise((r) => setTimeout(r, 250));
-      }
-    } catch { /* price fetch pass failed, prices remain null — non-critical */ }
-
-    cachedMetrics = results;
-    cacheTimestamp = Date.now();
-    writeCachedMetrics(results);
-    setMetrics(results);
-    setLoading(false);
-  }, []);
-
-  useEffect(() => {
-    fetchMetrics(); // eslint-disable-line react-hooks/set-state-in-effect
-    return () => { abortRef.current = true; };
-  }, [fetchMetrics]);
+    void fetchMetrics();
+  }, [fetchMetrics, metrics.length]);
 
   return { metrics, loading, error, progress, refresh: fetchMetrics };
 }

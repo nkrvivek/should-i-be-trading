@@ -1,28 +1,26 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { InsiderTransaction, InsiderActivitySummary, InsiderSignal } from "../api/types";
 import { fetchInsiderTransactions as fetchInsiderViaEdge } from "../api/freeDataClient";
+import { dedupFetch } from "../api/fetchDedup";
 import { getCredential } from "../lib/credentials";
 import { isSupabaseConfigured } from "../lib/supabase";
 
 const CACHE_TTL_MS = 15 * 60 * 1000; // 15 min
-const INITIAL_DELAY_MS = 8000; // Wait 8s for sector/score fetches to finish first
 
 type CacheEntry = { data: InsiderActivitySummary; ts: number };
 const cache = new Map<string, CacheEntry>();
+const inflight = new Map<string, Promise<InsiderActivitySummary>>();
+
+function normalizeSymbol(symbol: string): string {
+  return symbol.trim().toUpperCase();
+}
 
 export function getCachedInsiderData(symbol: string): InsiderActivitySummary | null {
-  const trimmed = symbol.trim();
-  if (!trimmed) return null;
+  const key = normalizeSymbol(symbol);
+  if (!key) return null;
 
-  const candidates = Array.from(new Set([trimmed, trimmed.toUpperCase()]));
-  for (const key of candidates) {
-    const cached = cache.get(key);
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      return cached.data;
-    }
-  }
-
-  return null;
+  const cached = cache.get(key);
+  return cached && Date.now() - cached.ts < CACHE_TTL_MS ? cached.data : null;
 }
 
 function classifySignal(buyValue: number, sellValue: number): { signal: InsiderSignal; score: number } {
@@ -80,20 +78,71 @@ function processTransactions(symbol: string, raw: InsiderTransaction[]): Insider
   };
 }
 
+async function loadInsiderSummary(symbol: string): Promise<InsiderActivitySummary> {
+  let transactions: InsiderTransaction[] = [];
+
+  const directKey = getCredential("finnhub");
+  if (directKey) {
+    const res = await dedupFetch(
+      `/finnhub-api/api/v1/stock/insider-transactions?symbol=${encodeURIComponent(symbol)}&token=${directKey}`,
+      undefined,
+      CACHE_TTL_MS,
+    );
+
+    if (!res.ok) {
+      if (res.status === 429) throw new Error("Finnhub rate limit — try again in 60 seconds.");
+      if (res.status === 403) throw new Error("Invalid Finnhub API key");
+      throw new Error(`Finnhub error: ${res.status}`);
+    }
+
+    const json = await res.json();
+    transactions = (json.data ?? []).map((t: Record<string, unknown>) => ({
+      ...t,
+      filingDate: (t.filingDate as string) ?? "",
+      officerTitle: (t.officerTitle as string) ?? "",
+    }));
+  } else if (isSupabaseConfigured()) {
+    const edgeData = await fetchInsiderViaEdge(symbol);
+    transactions = edgeData.map((t) => ({
+      ...t,
+      transactionCode: (t as Record<string, unknown>).transactionCode as string ?? t.transactionType ?? "",
+      filingDate: (t as Record<string, unknown>).filingDate as string ?? "",
+      officerTitle: (t as Record<string, unknown>).officerTitle as string ?? "",
+    }));
+  } else {
+    throw new Error("Configure Supabase or add a Finnhub API key in Settings.");
+  }
+
+  const summary = processTransactions(symbol, transactions);
+  cache.set(symbol, { data: summary, ts: Date.now() });
+  return summary;
+}
+
+function getOrCreateInsiderRequest(symbol: string): Promise<InsiderActivitySummary> {
+  const cached = getCachedInsiderData(symbol);
+  if (cached) return Promise.resolve(cached);
+
+  const existing = inflight.get(symbol);
+  if (existing) return existing;
+
+  const request = loadInsiderSummary(symbol).finally(() => inflight.delete(symbol));
+  inflight.set(symbol, request);
+  return request;
+}
+
 export function useInsiderTrading(symbol: string | null, enabled = true) {
   const [data, setData] = useState<InsiderActivitySummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const retryCountRef = useRef(0);
 
-  const fetchData = useCallback(async (isRetry = false) => {
-    if (!symbol || !enabled) return;
+  const fetchData = useCallback(async () => {
+    const key = symbol ? normalizeSymbol(symbol) : "";
+    if (!key || !enabled) return;
 
-    // Check cache
-    const cached = cache.get(symbol);
-    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
-      setData(cached.data);
+    const cached = getCachedInsiderData(key);
+    if (cached) {
+      setData(cached);
       setError(null);
       return;
     }
@@ -103,83 +152,31 @@ export function useInsiderTrading(symbol: string | null, enabled = true) {
     abortRef.current = ctrl;
 
     setLoading(true);
+    setError(null);
 
     try {
-      let transactions: InsiderTransaction[] = [];
-
-      // Strategy 1: Direct Finnhub API (local dev with VITE_FINNHUB_API_KEY)
-      const directKey = getCredential("finnhub");
-      if (directKey) {
-        const res = await fetch(
-          `/finnhub-api/api/v1/stock/insider-transactions?symbol=${encodeURIComponent(symbol)}&token=${directKey}`,
-          { signal: ctrl.signal },
-        );
-
-        if (!res.ok) {
-          if (res.status === 429) throw new Error("Finnhub rate limit — try again in 60 seconds.");
-          if (res.status === 403) throw new Error("Invalid Finnhub API key");
-          throw new Error(`Finnhub error: ${res.status}`);
-        }
-
-        const json = await res.json();
-        transactions = (json.data ?? []).map((t: Record<string, unknown>) => ({
-          ...t,
-          filingDate: (t.filingDate as string) ?? "",
-          officerTitle: (t.officerTitle as string) ?? "",
-        }));
-      }
-      // Strategy 2: Supabase Edge Function (production, server-side Finnhub key)
-      else if (isSupabaseConfigured()) {
-        try {
-          const edgeData = await fetchInsiderViaEdge(symbol);
-          transactions = edgeData.map((t) => ({
-            ...t,
-            transactionCode: (t as Record<string, unknown>).transactionCode as string ?? t.transactionType ?? "",
-            filingDate: (t as Record<string, unknown>).filingDate as string ?? "",
-            officerTitle: (t as Record<string, unknown>).officerTitle as string ?? "",
-          }));
-        } catch (edgeErr) {
-          const msg = edgeErr instanceof Error ? edgeErr.message : "Edge function error";
-          // Auto-retry once after a delay (likely rate limited)
-          if (!isRetry && retryCountRef.current < 2) {
-            retryCountRef.current++;
-            setLoading(false);
-            setTimeout(() => fetchData(true), 5000);
-            return;
-          }
-          throw new Error(msg.includes("429") || msg.includes("rate")
-            ? "Finnhub rate limit. Try refreshing in 60 seconds."
-            : `Insider data: ${msg}`);
-        }
-      } else {
-        throw new Error("Configure Supabase or add a Finnhub API key in Settings.");
-      }
-
-      const summary = processTransactions(symbol, transactions);
-      cache.set(symbol, { data: summary, ts: Date.now() });
+      const summary = await getOrCreateInsiderRequest(key);
+      if (ctrl.signal.aborted) return;
       setData(summary);
       setError(null);
-      retryCountRef.current = 0;
     } catch (e) {
       if ((e as Error).name !== "AbortError") {
         setError(e instanceof Error ? e.message : "Failed to fetch insider data");
       }
     } finally {
-      setLoading(false);
+      if (!ctrl.signal.aborted) {
+        setLoading(false);
+      }
     }
   }, [symbol, enabled]);
 
   useEffect(() => {
-    // Delay initial fetch to avoid Finnhub rate limits from concurrent dashboard calls
-    const hasDirectKey = !!getCredential("finnhub");
-    const delay = hasDirectKey ? 0 : INITIAL_DELAY_MS;
-
-    const timer = setTimeout(() => fetchData(), delay);
+    const timer = setTimeout(() => fetchData(), 0);
     return () => {
       clearTimeout(timer);
       abortRef.current?.abort();
     };
   }, [fetchData]);
 
-  return { data, loading, error, refresh: () => fetchData(false) };
+  return { data, loading, error, refresh: fetchData };
 }

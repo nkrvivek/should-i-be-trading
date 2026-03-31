@@ -4,7 +4,7 @@
  * Used as a sub-tab within ResearchPage.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Panel } from "../../components/layout/Panel";
 import {
   type FmpProfile,
@@ -90,6 +90,7 @@ export default function FundamentalsContent() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { score: sibtScore, compute: computeScore } = useStockScore();
+  const requestIdRef = useRef(0);
 
   // Debounced search
   useEffect(() => {
@@ -112,6 +113,7 @@ export default function FundamentalsContent() {
   const loadFundamentals = useCallback(async (sym: string) => {
     const ticker = sym.toUpperCase().trim();
     if (!ticker) return;
+    const requestId = ++requestIdRef.current;
 
     setSymbol(ticker);
     setQuery(ticker);
@@ -127,6 +129,10 @@ export default function FundamentalsContent() {
         getAnalystEstimates(ticker, 4).catch(() => [] as FmpAnalystEstimate[]),
       ]);
 
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
+
       if (!snap.profile) {
         setError(`No data found for "${ticker}". Check the symbol and try again.`);
         setSnapshot(null);
@@ -138,14 +144,18 @@ export default function FundamentalsContent() {
         setIncome(inc);
         setBalance(bal);
         setEstimates(est);
-        // Compute SIBT Score in the background
-        computeScore(ticker).catch(() => {});
+        computeScore(ticker, { snapshot: snap, incomeStatements: inc }).catch(() => {});
       }
     } catch (err) {
+      if (requestId !== requestIdRef.current) {
+        return;
+      }
       setError(err instanceof Error ? err.message : "Failed to load fundamentals");
       setSnapshot(null);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [computeScore]);
 

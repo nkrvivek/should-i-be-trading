@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { getProfile } from "../../api/fmpClient";
 import { useAuthStore } from "../../stores/authStore";
 import { hasFeature } from "../../lib/featureGates";
 import { isSupabaseConfigured } from "../../lib/supabase";
@@ -15,6 +16,7 @@ import { SocialFeed } from "../../components/social/SocialFeed";
 import { TrendingTickers } from "../../components/social/TrendingTickers";
 import { TradeVerdictBadgeWithScore } from "../../components/trading/TradeVerdictBadge";
 import { useSocialSentiment } from "../../hooks/useSocialSentiment";
+import { useTrendingSymbols } from "../../hooks/useTrendingSymbols";
 
 interface TickerQuote {
   name: string;
@@ -29,12 +31,14 @@ export default function SocialContent() {
   const [ticker, setTicker] = useState("");
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
   const { data, loading, error, refresh } = useSocialSentiment(activeTicker);
+  const { data: trendingTickers } = useTrendingSymbols();
   const [quote, setQuote] = useState<TickerQuote | null>(null);
 
   // Fetch company profile + quote when ticker changes
   useEffect(() => {
     if (!activeTicker || !isSupabaseConfigured()) return;
     let cancelled = false;
+    const ticker = activeTicker;
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
     async function fetchQuote() {
@@ -42,21 +46,16 @@ export default function SocialContent() {
       try {
         // Fetch Finnhub quote + FMP profile in parallel
         const [qRes, pRes] = await Promise.allSettled([
-          dedupFetch(`${supabaseUrl}/functions/v1/finnhub?endpoint=quote&symbol=${activeTicker}`, { headers }, 60_000),
-          dedupFetch(`${supabaseUrl}/functions/v1/fmp`, {
-            method: "POST",
-            headers: { ...headers, "Content-Type": "application/json" },
-            body: JSON.stringify({ endpoint: "profile", symbol: activeTicker }),
-          }, 3600_000),
+          dedupFetch(`${supabaseUrl}/functions/v1/finnhub?endpoint=quote&symbol=${ticker}`, { headers }, 60_000),
+          getProfile(ticker),
         ]);
 
         const q = qRes.status === "fulfilled" && qRes.value.ok ? await qRes.value.json() : null;
-        const p = pRes.status === "fulfilled" && pRes.value.ok ? await pRes.value.json() : null;
-        const profile = Array.isArray(p?.data) ? p.data[0] : p?.data;
+        const profile = pRes.status === "fulfilled" ? pRes.value[0] ?? null : null;
 
         if (!cancelled && q?.c) {
           setQuote({
-            name: profile?.companyName ?? profile?.name ?? activeTicker,
+            name: profile?.companyName ?? ticker,
             price: q.c,
             change: q.d ?? 0,
             changePercent: q.dp ?? 0,
@@ -411,20 +410,21 @@ export default function SocialContent() {
             />
           </div>
 
-          {/* Trending */}
-          {data.trending.length > 0 && (
-            <div
-              style={{
-                padding: 16,
-                background: "var(--bg-panel)",
-                border: "1px solid var(--border-dim)",
-                borderRadius: 4,
-              }}
-            >
-              <TrendingTickers tickers={data.trending} onSelect={handleTrendingSelect} />
-            </div>
-          )}
         </>
+      )}
+
+      {/* Trending */}
+      {trendingTickers.length > 0 && (
+        <div
+          style={{
+            padding: 16,
+            background: "var(--bg-panel)",
+            border: "1px solid var(--border-dim)",
+            borderRadius: 4,
+          }}
+        >
+          <TrendingTickers tickers={trendingTickers} onSelect={handleTrendingSelect} />
+        </div>
       )}
 
       {/* Empty state */}

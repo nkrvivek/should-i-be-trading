@@ -2,10 +2,10 @@
  * Market Regime & Fragility Monitor — Data Hook
  *
  * Fetches FRED + Finnhub data and computes regime scores.
- * Follows useMarketScore.ts patterns: localStorage cache, auto-refresh, market hours awareness.
+ * Uses a shared single-flight loader so duplicate hook mounts do not rescan in parallel.
  */
 
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { computeRegimeMonitor, type RegimeMonitorResult, type RegimeInputs } from "../lib/regimeScoring";
 import { computeSMA } from "../lib/marketScoring";
 import { getCredential } from "../lib/credentials";
@@ -18,7 +18,15 @@ const CLOSED_CACHE_TTL = 30 * 60_000; // 30 min when closed
 
 type FinnhubQuote = { c: number; dp: number; pc: number; o: number; h: number; l: number };
 
+let memoryRegime: { data: RegimeMonitorResult; ts: number } | null = null;
+let inflightRegimePromise: Promise<{ data: RegimeMonitorResult; ts: number } | null> | null = null;
+
+function isMarketActive(status: string): boolean {
+  return status === "OPEN" || status === "PRE_MARKET" || status === "AFTER_HOURS";
+}
+
 function readCachedRegime(): { data: RegimeMonitorResult; ts: number } | null {
+  if (memoryRegime) return memoryRegime;
   if (typeof window === "undefined") return null;
 
   try {
@@ -26,204 +34,218 @@ function readCachedRegime(): { data: RegimeMonitorResult; ts: number } | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as { data?: RegimeMonitorResult; ts?: number };
     if (!parsed?.data || typeof parsed.ts !== "number") return null;
-    return { data: parsed.data, ts: parsed.ts };
+    memoryRegime = { data: parsed.data, ts: parsed.ts };
+    return memoryRegime;
   } catch {
     return null;
   }
 }
 
-export function getCachedRegimeMonitor(): RegimeMonitorResult | null {
-  const cached = readCachedRegime();
-  if (!cached) return null;
-  return Date.now() - cached.ts < CLOSED_CACHE_TTL ? cached.data : null;
+function writeCachedRegime(snapshot: { data: RegimeMonitorResult; ts: number }) {
+  memoryRegime = snapshot;
+
+  if (typeof window === "undefined") return;
+
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(snapshot));
+  } catch {
+    // ignore cache write failures
+  }
 }
 
-// ── Hook ───────────────────────────────────────────────────────────────
+function getFreshCachedRegime(maxAgeMs: number): { data: RegimeMonitorResult; ts: number } | null {
+  const cached = readCachedRegime();
+  if (!cached) return null;
+  return Date.now() - cached.ts < maxAgeMs ? cached : null;
+}
+
+export function getCachedRegimeMonitor(): RegimeMonitorResult | null {
+  return getFreshCachedRegime(CLOSED_CACHE_TTL)?.data ?? null;
+}
+
+async function fetchFreshRegimeMonitor(): Promise<{ data: RegimeMonitorResult; ts: number }> {
+  const apiKey = getCredential("finnhub") ?? undefined;
+
+  const [
+    vixSeries,
+    sp500Series,
+    hySpreadSeries,
+    dgs2Series,
+    dgs10Series,
+    vix3mSeries,
+  ] = await Promise.all([
+    fredFetchSeries("VIXCLS", 5),
+    fredFetchSeries("SP500", 250),
+    fredFetchSeries("BAMLH0A0HYM2", 5),
+    fredFetchSeries("DGS2", 5),
+    fredFetchSeries("DGS10", 5),
+    fredFetchSeries("VXVCLS", 5),
+  ]);
+
+  const vix = vixSeries[0];
+  const vixPrev = vixSeries[1];
+  const hySpread = hySpreadSeries[0];
+  const twoYearYield = dgs2Series[0];
+  const tenYearYield = dgs10Series[0];
+  const vix3m = vix3mSeries[0];
+
+  let spxPrice: number | undefined;
+  let spxSma200: number | undefined;
+  if (sp500Series.length > 0) {
+    spxPrice = sp500Series[0];
+    const chronological = [...sp500Series].reverse();
+    spxSma200 = computeSMA(chronological, 200);
+  }
+
+  const [spyQuote, rspQuote] = await Promise.all([
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch(() => null),
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "RSP" }, apiKey).catch(() => null),
+  ]);
+
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  const [hygQuote, tltQuote] = await Promise.all([
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "HYG" }, apiKey).catch(() => null),
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "TLT" }, apiKey).catch(() => null),
+  ]);
+
+  if (spyQuote?.c) spxPrice = spyQuote.c;
+
+  const sectors = ["XLK", "XLF", "XLV", "XLY", "XLP", "XLE", "XLI", "XLB", "XLRE", "XLC", "XLU"];
+  const sectorChanges: { symbol: string; change: number }[] = [];
+
+  for (let i = 0; i < sectors.length; i += 4) {
+    if (i > 0) await new Promise((resolve) => setTimeout(resolve, 500));
+
+    const batch = sectors.slice(i, i + 4);
+    const results = await Promise.all(
+      batch.map(async (symbol) => {
+        try {
+          const quote = await finnhubFetch<FinnhubQuote>("quote", { symbol }, apiKey);
+          return { symbol, change: quote.dp ?? 0 };
+        } catch {
+          return null;
+        }
+      }),
+    );
+
+    for (const result of results) {
+      if (result) sectorChanges.push(result);
+    }
+  }
+
+  const inputs: RegimeInputs = {
+    spxPrice,
+    spxSma200,
+    hySpread,
+    twoYearYield,
+    tenYearYield,
+    vix,
+    vixPrev,
+    vix3m,
+    rspPrice: rspQuote?.c,
+    spyPrice: spyQuote?.c,
+    rspPrev: rspQuote?.pc,
+    spyPrev: spyQuote?.pc,
+    hygPrice: hygQuote?.c,
+    tltPrice: tltQuote?.c,
+    moveIndex: undefined,
+    sectorChanges,
+  };
+
+  const snapshot = {
+    data: computeRegimeMonitor(inputs),
+    ts: Date.now(),
+  };
+
+  writeCachedRegime(snapshot);
+  return snapshot;
+}
+
+async function loadRegimeMonitor(
+  maxAgeMs: number,
+  force = false,
+): Promise<{ data: RegimeMonitorResult; ts: number } | null> {
+  if (!force) {
+    const cached = getFreshCachedRegime(maxAgeMs);
+    if (cached) return cached;
+  }
+
+  if (inflightRegimePromise) {
+    return inflightRegimePromise;
+  }
+
+  inflightRegimePromise = fetchFreshRegimeMonitor().finally(() => {
+    inflightRegimePromise = null;
+  });
+
+  return inflightRegimePromise;
+}
 
 export function useRegimeMonitor() {
-  const [regime, setRegime] = useState<RegimeMonitorResult | null>(null);
+  const [regime, setRegime] = useState<RegimeMonitorResult | null>(() => getCachedRegimeMonitor());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { status } = useMarketHours();
-  const fetchingRef = useRef(false);
-  const abortRef = useRef<AbortController | null>(null);
 
-  const fetchRegime = useCallback(async () => {
-    if (fetchingRef.current) return;
-
-    // Abort any previous in-flight request
-    abortRef.current?.abort();
-    const controller = new AbortController();
-    abortRef.current = controller;
-
-    fetchingRef.current = true;
+  const refresh = useCallback(async (force = true) => {
     setLoading(true);
     setError(null);
 
     try {
-      const apiKey = getCredential("finnhub") ?? undefined;
-
-      // ── Phase 1: FRED data (all free, unlimited) ─────────────────
-
-      const [
-        vixSeries,       // VIXCLS: last 5 days
-        sp500Series,     // SP500: 250 days for SMA200
-        hySpreadSeries,  // BAMLH0A0HYM2: HY credit spread
-        dgs2Series,      // DGS2: 2-year Treasury yield
-        dgs10Series,     // DGS10: 10-year Treasury yield
-        vix3mSeries,     // VXVCLS: 3-month VIX (VIX3M)
-      ] = await Promise.all([
-        fredFetchSeries("VIXCLS", 5),
-        fredFetchSeries("SP500", 250),
-        fredFetchSeries("BAMLH0A0HYM2", 5),
-        fredFetchSeries("DGS2", 5),
-        fredFetchSeries("DGS10", 5),
-        fredFetchSeries("VXVCLS", 5),
-      ]);
-
-      if (controller.signal.aborted) return;
-
-      // Parse FRED values (most recent first)
-      const vix = vixSeries[0];
-      const vixPrev = vixSeries[1];
-      const hySpread = hySpreadSeries[0];
-      const twoYearYield = dgs2Series[0];
-      const tenYearYield = dgs10Series[0];
-      const vix3m = vix3mSeries[0];
-
-      // Compute SPX SMA200
-      let spxPrice: number | undefined;
-      let spxSma200: number | undefined;
-      if (sp500Series.length > 0) {
-        spxPrice = sp500Series[0];
-        const chronological = [...sp500Series].reverse();
-        spxSma200 = computeSMA(chronological, 200);
-      }
-
-      // ── Phase 2: Finnhub quotes (batched with delays) ───────────
-
-      // Batch 1: SPY + RSP
-      const [spyQuote, rspQuote] = await Promise.all([
-        finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch(() => null),
-        finnhubFetch<FinnhubQuote>("quote", { symbol: "RSP" }, apiKey).catch(() => null),
-      ]);
-
-      if (controller.signal.aborted) return;
-
-      // Small delay to avoid Finnhub rate limits
-      await new Promise((r) => setTimeout(r, 500));
-
-      if (controller.signal.aborted) return;
-
-      // Batch 2: HYG + TLT
-      const [hygQuote, tltQuote] = await Promise.all([
-        finnhubFetch<FinnhubQuote>("quote", { symbol: "HYG" }, apiKey).catch(() => null),
-        finnhubFetch<FinnhubQuote>("quote", { symbol: "TLT" }, apiKey).catch(() => null),
-      ]);
-
-      if (controller.signal.aborted) return;
-
-      // Override SPX price with live SPY if available
-      if (spyQuote?.c) spxPrice = spyQuote.c;
-
-      // Sector data for breadth (reuse same Finnhub calls)
-      const sectors = ["XLK", "XLF", "XLV", "XLY", "XLP", "XLE", "XLI", "XLB", "XLRE", "XLC", "XLU"];
-      const sectorChanges: { symbol: string; change: number }[] = [];
-
-      for (let i = 0; i < sectors.length; i += 4) {
-        if (controller.signal.aborted) return;
-        if (i > 0) await new Promise((r) => setTimeout(r, 500));
-        if (controller.signal.aborted) return;
-        const batch = sectors.slice(i, i + 4);
-        const results = await Promise.all(
-          batch.map(async (sym) => {
-            try {
-              const q = await finnhubFetch<FinnhubQuote>("quote", { symbol: sym }, apiKey);
-              return { symbol: sym, change: q.dp ?? 0 };
-            } catch {
-              return null;
-            }
-          }),
-        );
-        for (const r of results) {
-          if (r) sectorChanges.push(r);
-        }
-      }
-
-      if (controller.signal.aborted) return;
-
-      // ── Build inputs and compute ─────────────────────────────────
-
-      const inputs: RegimeInputs = {
-        spxPrice,
-        spxSma200,
-        hySpread,
-        twoYearYield,
-        tenYearYield,
-        vix,
-        vixPrev,
-        vix3m,
-        rspPrice: rspQuote?.c,
-        spyPrice: spyQuote?.c,
-        rspPrev: rspQuote?.pc,
-        spyPrev: spyQuote?.pc,
-        hygPrice: hygQuote?.c,
-        tltPrice: tltQuote?.c,
-        moveIndex: undefined, // MOVE not available on Finnhub free tier; FSI uses VIX as proxy
-        sectorChanges,
-      };
-
-      const result = computeRegimeMonitor(inputs);
-
-      // Cache
-      localStorage.setItem(
-        CACHE_KEY,
-        JSON.stringify({ data: result, ts: Date.now() }),
-      );
-
-      if (controller.signal.aborted) return;
-      setRegime(result);
-    } catch (e) {
-      if (controller.signal.aborted) return;
-      setError(e instanceof Error ? e.message : "Failed to load regime data");
+      const snapshot = await loadRegimeMonitor(CACHE_TTL, force);
+      setRegime(snapshot?.data ?? null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load regime data");
     } finally {
-      if (!controller.signal.aborted) {
-        setLoading(false);
-      }
-      fetchingRef.current = false;
+      setLoading(false);
     }
   }, []);
 
-  // Load from cache on mount
   useEffect(() => {
-    const cached = readCachedRegime();
+    let active = true;
+    const maxAgeMs = isMarketActive(status) ? CACHE_TTL : CLOSED_CACHE_TTL;
+    const cached = getFreshCachedRegime(maxAgeMs);
+
     if (cached) {
-      const isOpen = status === "OPEN";
-      const ttl = isOpen ? CACHE_TTL : CLOSED_CACHE_TTL;
-      if (Date.now() - cached.ts < ttl) {
-        setRegime(cached.data);
-        return;
-      }
+      setRegime(cached.data);
+      setError(null);
+      setLoading(false);
+      return () => {
+        active = false;
+      };
     }
-    fetchRegime();
-  }, [fetchRegime, status]);
 
-  // Auto-refresh during market hours — use ref to avoid interval recreation
-  const fetchRegimeRef = useRef(fetchRegime);
-  fetchRegimeRef.current = fetchRegime;
+    setLoading(true);
+    setError(null);
 
-  useEffect(() => {
-    if (status !== "OPEN") return;
-    const interval = setInterval(() => fetchRegimeRef.current(), CACHE_TTL);
-    return () => clearInterval(interval);
+    void loadRegimeMonitor(maxAgeMs)
+      .then((snapshot) => {
+        if (!active) return;
+        setRegime(snapshot?.data ?? null);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : "Failed to load regime data");
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
   }, [status]);
 
-  // Abort on unmount
   useEffect(() => {
-    return () => {
-      abortRef.current?.abort();
-    };
-  }, []);
+    if (!isMarketActive(status)) return;
 
-  return { regime, loading, error, refresh: fetchRegime };
+    const interval = setInterval(() => {
+      void refresh(false);
+    }, CACHE_TTL);
+
+    return () => clearInterval(interval);
+  }, [refresh, status]);
+
+  return { regime, loading, error, refresh: () => refresh(true) };
 }

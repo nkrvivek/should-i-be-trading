@@ -1,4 +1,10 @@
 import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import {
+  buildRateLimitHeaders,
+  consumeRateLimit,
+  errorResponseWithHeaders,
+  jsonResponseWithHeaders,
+} from "../_shared/rateLimit.ts";
 
 /**
  * FMP (Financial Modeling Prep) proxy edge function.
@@ -50,6 +56,15 @@ function getCacheTTL(endpoint: string): number {
   return 3600 * 1000;
 }
 
+function getRateLimitConfig(endpoint: string) {
+  if (["profile", "quote"].includes(endpoint)) return { capacity: 120, refillMs: 60_000 };
+  if (["income-statement", "balance-sheet", "cash-flow", "historical-price"].includes(endpoint)) {
+    return { capacity: 60, refillMs: 60_000 };
+  }
+  if (["screener", "search"].includes(endpoint)) return { capacity: 45, refillMs: 60_000 };
+  return { capacity: 90, refillMs: 60_000 };
+}
+
 // ── Handler ─────────────────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -59,7 +74,7 @@ Deno.serve(async (req) => {
 
   try {
     // Authenticate user
-    await authenticateRequest(req);
+    const ctx = await authenticateRequest(req);
 
     const apiKey = Deno.env.get("FMP_API_KEY");
     if (!apiKey) {
@@ -144,17 +159,39 @@ Deno.serve(async (req) => {
       return jsonResponse({ data: cached.data, cached: true }, 200, req);
     }
 
+    const rateLimit = consumeRateLimit({
+      key: `${ctx.userId}:fmp:${endpoint}`,
+      ...getRateLimitConfig(endpoint),
+    });
+    if (!rateLimit.allowed) {
+      return errorResponseWithHeaders(
+        `Rate limit exceeded for FMP ${endpoint}. Try again shortly.`,
+        429,
+        req,
+        buildRateLimitHeaders(rateLimit),
+      );
+    }
+
     // Fetch from FMP
     const res = await fetch(url.toString());
 
     if (res.status === 429) {
-      return errorResponse("FMP daily rate limit reached (250 calls/day). Try again tomorrow.", 429, req);
+      const retryAfter = res.headers.get("Retry-After");
+      return errorResponseWithHeaders(
+        "FMP daily rate limit reached (250 calls/day). Try again tomorrow.",
+        429,
+        req,
+        {
+          ...buildRateLimitHeaders(rateLimit),
+          ...(retryAfter ? { "Retry-After": retryAfter } : {}),
+        },
+      );
     }
 
     if (!res.ok) {
       const text = await res.text();
       console.error(`FMP error (${res.status}):`, text);
-      return errorResponse(`FMP API error: ${res.status}`, 502, req);
+      return errorResponseWithHeaders(`FMP API error: ${res.status}`, 502, req, buildRateLimitHeaders(rateLimit));
     }
 
     const data = await res.json();
@@ -170,7 +207,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    return jsonResponse({ data, cached: false }, 200, req);
+    return jsonResponseWithHeaders(
+      { data, cached: false },
+      200,
+      req,
+      buildRateLimitHeaders(rateLimit),
+    );
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Internal error";
     if (msg.includes("authentication") || msg.includes("token") || msg.includes("Missing")) {

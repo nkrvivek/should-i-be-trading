@@ -1,12 +1,17 @@
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
+import { dedupFetch } from "./fetchDedup";
 
 /**
  * Call a Supabase Edge Function for free data APIs (FRED, Finnhub, SEC EDGAR).
  * These use server-side keys, not per-user credentials.
  * Sends user JWT via x-user-token for authentication.
  */
-async function callEdgeFunction<T>(functionName: string, params: Record<string, string>): Promise<T> {
+async function callEdgeFunction<T>(
+  functionName: string,
+  params: Record<string, string>,
+  ttlMs = 60_000,
+): Promise<T> {
   if (!isSupabaseConfigured()) {
     throw new Error(`${functionName} requires Supabase. Configure VITE_SUPABASE_URL.`);
   }
@@ -15,7 +20,7 @@ async function callEdgeFunction<T>(functionName: string, params: Record<string, 
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/${functionName}?${searchParams}`;
 
   const headers = await getEdgeHeaders();
-  const response = await fetch(url, { headers });
+  const response = await dedupFetch(url, { headers }, ttlMs);
 
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
@@ -41,7 +46,7 @@ export async function fetchFredSeries(seriesId: string, limit = 60): Promise<Fre
     series_id: seriesId,
     sort_order: "desc",
     limit: String(limit),
-  });
+  }, 5 * 60_000);
   return (data.observations ?? []).filter((o) => o.value !== ".");
 }
 
@@ -83,7 +88,7 @@ export async function fetchEconomicCalendar(): Promise<EconomicEvent[]> {
     endpoint: "calendar/economic",
     from: today,
     to: nextWeek,
-  });
+  }, 30 * 60_000);
   return data.economicCalendar ?? [];
 }
 
@@ -109,7 +114,7 @@ export async function fetchInsiderTransactions(symbol: string): Promise<InsiderT
     symbol,
     from: threeMonthsAgo,
     to: today,
-  });
+  }, 15 * 60_000);
   return data.data ?? [];
 }
 
@@ -133,6 +138,6 @@ export async function fetchCongressionalTrades(): Promise<CongressTrade[]> {
     endpoint: "stock/congressional-trading",
     from: threeMonthsAgo,
     to: today,
-  });
+  }, 15 * 60_000);
   return data.data ?? [];
 }

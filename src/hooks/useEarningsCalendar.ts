@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "../api/edgeHeaders";
+import { dedupFetch } from "../api/fetchDedup";
 
 export type AnalystConsensus = {
   strongBuy: number;
@@ -61,6 +62,8 @@ const MAJOR_TICKERS = new Set(Object.keys(SECTOR_MAP));
 // Cache enrichment data in localStorage to avoid refetching analyst/EPS data
 const ENRICHMENT_CACHE_KEY = "sibt_earnings_enrichment";
 const ENRICHMENT_CACHE_TTL = 60 * 60 * 1000; // 1 hour — analyst data doesn't change fast
+const CALENDAR_CACHE_TTL = 15 * 60 * 1000;
+const calendarCache = new Map<string, { data: EarningsEntry[]; expires: number }>();
 
 function loadEnrichmentCache(): Map<string, { analyst?: AnalystConsensus; surprises?: EpsSurprise[]; ts: number }> {
   try {
@@ -81,9 +84,19 @@ export function useEarningsCalendar(weeksRange = 4, direction: "upcoming" | "pas
   const [earnings, setEarnings] = useState<EarningsEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const requestRef = useRef(0);
 
   const fetchEarnings = useCallback(async () => {
     if (!isSupabaseConfigured()) return;
+    const cacheKey = `${weeksRange}:${direction}`;
+    const cached = calendarCache.get(cacheKey);
+    if (cached && Date.now() < cached.expires) {
+      setEarnings(cached.data);
+      setError(null);
+      return;
+    }
+
+    const requestId = ++requestRef.current;
     setLoading(true);
     setError(null);
 
@@ -103,9 +116,10 @@ export function useEarningsCalendar(weeksRange = 4, direction: "upcoming" | "pas
       }
 
       const headers = await getEdgeHeaders();
-      const res = await fetch(
+      const res = await dedupFetch(
         `${supabaseUrl}/functions/v1/finnhub?endpoint=calendar/earnings&from=${from}&to=${to}`,
         { headers },
+        5 * 60_000,
       );
 
       if (!res.ok) throw new Error(`Finnhub ${res.status}`);
@@ -130,15 +144,19 @@ export function useEarningsCalendar(weeksRange = 4, direction: "upcoming" | "pas
           : a.date.localeCompare(b.date)  // chronological for upcoming
         );
 
+      if (requestRef.current !== requestId) return;
       setEarnings(filtered);
 
       // Phase 2: Fetch analyst data for each unique ticker (batched, delayed)
       const uniqueSymbols = [...new Set(filtered.map((e) => e.symbol))];
-      enrichWithAnalystData(uniqueSymbols, supabaseUrl, headers, filtered, setEarnings);
+      enrichWithAnalystData(uniqueSymbols, supabaseUrl, headers, filtered, setEarnings, cacheKey, requestRef, requestId);
     } catch (e) {
+      if (requestRef.current !== requestId) return;
       setError(e instanceof Error ? e.message : "Failed to fetch earnings");
     } finally {
-      setLoading(false);
+      if (requestRef.current === requestId) {
+        setLoading(false);
+      }
     }
   }, [weeksRange, direction]);
 
@@ -168,6 +186,9 @@ async function enrichWithAnalystData(
   headers: Record<string, string>,
   entries: EarningsEntry[],
   setEarnings: (e: EarningsEntry[]) => void,
+  cacheKey: string,
+  requestRef: React.MutableRefObject<number>,
+  requestId: number,
 ) {
   const analystMap = new Map<string, AnalystConsensus>();
   const surpriseMap = new Map<string, EpsSurprise[]>();
@@ -189,9 +210,10 @@ async function enrichWithAnalystData(
     const batch = uncached.slice(i, i + 3);
     await Promise.all(batch.map(async (sym) => {
       try {
-        const recRes = await fetch(
+        const recRes = await dedupFetch(
           `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/recommendation&symbol=${sym}`,
           { headers },
+          ENRICHMENT_CACHE_TTL,
         );
         if (recRes.ok) {
           const recs = await recRes.json();
@@ -202,9 +224,10 @@ async function enrichWithAnalystData(
       } catch { /* ignore */ }
 
       try {
-        const epsRes = await fetch(
+        const epsRes = await dedupFetch(
           `${supabaseUrl}/functions/v1/finnhub?endpoint=stock/earnings&symbol=${sym}&limit=4`,
           { headers },
+          ENRICHMENT_CACHE_TTL,
         );
         if (epsRes.ok) {
           const eps = await epsRes.json();
@@ -228,6 +251,7 @@ async function enrichWithAnalystData(
       });
     }));
 
+    if (requestRef.current !== requestId) return;
     if (i + 3 < uncached.length) await new Promise((r) => setTimeout(r, 2000));
   }
 
@@ -240,5 +264,7 @@ async function enrichWithAnalystData(
     analyst: analystMap.get(e.symbol),
     epsSurprises: surpriseMap.get(e.symbol),
   }));
+  if (requestRef.current !== requestId) return;
+  calendarCache.set(cacheKey, { data: enriched, expires: Date.now() + CALENDAR_CACHE_TTL });
   setEarnings(enriched);
 }

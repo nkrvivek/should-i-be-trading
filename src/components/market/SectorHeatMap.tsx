@@ -4,6 +4,7 @@ import { getCredential } from "../../lib/credentials";
 import { isSupabaseConfigured } from "../../lib/supabase";
 import { getEdgeHeaders } from "../../api/edgeHeaders";
 import { dedupFetch } from "../../api/fetchDedup";
+import { getCachedMarketScore } from "../../hooks/useMarketScore";
 
 type SectorData = {
   symbol: string;
@@ -28,6 +29,28 @@ const SECTORS: { symbol: string; name: string; color: string }[] = [
 
 const CACHE_KEY = "sibt_sector_heatmap";
 const CACHE_TTL = 10 * 60 * 1000; // 10 min
+
+function mergeCachedSectorChanges(
+  previous: SectorData[],
+  sectorChanges?: { symbol: string; change: number }[],
+): SectorData[] {
+  if (!sectorChanges?.length) return [];
+
+  const priceMap = new Map(previous.map((entry) => [entry.symbol, entry.price]));
+  return SECTORS.map((sector) => {
+    const change = sectorChanges.find((entry) => entry.symbol === sector.symbol)?.change;
+    if (change == null) return null;
+
+    return {
+      symbol: sector.symbol,
+      name: sector.name,
+      change,
+      price: priceMap.get(sector.symbol) ?? 0,
+    };
+  })
+    .filter((entry): entry is SectorData => entry !== null)
+    .sort((a, b) => b.change - a.change);
+}
 
 export function SectorHeatMap() {
   const [sectors, setSectors] = useState<SectorData[]>([]);
@@ -92,16 +115,29 @@ export function SectorHeatMap() {
   }, []);
 
   useEffect(() => {
+    let cachedSectorData: SectorData[] = [];
     try {
       const raw = localStorage.getItem(CACHE_KEY);
       if (raw) {
         const { data, ts } = JSON.parse(raw);
+        cachedSectorData = Array.isArray(data) ? data : [];
         if (Date.now() - ts < CACHE_TTL) {
           setSectors(data);
           return;
         }
       }
     } catch { /* ignore */ }
+
+    const cachedMarket = getCachedMarketScore();
+    const merged = mergeCachedSectorChanges(cachedSectorData, cachedMarket?.sectorChanges);
+    if (merged.length === SECTORS.length && merged.every((sector) => sector.price > 0)) {
+      setSectors(merged);
+      return;
+    }
+
+    if (merged.length > 0) {
+      setSectors(merged);
+    }
     fetchSectors();
   }, [fetchSectors]);
 
@@ -169,7 +205,7 @@ export function SectorHeatMap() {
                     fontFamily: "var(--font-mono)", fontSize: 12,
                     color: "var(--text-muted)", marginTop: 2,
                   }}>
-                    ${s.price.toFixed(2)}
+                    {s.price > 0 ? `$${s.price.toFixed(2)}` : "—"}
                   </div>
                 </div>
               );

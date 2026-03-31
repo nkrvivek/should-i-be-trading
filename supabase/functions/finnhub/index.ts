@@ -1,4 +1,10 @@
 import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
+import {
+  buildRateLimitHeaders,
+  consumeRateLimit,
+  errorResponseWithHeaders,
+  jsonResponseWithHeaders,
+} from "../_shared/rateLimit.ts";
 
 const FINNHUB_BASE = "https://finnhub.io/api/v1";
 
@@ -31,6 +37,14 @@ function getCacheTTL(endpoint: string): number {
   return 5 * 60 * 1000;
 }
 
+function getRateLimitConfig(endpoint: string) {
+  if (endpoint === "quote") return { capacity: 360, refillMs: 60_000 };
+  if (endpoint === "stock/metric") return { capacity: 320, refillMs: 60_000 };
+  if (endpoint.includes("calendar")) return { capacity: 90, refillMs: 60_000 };
+  if (endpoint.includes("insider")) return { capacity: 90, refillMs: 60_000 };
+  return { capacity: 180, refillMs: 60_000 };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: getCorsHeaders(req) });
@@ -38,7 +52,7 @@ Deno.serve(async (req) => {
 
   try {
     // Authenticate user
-    await authenticateRequest(req);
+    const ctx = await authenticateRequest(req);
 
     const apiKey = Deno.env.get("FINNHUB_API_KEY");
     if (!apiKey) return errorResponse("FINNHUB_API_KEY not configured", 500, req);
@@ -75,12 +89,37 @@ Deno.serve(async (req) => {
       return jsonResponse(cached.data, 200, req);
     }
 
+    const rateLimit = consumeRateLimit({
+      key: `${ctx.userId}:finnhub:${endpoint}`,
+      ...getRateLimitConfig(endpoint),
+    });
+    if (!rateLimit.allowed) {
+      return errorResponseWithHeaders(
+        `Rate limit exceeded for Finnhub ${endpoint}. Try again shortly.`,
+        429,
+        req,
+        buildRateLimitHeaders(rateLimit),
+      );
+    }
+
     // ── Fetch from Finnhub ──────────────────────────────────────
     const response = await fetch(`${FINNHUB_BASE}/${endpoint}?${params}`);
+    if (response.status === 429) {
+      const retryAfter = response.headers.get("Retry-After");
+      return errorResponseWithHeaders(
+        `Finnhub upstream rate limit reached for ${endpoint}.`,
+        429,
+        req,
+        {
+          ...buildRateLimitHeaders(rateLimit),
+          ...(retryAfter ? { "Retry-After": retryAfter } : {}),
+        },
+      );
+    }
     if (!response.ok) {
       const text = await response.text();
       console.error(`Finnhub error (${response.status}):`, text);
-      return errorResponse(`Finnhub API error: ${response.status}`, 502, req);
+      return errorResponseWithHeaders(`Finnhub API error: ${response.status}`, 502, req, buildRateLimitHeaders(rateLimit));
     }
     const data = await response.json();
 
@@ -91,7 +130,7 @@ Deno.serve(async (req) => {
     }
     cache.set(cacheKey, { data, expires: Date.now() + getCacheTTL(endpoint) });
 
-    return jsonResponse(data, 200, req);
+    return jsonResponseWithHeaders(data, 200, req, buildRateLimitHeaders(rateLimit));
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Finnhub error";
     if (msg.includes("authentication") || msg.includes("token") || msg.includes("Missing")) {

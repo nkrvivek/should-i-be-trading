@@ -13,6 +13,7 @@
     "test:e2e": "npx playwright test",
     "test:e2e:ui": "npx playwright test --ui",
     "test:e2e:headed": "npx playwright test --headed",
+    "smoke:edge": "node scripts/smoke-edge-functions.mjs",
     "email:preview": "npx tsx scripts/sync-email-templates.ts --preview",
     "email:sync": "sh -c 'curl -s -X POST ${VITE_SUPABASE_URL}/functions/v1/sync-email-templates -H \"x-admin-secret: ${ADMIN_SECRET}\" -H \"Content-Type: application/json\" -d \"{}\"'"
   },

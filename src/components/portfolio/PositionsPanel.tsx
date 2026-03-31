@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { PortfolioPosition } from "../../api/types";
 import { fmtUsdExact, fmtPct } from "../../lib/format";
+import { TickerWithCompanyName } from "../shared/TickerWithCompanyName";
 import { Badge } from "../shared/Badge";
 
 type Props = {
@@ -118,7 +119,9 @@ export function PositionsPanel({ positions, loading }: Props) {
             const tone = pnl > 0 ? "var(--positive)" : pnl < 0 ? "var(--negative)" : "var(--neutral)";
             return (
               <tr key={pos.id} style={{ borderBottom: "1px solid var(--border-dim)", height: 28 }}>
-                <td style={{ padding: "0 8px", fontWeight: 500 }}>{pos.ticker}</td>
+                <td style={{ padding: "0 8px", fontWeight: 500 }}>
+                  <TickerWithCompanyName symbol={pos.ticker} style={{ color: "var(--text-primary)" }} />
+                </td>
                 <td style={{ padding: "0 8px", color: "var(--text-secondary)", fontSize: 12 }}>{pos.structure}</td>
                 <td style={{ padding: "0 8px", color: pos.direction === "LONG" ? "var(--positive)" : "var(--negative)" }}>
                   {pos.direction}

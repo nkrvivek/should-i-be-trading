@@ -133,6 +133,9 @@ function CompositeScoreInfo({ score, size = "sm" }: { score: CompositeTradeScore
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 10 }}>
             Weighted 0-100 score. Market block is 40% of the total and ticker block is 60%. Missing inputs default to neutral 50 and reduce confidence.
           </div>
+          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>
+            Verdicts: TRADE 65+, CAUTION 40-64, AVOID below 40.
+          </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginBottom: 12 }}>
             <MetricCard label="Overall" value={`${score.overall}`} tone={score.verdict === "TRADE" ? "var(--positive)" : score.verdict === "AVOID" ? "var(--negative)" : "var(--warning)"} />

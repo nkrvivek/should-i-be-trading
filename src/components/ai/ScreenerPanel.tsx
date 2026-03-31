@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { chatWithClaude } from "../../api/anthropicClient";
+import { TickerWithCompanyName } from "../shared/TickerWithCompanyName";
 import { AiUsageBadge, useAiUsage } from "./AiUsageBadge";
 import { useStockMetrics, type StockMetrics } from "../../hooks/useStockMetrics";
 import {
@@ -261,7 +262,10 @@ export function ScreenerPanel() {
                 {sortedResults.map((r) => (
                   <tr key={r.symbol} style={{ borderBottom: "1px solid var(--border-dim)", height: 32 }}>
                     <td style={{ padding: "0 8px", fontWeight: 700, color: "var(--text-primary)" }}>
-                      {r.symbol}
+                      <TickerWithCompanyName
+                        symbol={r.symbol}
+                        style={{ fontWeight: 700, color: "var(--text-primary)" }}
+                      />
                     </td>
                     {columns.map((col) => (
                       <td key={col} style={{

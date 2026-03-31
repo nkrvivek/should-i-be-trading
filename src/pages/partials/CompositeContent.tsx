@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Panel } from "../../components/layout/Panel";
+import { TickerWithCompanyName } from "../../components/shared/TickerWithCompanyName";
 import { TradeVerdictBadgeWithScore } from "../../components/trading/TradeVerdictBadge";
 import { getCompositeTradeScore } from "../../hooks/useCompositeTradeScore";
 import { useMarketScore } from "../../hooks/useMarketScore";
@@ -221,7 +222,12 @@ export default function CompositeContent() {
               <tbody>
                 {filtered.map((row) => (
                   <tr key={row.metric.symbol} style={{ borderBottom: "1px solid var(--border-dim)", height: 34 }}>
-                    <td style={{ padding: "0 8px", fontWeight: 700, color: "var(--text-primary)" }}>{row.metric.symbol}</td>
+                    <td style={{ padding: "0 8px", fontWeight: 700, color: "var(--text-primary)" }}>
+                      <TickerWithCompanyName
+                        symbol={row.metric.symbol}
+                        style={{ fontWeight: 700, color: "var(--text-primary)" }}
+                      />
+                    </td>
                     <td style={{ padding: "0 8px", color: "var(--text-secondary)" }}>{row.metric.sector}</td>
                     <td style={{ padding: "0 8px", textAlign: "right", color: "var(--text-secondary)" }}>
                       {formatPrice(row.metric.currentPrice)}

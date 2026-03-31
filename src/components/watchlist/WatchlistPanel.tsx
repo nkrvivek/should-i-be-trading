@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { PriceData } from "../../api/types";
 import { formatPrice, formatVolume, calcChangePercent } from "../../lib/format";
+import { TickerWithCompanyName } from "../shared/TickerWithCompanyName";
 import { TradeVerdictBadgeWithScore } from "../trading/TradeVerdictBadge";
 
 type Props = {
@@ -91,7 +92,7 @@ export function WatchlistPanel({ prices, symbols }: Props) {
               <tr key={symbol} style={{ borderBottom: "1px solid var(--border-dim)", height: 28 }}>
                 <td style={{ padding: "0 8px", fontWeight: 500, color: "var(--text-primary)" }}>
                   <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
-                    <span>{symbol}</span>
+                    <TickerWithCompanyName symbol={symbol} style={{ color: "var(--text-primary)" }} />
                     <TradeVerdictBadgeWithScore symbol={symbol} showScore={false} />
                   </div>
                 </td>

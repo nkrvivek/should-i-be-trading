@@ -1,44 +1,8 @@
 import { useState, useEffect } from "react";
 import { Panel } from "../layout/Panel";
 import { useInsiderTrading } from "../../hooks/useInsiderTrading";
-import { getCredential } from "../../lib/credentials";
-import { isSupabaseConfigured } from "../../lib/supabase";
-import { getEdgeHeaders } from "../../api/edgeHeaders";
+import { fetchCompanyInfo } from "../../lib/companyInfo";
 import type { InsiderActivitySummary, InsiderSignal, InsiderTransaction } from "../../api/types";
-
-// Simple company name lookup cache
-const companyCache = new Map<string, { name: string; sector: string }>();
-
-async function fetchCompanyInfo(symbol: string): Promise<{ name: string; sector: string } | null> {
-  const cached = companyCache.get(symbol);
-  if (cached) return cached;
-
-  try {
-    let res: Response;
-    const apiKey = getCredential("finnhub");
-
-    if (apiKey) {
-      res = await fetch(`/finnhub-api/api/v1/stock/profile2?symbol=${encodeURIComponent(symbol)}&token=${apiKey}`);
-    } else if (isSupabaseConfigured()) {
-      const edgeUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finnhub?endpoint=stock/profile2&symbol=${encodeURIComponent(symbol)}`;
-      const edgeHeaders = await getEdgeHeaders();
-      res = await fetch(edgeUrl, {
-        headers: edgeHeaders,
-      });
-    } else {
-      return null;
-    }
-
-    if (!res.ok) return null;
-    const data = await res.json();
-    if (data.name) {
-      const info = { name: data.name, sector: data.finnhubIndustry ?? "" };
-      companyCache.set(symbol, info);
-      return info;
-    }
-  } catch { /* ignore */ }
-  return null;
-}
 
 const SIGNAL_CONFIG: Record<InsiderSignal, { label: string; color: string; icon: string }> = {
   HEAVY_BUYING: { label: "HEAVY BUYING", color: "var(--positive)", icon: "\u25b2\u25b2" },

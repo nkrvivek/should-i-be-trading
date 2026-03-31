@@ -1,5 +1,6 @@
 import type { BrokerConnection, BrokerAccount, BrokerPosition, BrokerOrder, OrderRequest, OptionChainEntry } from "./types";
 import { getEdgeHeaders } from "../../api/edgeHeaders";
+import { normalizeBrokerRequestError } from "./error";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 
@@ -20,54 +21,62 @@ export class SchwabBroker implements BrokerConnection {
     method = "GET",
     orderBody?: Record<string, unknown>,
   ) {
-    const headers = await getEdgeHeaders();
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-schwab`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        endpoint,
-        accountHash: this.accountHash,
-        accessToken: this.accessToken,
-        params,
-        method,
-        orderBody,
-      }),
-    });
-    if (res.status === 401 && this.refreshToken) {
-      await this.refreshAccessToken();
-      // Retry with new token
-      const retryRes = await fetch(`${SUPABASE_URL}/functions/v1/broker-schwab`, {
+    try {
+      const headers = await getEdgeHeaders();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-schwab`, {
         method: "POST",
         headers: { ...headers, "Content-Type": "application/json" },
         body: JSON.stringify({
-          endpoint, accountHash: this.accountHash, accessToken: this.accessToken, params, method, orderBody,
+          endpoint,
+          accountHash: this.accountHash,
+          accessToken: this.accessToken,
+          params,
+          method,
+          orderBody,
         }),
       });
-      if (!retryRes.ok) throw new Error(`Schwab ${retryRes.status}: ${await retryRes.text()}`);
-      return retryRes.json();
+      if (res.status === 401 && this.refreshToken) {
+        await this.refreshAccessToken();
+        // Retry with new token
+        const retryRes = await fetch(`${SUPABASE_URL}/functions/v1/broker-schwab`, {
+          method: "POST",
+          headers: { ...headers, "Content-Type": "application/json" },
+          body: JSON.stringify({
+            endpoint, accountHash: this.accountHash, accessToken: this.accessToken, params, method, orderBody,
+          }),
+        });
+        if (!retryRes.ok) throw new Error(`Schwab ${retryRes.status}: ${await retryRes.text()}`);
+        return retryRes.json();
+      }
+      if (!res.ok) throw new Error(`Schwab ${res.status}: ${await res.text()}`);
+      return res.json();
+    } catch (error) {
+      throw normalizeBrokerRequestError("Schwab", error);
     }
-    if (!res.ok) throw new Error(`Schwab ${res.status}: ${await res.text()}`);
-    return res.json();
   }
 
   /** Refresh the access token using the stored refresh token */
   private async refreshAccessToken(): Promise<void> {
     if (!this.refreshToken) throw new Error("No refresh token available");
 
-    const headers = await getEdgeHeaders();
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-schwab-auth`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action: "refresh",
-        refreshToken: this.refreshToken,
-      }),
-    });
-    if (!res.ok) throw new Error(`Token refresh failed: ${res.status}`);
+    try {
+      const headers = await getEdgeHeaders();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-schwab-auth`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "refresh",
+          refreshToken: this.refreshToken,
+        }),
+      });
+      if (!res.ok) throw new Error(`Token refresh failed: ${res.status}`);
 
-    const data = await res.json();
-    this.accessToken = data.access_token;
-    if (data.refresh_token) this.refreshToken = data.refresh_token;
+      const data = await res.json();
+      this.accessToken = data.access_token;
+      if (data.refresh_token) this.refreshToken = data.refresh_token;
+    } catch (error) {
+      throw normalizeBrokerRequestError("Schwab", error);
+    }
   }
 
   async connect(credentials: Record<string, string>): Promise<void> {

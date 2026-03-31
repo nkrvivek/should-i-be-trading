@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useMemo, lazy, Suspense } from "react";
+import { useEffect, useState, useCallback, useMemo, lazy, Suspense, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
@@ -70,6 +70,7 @@ export default function TradingPage() {
   const brokerReady = hasConnections && hasAnyAccount;
 
   const [tab, setTab] = useState<TabId>(() => brokerReady ? "portfolio" : "import");
+  const brokerSyncAttemptedRef = useRef(false);
   const [executionModal, setExecutionModal] = useState<{
     open: boolean;
     symbol: string;
@@ -105,22 +106,27 @@ export default function TradingPage() {
   const orders = allOrders();
   const combinedAccounts = allAccounts();
 
-  // Auto-reconnect saved connections on page load
   useEffect(() => {
     if (!hasConnections) {
-      reconnectAll();
+      brokerSyncAttemptedRef.current = false;
+      return;
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!BROKER_TABS.includes(tab) || brokerReady || isAnyLoading || brokerSyncAttemptedRef.current) {
+      return;
+    }
+    brokerSyncAttemptedRef.current = true;
+    void reconnectAll();
+  }, [brokerReady, hasConnections, isAnyLoading, reconnectAll, tab]);
 
   // If user is on a broker tab and broker disconnects, reset to import
   // This is an event-driven transition, not a render-time derivation
   useEffect(() => {
-    if (!brokerReady && BROKER_TABS.includes(tab)) {
+    if (!hasConnections && BROKER_TABS.includes(tab)) {
       setTab("import"); // eslint-disable-line react-hooks/set-state-in-effect
     }
-  }, [brokerReady, tab]);
+  }, [hasConnections, tab]);
 
-  const visibleTabs: TabId[] = brokerReady
+  const visibleTabs: TabId[] = hasConnections
     ? [...BROKER_TABS, "strategies", "import"]
     : ["import", "strategies"];
 
@@ -179,7 +185,10 @@ export default function TradingPage() {
                 );
               })}
               <button
-                onClick={() => refresh()}
+                onClick={() => {
+                  brokerSyncAttemptedRef.current = true;
+                  void refresh();
+                }}
                 style={{
                   ...monoStyle,
                   fontSize: 13,
@@ -278,7 +287,53 @@ export default function TradingPage() {
       </div>
 
       {/* Tab content */}
-      {brokerReady && isAnyLoading && <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>}
+      {(brokerReady || BROKER_TABS.includes(activeTab)) && isAnyLoading && (
+        <div style={{ textAlign: "center", padding: 32, color: "var(--text-secondary)" }}>Loading...</div>
+      )}
+
+      {!brokerReady && hasConnections && BROKER_TABS.includes(activeTab) && !isAnyLoading && (
+        <div style={{ ...panelStyle, textAlign: "center", padding: 28 }}>
+          <div style={{ ...headerStyle, marginBottom: 10 }}>Live Broker Sync Required</div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65, maxWidth: 720, margin: "0 auto 12px" }}>
+            This section pulls live balances, positions, and orders from your connected broker only when you open a broker workflow. That keeps the Trading menu fast, but it means you need to sync before viewing live account data.
+          </div>
+          <div style={{ display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap" }}>
+            <button
+              onClick={() => {
+                brokerSyncAttemptedRef.current = true;
+                void reconnectAll();
+              }}
+              style={{
+                ...monoStyle,
+                fontSize: 13,
+                padding: "6px 12px",
+                border: "1px solid var(--signal-core)",
+                borderRadius: 4,
+                background: "none",
+                color: "var(--signal-core)",
+                cursor: "pointer",
+              }}
+            >
+              SYNC BROKER NOW
+            </button>
+            <button
+              onClick={() => navigate("/learn")}
+              style={{
+                ...monoStyle,
+                fontSize: 13,
+                padding: "6px 12px",
+                border: "1px solid var(--border-dim)",
+                borderRadius: 4,
+                background: "none",
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+              }}
+            >
+              REVIEW ACADEMY FIRST
+            </button>
+          </div>
+        </div>
+      )}
 
       {brokerReady && activeTab === "portfolio" && (
         <>

@@ -408,84 +408,86 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
         await saveConnections(deduped);
       }
 
-      for (const entry of deduped) {
-        // Skip if already connected
-        const existing = get().connections.find((c) => c.id === entry.id);
-        if (existing?.instance.isConnected) continue;
+      await Promise.allSettled(
+        deduped.map(async (entry) => {
+          // Skip if already connected
+          const existing = get().connections.find((c) => c.id === entry.id);
+          if (existing?.instance.isConnected) return;
 
-        const instance = existing?.instance ?? createBrokerInstance(entry.slug);
-        if (!instance) continue;
+          const instance = existing?.instance ?? createBrokerInstance(entry.slug);
+          if (!instance) return;
 
-        set((s) => ({
-          loading: { ...s.loading, [entry.id]: true },
-          errors: { ...s.errors, [entry.id]: null },
-        }));
+          set((s) => ({
+            loading: { ...s.loading, [entry.id]: true },
+            errors: { ...s.errors, [entry.id]: null },
+          }));
 
-        try {
-          await instance.connect(entry.credentials);
+          try {
+            await instance.connect(entry.credentials);
 
-          // Use the instance's display name if it discovered the underlying brokerage
-          const resolvedName = instance.getDisplayName?.() || entry.displayName;
+            // Use the instance's display name if it discovered the underlying brokerage
+            const resolvedName = instance.getDisplayName?.() || entry.displayName;
 
-          const conn: BrokerConnection = {
-            id: entry.id,
-            slug: entry.slug,
-            displayName: resolvedName,
-            instance,
-          };
-
-          const data = await fetchConnectionData(conn);
-
-          // Persist refreshed credentials and display name
-          const refreshedCreds = instance.getCredentials?.() ?? entry.credentials;
-          const currentStored = await loadConnections();
-          const idx = currentStored.findIndex((c) => c.id === entry.id);
-          if (idx >= 0) {
-            currentStored[idx].credentials = refreshedCreds;
-            currentStored[idx].displayName = resolvedName;
-            await saveConnections(currentStored);
-          }
-
-          set((s) => {
-            const alreadyExists = s.connections.some((c) => c.id === entry.id);
-            const newConns = alreadyExists
-              ? s.connections.map((c) => (c.id === entry.id ? conn : c))
-              : [...s.connections, conn];
-            const newState = {
-              connections: newConns,
-              accounts: { ...s.accounts, [entry.id]: data.account },
-              positions: { ...s.positions, [entry.id]: data.positions },
-              orders: { ...s.orders, [entry.id]: data.orders },
-              loading: { ...s.loading, [entry.id]: false },
-              errors: { ...s.errors, [entry.id]: null },
-            };
-            return { ...newState, ...legacyCompat(newState) };
-          });
-        } catch (e) {
-          // If instance was newly created (not existing), still track it so it can be retried
-          if (!existing) {
             const conn: BrokerConnection = {
               id: entry.id,
               slug: entry.slug,
-              displayName: entry.displayName,
+              displayName: resolvedName,
               instance,
             };
+
+            const data = await fetchConnectionData(conn);
+
+            // Persist refreshed credentials and display name
+            const refreshedCreds = instance.getCredentials?.() ?? entry.credentials;
+            const currentStored = await loadConnections();
+            const idx = currentStored.findIndex((c) => c.id === entry.id);
+            if (idx >= 0) {
+              currentStored[idx].credentials = refreshedCreds;
+              currentStored[idx].displayName = resolvedName;
+              await saveConnections(currentStored);
+            }
+
             set((s) => {
               const alreadyExists = s.connections.some((c) => c.id === entry.id);
-              return {
-                connections: alreadyExists ? s.connections : [...s.connections, conn],
+              const newConns = alreadyExists
+                ? s.connections.map((c) => (c.id === entry.id ? conn : c))
+                : [...s.connections, conn];
+              const newState = {
+                connections: newConns,
+                accounts: { ...s.accounts, [entry.id]: data.account },
+                positions: { ...s.positions, [entry.id]: data.positions },
+                orders: { ...s.orders, [entry.id]: data.orders },
+                loading: { ...s.loading, [entry.id]: false },
+                errors: { ...s.errors, [entry.id]: null },
+              };
+              return { ...newState, ...legacyCompat(newState) };
+            });
+          } catch (e) {
+            // If instance was newly created (not existing), still track it so it can be retried
+            if (!existing) {
+              const conn: BrokerConnection = {
+                id: entry.id,
+                slug: entry.slug,
+                displayName: entry.displayName,
+                instance,
+              };
+              set((s) => {
+                const alreadyExists = s.connections.some((c) => c.id === entry.id);
+                return {
+                  connections: alreadyExists ? s.connections : [...s.connections, conn],
+                  loading: { ...s.loading, [entry.id]: false },
+                  errors: { ...s.errors, [entry.id]: e instanceof Error ? e.message : "Reconnection failed" },
+                };
+              });
+            } else {
+              set((s) => ({
                 loading: { ...s.loading, [entry.id]: false },
                 errors: { ...s.errors, [entry.id]: e instanceof Error ? e.message : "Reconnection failed" },
-              };
-            });
-          } else {
-            set((s) => ({
-              loading: { ...s.loading, [entry.id]: false },
-              errors: { ...s.errors, [entry.id]: e instanceof Error ? e.message : "Reconnection failed" },
-            }));
+              }));
+            }
           }
-        }
-      }
+        }),
+      );
     },
 
     placeOrder: async (connectionId, order) => {

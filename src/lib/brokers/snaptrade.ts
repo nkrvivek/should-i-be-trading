@@ -1,5 +1,6 @@
 import type { BrokerConnectionInterface, BrokerAccount, BrokerPosition, BrokerOrder, OrderRequest } from "./types";
 import { getEdgeHeaders } from "../../api/edgeHeaders";
+import { normalizeBrokerRequestError } from "./error";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 const CREDS_STORAGE_KEY = "sibt_snaptrade_creds";
@@ -38,22 +39,26 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
   private institutionName = "";
 
   private async edgeCall(action: string, extra: Record<string, unknown> = {}): Promise<unknown> {
-    const headers = await getEdgeHeaders();
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-snaptrade`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action,
-        userId: this.snapUserId,
-        userSecret: this.snapUserSecret,
-        ...extra,
-      }),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`SnapTrade ${res.status}: ${text}`);
+    try {
+      const headers = await getEdgeHeaders();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-snaptrade`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action,
+          userId: this.snapUserId,
+          userSecret: this.snapUserSecret,
+          ...extra,
+        }),
+      });
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`SnapTrade ${res.status}: ${text}`);
+      }
+      return res.json();
+    } catch (error) {
+      throw normalizeBrokerRequestError("SnapTrade", error);
     }
-    return res.json();
   }
 
   /** Returns the current SnapTrade credentials for persistence in connection entries */
@@ -194,20 +199,13 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
       }
     }
 
-    // Get positions to calculate portfolio value
-    let positionsValue = 0;
-    try {
-      const positions = await this.getPositions();
-      positionsValue = positions.reduce((sum, p) => sum + p.marketValue, 0);
-    } catch { /* positions may fail if account just connected */ }
-
     return {
       id: this.accountId,
       broker: "snaptrade",
-      equity: cash + positionsValue,
+      equity: cash,
       buyingPower,
       cash,
-      portfolioValue: cash + positionsValue,
+      portfolioValue: cash,
       isPaperTrading: false,
     };
   }

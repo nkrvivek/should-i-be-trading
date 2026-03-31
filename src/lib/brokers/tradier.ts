@@ -1,5 +1,6 @@
 import type { BrokerConnection, BrokerAccount, BrokerPosition, BrokerOrder, OrderRequest, OptionChainEntry } from "./types";
 import { getEdgeHeaders } from "../../api/edgeHeaders";
+import { normalizeBrokerRequestError } from "./error";
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
 
@@ -20,22 +21,26 @@ export class TradierBroker implements BrokerConnection {
     method = "GET",
     orderParams?: Record<string, string>,
   ) {
-    const headers = await getEdgeHeaders();
-    const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-tradier`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({
-        endpoint,
-        accountId: this.accountId,
-        apiToken: this.apiToken,
-        mode: this.mode,
-        params,
-        method,
-        orderParams,
-      }),
-    });
-    if (!res.ok) throw new Error(`Tradier ${res.status}: ${await res.text()}`);
-    return res.json();
+    try {
+      const headers = await getEdgeHeaders();
+      const res = await fetch(`${SUPABASE_URL}/functions/v1/broker-tradier`, {
+        method: "POST",
+        headers: { ...headers, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          endpoint,
+          accountId: this.accountId,
+          apiToken: this.apiToken,
+          mode: this.mode,
+          params,
+          method,
+          orderParams,
+        }),
+      });
+      if (!res.ok) throw new Error(`Tradier ${res.status}: ${await res.text()}`);
+      return res.json();
+    } catch (error) {
+      throw normalizeBrokerRequestError("Tradier", error);
+    }
   }
 
   async connect(credentials: Record<string, string>): Promise<void> {

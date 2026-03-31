@@ -38,6 +38,26 @@ export function GlossaryPage() {
     () => ALL_LEARNING_LESSONS.find((lesson) => !progress.completedLessons[lesson.slug]) ?? ALL_LEARNING_LESSONS[0],
     [progress.completedLessons],
   );
+  const nextTrack = useMemo(
+    () => LEARNING_TRACKS.find((track) => track.lessons.some((lesson) => lesson.slug === nextLesson?.slug)) ?? LEARNING_TRACKS[0],
+    [nextLesson],
+  );
+  const [activeTrackSlug, setActiveTrackSlug] = useState(nextTrack?.slug ?? LEARNING_TRACKS[0]?.slug ?? "");
+  const [activeLessonSlug, setActiveLessonSlug] = useState(nextLesson?.slug ?? LEARNING_TRACKS[0]?.lessons[0]?.slug ?? "");
+
+  const activeTrack = useMemo(
+    () => LEARNING_TRACKS.find((track) => track.slug === activeTrackSlug) ?? LEARNING_TRACKS[0],
+    [activeTrackSlug],
+  );
+  const activeLesson = useMemo(
+    () => activeTrack?.lessons.find((lesson) => lesson.slug === activeLessonSlug) ?? activeTrack?.lessons[0] ?? null,
+    [activeLessonSlug, activeTrack],
+  );
+  const activeTrackProgress = useMemo(() => {
+    if (!activeTrack) return { completed: 0, total: 0 };
+    const completed = activeTrack.lessons.filter((lesson) => progress.completedLessons[lesson.slug]).length;
+    return { completed, total: activeTrack.lessons.length };
+  }, [activeTrack, progress.completedLessons]);
 
   const filtered = useMemo(() => {
     return GLOSSARY.filter((entry) => {
@@ -88,6 +108,19 @@ export function GlossaryPage() {
     }, 100);
   }, [deepLinkTerm]);
 
+  useEffect(() => {
+    if (!nextTrack?.slug) return;
+    setActiveTrackSlug((current) => current || nextTrack.slug);
+  }, [nextTrack]);
+
+  useEffect(() => {
+    if (!activeTrack) return;
+    const lessonStillExists = activeTrack.lessons.some((lesson) => lesson.slug === activeLessonSlug);
+    if (lessonStillExists) return;
+    const firstIncomplete = activeTrack.lessons.find((lesson) => !progress.completedLessons[lesson.slug]);
+    setActiveLessonSlug(firstIncomplete?.slug ?? activeTrack.lessons[0]?.slug ?? "");
+  }, [activeLessonSlug, activeTrack, progress.completedLessons]);
+
   return (
     <TerminalShell cri={null}>
       <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px" }}>
@@ -136,6 +169,204 @@ export function GlossaryPage() {
               <AcademyStatCard label="Streak" value={`${stats.currentStreak}d`} sublabel="Consecutive learning days" tone="var(--warning)" />
               <AcademyStatCard label="This Week" value={`${stats.thisWeekSessions}/${stats.weeklyTarget}`} sublabel="Weekly session goal" tone="var(--positive)" />
             </div>
+
+            {activeTrack && activeLesson && (
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 320px) minmax(0, 1fr)", gap: 16 }}>
+                <div style={{ ...academyPanelStyle, display: "flex", flexDirection: "column", gap: 10 }}>
+                  <div style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                    Course Paths
+                  </div>
+                  <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                    Pick one track, work the lessons in order, then move into the related simulator or trading workflow after each concept is clear.
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {LEARNING_TRACKS.map((track) => {
+                      const completed = track.lessons.filter((lesson) => progress.completedLessons[lesson.slug]).length;
+                      const isActive = track.slug === activeTrack.slug;
+                      return (
+                        <button
+                          key={track.slug}
+                          onClick={() => {
+                            setActiveTrackSlug(track.slug);
+                            const firstIncomplete = track.lessons.find((lesson) => !progress.completedLessons[lesson.slug]);
+                            setActiveLessonSlug(firstIncomplete?.slug ?? track.lessons[0]?.slug ?? "");
+                          }}
+                          style={{
+                            textAlign: "left",
+                            padding: 12,
+                            borderRadius: 8,
+                            border: `1px solid ${isActive ? "var(--signal-core)" : "var(--border-dim)"}`,
+                            background: isActive ? "rgba(5, 173, 152, 0.08)" : "var(--bg-panel-raised)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginBottom: 6 }}>
+                            <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{track.title}</span>
+                            <span style={levelPillStyle(track.level)}>{track.level.toUpperCase()}</span>
+                          </div>
+                          <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 8 }}>
+                            {track.audience}
+                          </div>
+                          <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>
+                            {completed}/{track.lessons.length} lessons complete
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  <div style={{ ...academyPanelStyle, borderColor: "rgba(5, 173, 152, 0.4)" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                      <div>
+                        <div style={{ ...mono, fontSize: 12, color: "var(--signal-core)", fontWeight: 700, marginBottom: 4 }}>
+                          ACTIVE COURSE
+                        </div>
+                        <div style={{ ...mono, fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>
+                          {activeTrack.title}
+                        </div>
+                      </div>
+                      <div style={{ ...mono, fontSize: 12, color: "var(--text-muted)", alignSelf: "flex-start" }}>
+                        {activeTrackProgress.completed}/{activeTrackProgress.total} complete
+                      </div>
+                    </div>
+                    <p style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65, marginTop: 0 }}>
+                      {activeTrack.description}
+                    </p>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+                      <FlowStepCard
+                        step="1"
+                        label="Learn"
+                        body="Read the concept in plain English so the order ticket makes sense before you click anything live."
+                      />
+                      <FlowStepCard
+                        step="2"
+                        label="Practice"
+                        body="Use the simulator or walkthrough to see payoff, assignment, and risk behavior before execution."
+                      />
+                      <FlowStepCard
+                        step="3"
+                        label="Apply"
+                        body="Open the relevant SIBT workflow only after you understand the setup, risk, and what to check next."
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ ...academyPanelStyle, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <div style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>
+                      Course Sequence
+                    </div>
+                    {activeTrack.lessons.map((lesson, index) => {
+                      const isActive = lesson.slug === activeLesson.slug;
+                      const isComplete = Boolean(progress.completedLessons[lesson.slug]);
+                      return (
+                        <button
+                          key={lesson.slug}
+                          onClick={() => setActiveLessonSlug(lesson.slug)}
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "34px minmax(0, 1fr) auto",
+                            gap: 10,
+                            alignItems: "center",
+                            textAlign: "left",
+                            padding: 12,
+                            borderRadius: 8,
+                            border: `1px solid ${isActive ? "var(--signal-core)" : "var(--border-dim)"}`,
+                            background: isActive ? "rgba(5, 173, 152, 0.08)" : "var(--bg-panel-raised)",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <div style={{
+                            ...mono,
+                            width: 34,
+                            height: 34,
+                            borderRadius: 999,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            background: isComplete ? "rgba(5, 173, 152, 0.15)" : "rgba(148, 163, 184, 0.15)",
+                            color: isComplete ? "var(--signal-core)" : "var(--text-muted)",
+                            fontWeight: 700,
+                          }}>
+                            {isComplete ? "✓" : index + 1}
+                          </div>
+                          <div>
+                            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 4 }}>
+                              <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)" }}>{lesson.title}</span>
+                              <span style={stagePillStyle(lesson.format)}>{academyStageLabel(lesson.format)}</span>
+                            </div>
+                            <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+                              {lesson.description}
+                            </div>
+                          </div>
+                          <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                            {lesson.durationMinutes} min
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div style={{ ...academyPanelStyle, background: "linear-gradient(180deg, rgba(15,23,42,0.45), rgba(15,23,42,0.7))" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap", marginBottom: 8 }}>
+                      <div>
+                        <div style={{ ...mono, fontSize: 12, color: "var(--signal-core)", fontWeight: 700, marginBottom: 4 }}>
+                          CURRENT STEP
+                        </div>
+                        <div style={{ ...mono, fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
+                          {activeLesson.title}
+                        </div>
+                      </div>
+                      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                        <span style={riskPillStyle(activeLesson.riskLevel)}>{activeLesson.riskLevel.toUpperCase()} RISK</span>
+                        <span style={stagePillStyle(activeLesson.format)}>{academyStageLabel(activeLesson.format)}</span>
+                      </div>
+                    </div>
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65, marginBottom: 12 }}>
+                      {activeLesson.description}
+                    </div>
+                    <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 12 }}>
+                      {activeLesson.market.toUpperCase()} • {activeLesson.durationMinutes} MINUTES
+                    </div>
+                    <div style={{ marginBottom: 12 }}>
+                      <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>
+                        WHAT YOU SHOULD KNOW BEFORE MOVING ON
+                      </div>
+                      <ul style={{ margin: 0, paddingLeft: 18, color: "var(--text-secondary)", fontSize: 13, lineHeight: 1.6 }}>
+                        {activeLesson.outcomes.map((outcome) => (
+                          <li key={outcome}>{outcome}</li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <button
+                        onClick={() => void markLessonComplete(activeLesson.slug)}
+                        style={progress.completedLessons[activeLesson.slug] ? secondarySmallBtn : primarySmallBtn}
+                      >
+                        {progress.completedLessons[activeLesson.slug] ? "SESSION COMPLETE" : "MARK SESSION COMPLETE"}
+                      </button>
+                      {activeLesson.simulatorRoute && (
+                        <a href={activeLesson.simulatorRoute} style={linkChipStyle}>
+                          PRACTICE IN SIMULATOR
+                        </a>
+                      )}
+                      {activeLesson.followUpRoute && (
+                        <a href={activeLesson.followUpRoute} style={linkChipStyle}>
+                          OPEN TRADING WORKFLOW
+                        </a>
+                      )}
+                      <button
+                        onClick={() => setActiveView("glossary")}
+                        style={{ ...linkChipStyle, background: "transparent", cursor: "pointer" }}
+                      >
+                        REVIEW GLOSSARY TERMS
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 16 }}>
               <div style={academyPanelStyle}>
@@ -280,7 +511,7 @@ export function GlossaryPage() {
 
             <div>
               <div style={{ ...mono, fontSize: 16, fontWeight: 700, color: "var(--text-primary)", marginBottom: 12 }}>
-                Learning Tracks
+                Full Track Library
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
                 {LEARNING_TRACKS.map((track) => (
@@ -514,6 +745,22 @@ function AcademyStatCard({
       <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>{label.toUpperCase()}</div>
       <div style={{ ...mono, fontSize: 24, fontWeight: 700, color: tone, marginBottom: 4 }}>{value}</div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>{sublabel}</div>
+    </div>
+  );
+}
+
+function FlowStepCard({ step, label, body }: { step: string; label: string; body: string }) {
+  return (
+    <div style={{ border: "1px solid var(--border-dim)", borderRadius: 8, padding: 12, background: "var(--bg-panel-raised)" }}>
+      <div style={{ ...mono, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, marginBottom: 6 }}>
+        STEP {step}
+      </div>
+      <div style={{ ...mono, fontSize: 13, color: "var(--text-primary)", fontWeight: 700, marginBottom: 4 }}>
+        {label}
+      </div>
+      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+        {body}
+      </div>
     </div>
   );
 }
@@ -762,6 +1009,31 @@ function riskPillStyle(level: "low" | "medium" | "high" | "varies"): React.CSSPr
         : level === "high"
           ? { bg: "rgba(232, 93, 108, 0.12)", color: "var(--negative)" }
           : { bg: "rgba(96, 165, 250, 0.12)", color: "var(--info)" };
+
+  return {
+    ...mono,
+    fontSize: 10,
+    fontWeight: 700,
+    padding: "2px 6px",
+    borderRadius: 999,
+    background: colors.bg,
+    color: colors.color,
+  };
+}
+
+function academyStageLabel(format: "lesson" | "simulation" | "walkthrough"): string {
+  if (format === "simulation") return "PRACTICE";
+  if (format === "walkthrough") return "APPLY";
+  return "LEARN";
+}
+
+function stagePillStyle(format: "lesson" | "simulation" | "walkthrough"): React.CSSProperties {
+  const colors =
+    format === "simulation"
+      ? { bg: "rgba(96, 165, 250, 0.12)", color: "var(--info)" }
+      : format === "walkthrough"
+        ? { bg: "rgba(234, 179, 8, 0.12)", color: "var(--warning)" }
+        : { bg: "rgba(5, 173, 152, 0.12)", color: "var(--positive)" };
 
   return {
     ...mono,

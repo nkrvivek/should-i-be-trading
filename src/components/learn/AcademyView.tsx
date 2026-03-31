@@ -6,11 +6,43 @@ import { useLearningAcademy } from "../../hooks/useLearningAcademy";
 import { isTrackUnlocked, isLessonUnlocked, getUnlockRequirement } from "../../lib/academyUnlock";
 import { LazyLessonViewer, prefetchLessonViewer, scheduleLessonViewerPrefetch } from "./lazyLessonViewer";
 import { getAcademyViewState, saveAcademyViewState } from "../../lib/academyViewState";
+import { useAppStore, type WorkflowProfile } from "../../stores/appStore";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
+const ACADEMY_PROFILE_COPY: Record<WorkflowProfile, {
+  heroTitle: string;
+  heroBody: string;
+  trackIntro: string;
+  continueHint: string;
+  completeHint: string;
+}> = {
+  beginner: {
+    heroTitle: "Learn the product, then learn the trade.",
+    heroBody: "Start with market regime and stock workflows, then move into options, spreads, broker order entry, ETFs, forex, futures, and commodity basics. SIBT badges reward completion, simulation, and trade review discipline. They should never reward reckless short-term P&L.",
+    trackIntro: "Pick one track, work the lessons in order, then move into the related simulator or trading workflow only after the concept is clear.",
+    continueHint: "Stay on the guided path and use the simulator before pushing into a live order workflow.",
+    completeHint: "You have completed the current curriculum. Keep reviewing badge paths, glossary concepts, and simulator reps before increasing complexity.",
+  },
+  active_trader: {
+    heroTitle: "Sharpen the workflow you already use.",
+    heroBody: "Use the academy as a structured refresher for regime, screening, execution, and review discipline. The goal is to reduce sloppiness, not to turn the app into a content library.",
+    trackIntro: "Pick the track that strengthens your current weak spot, finish the sequence, then move directly back into research, validation, or trade review.",
+    continueHint: "Use the next lesson as a short process reset, then hand off quickly into research or trade review.",
+    completeHint: "You have completed the current curriculum. Keep using the academy as a process refresher before the quality of your workflow drifts.",
+  },
+  options_trader: {
+    heroTitle: "Structure first. Execution second.",
+    heroBody: "Use the academy to reinforce options structure, defined risk, spread mechanics, and order-entry discipline before live execution. The goal is cleaner decisions, not just more trades.",
+    trackIntro: "Work the options, spreads, and execution tracks in sequence, then move into simulator reps or order review while the structure is still fresh.",
+    continueHint: "Use the next lesson to tighten structure, then move into simulator or order-review flows before live execution.",
+    completeHint: "You have completed the current curriculum. Keep revisiting spreads, execution, and simulator lessons to maintain structure and risk discipline.",
+  },
+};
+
 export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) {
   const { progress, markLessonComplete, saveReminderPrefs, loading: academyLoading, persistence } = useLearningAcademy();
+  const workflowProfile = useAppStore((state) => state.workflowProfile);
   const persistedState = useMemo(() => getAcademyViewState(), []);
 
   const stats = useMemo(
@@ -57,6 +89,7 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
   const warmLessonViewer = useCallback(() => {
     prefetchLessonViewer();
   }, []);
+  const workflowCopy = ACADEMY_PROFILE_COPY[workflowProfile];
 
   useEffect(() => {
     if (!activeLesson?.slug && !nextLesson?.slug) return;
@@ -121,11 +154,10 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
           FREE-TIER LEARNING HUB
         </div>
         <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 10 }}>
-          Learn the product, then learn the trade.
+          {workflowCopy.heroTitle}
         </div>
         <p style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65, margin: 0, maxWidth: 720 }}>
-          Start with market regime and stock workflows, then move into options, spreads, broker order entry, ETFs, forex, futures, and commodity basics.
-          SIBT badges reward completion, simulation, and trade review discipline. They should never reward reckless short-term P&amp;L.
+          {workflowCopy.heroBody}
         </p>
       </div>
 
@@ -143,7 +175,7 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
               Course Paths
             </div>
             <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
-              Pick one track, work the lessons in order, then move into the related simulator or trading workflow after each concept is clear.
+              {workflowCopy.trackIntro}
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
               {LEARNING_TRACKS.map((track) => {
@@ -368,7 +400,7 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
             {nextLesson?.title ?? "All lessons completed"}
           </div>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.6, marginBottom: 10 }}>
-            {nextLesson?.description ?? "You have completed the current curriculum. Keep reviewing badge paths and glossary concepts."}
+            {nextLesson ? `${nextLesson.description} ${workflowCopy.continueHint}` : workflowCopy.completeHint}
           </div>
           <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>
             {academyLoading

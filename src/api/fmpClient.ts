@@ -46,7 +46,7 @@ function serializeParams(params: Record<string, unknown>): string {
 
 async function fmpCall<T>(params: Record<string, unknown>): Promise<T> {
   if (!isSupabaseConfigured()) {
-    throw new Error("FMP requires Supabase. Configure VITE_SUPABASE_URL.");
+    throw new Error("Market data unavailable. Please sign in for automatic access.");
   }
 
   const cacheKey = serializeParams(params);

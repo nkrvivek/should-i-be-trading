@@ -52,7 +52,7 @@ export default function InstitutionalContent() {
     return (
       <Panel title="Institutional Tracker">
         <div style={{ padding: 24, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
-          Institutional tracker requires Supabase configuration.
+          Please sign in to access the institutional tracker.
         </div>
       </Panel>
     );

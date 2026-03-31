@@ -88,7 +88,7 @@ function getFreshCachedMetrics(): StockMetrics[] | null {
 
 async function fetchMetricsFresh(): Promise<StockMetrics[]> {
   if (!isSupabaseConfigured()) {
-    throw new Error("Supabase not configured");
+    throw new Error("Market data unavailable. Please sign in for automatic access.");
   }
 
   const results: StockMetrics[] = [];

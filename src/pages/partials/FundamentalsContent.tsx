@@ -172,9 +172,7 @@ export default function FundamentalsContent() {
     return (
       <Panel title="Fundamentals">
         <div style={{ padding: 24, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
-          Fundamentals requires Supabase configuration.
-          <br />
-          Set <code>VITE_SUPABASE_URL</code> and <code>VITE_SUPABASE_ANON_KEY</code> to enable.
+          Please sign in to access stock fundamentals.
         </div>
       </Panel>
     );

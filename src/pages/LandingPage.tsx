@@ -273,6 +273,10 @@ export function LandingPage() {
             title="See Why The Score Changed"
             description="Break out market and ticker inputs so you understand the signal before you trust it."
           />
+          <FeatureCard
+            title="Learn Before You Trade"
+            description="Move through progressive lessons, simulator practice, and workflow handoffs instead of jumping straight from theory into a live order ticket."
+          />
         </div>
       </section>
 
@@ -399,7 +403,7 @@ export function LandingPage() {
           />
           <FeatureCard
             title="Learning Academy + Glossary"
-            description="Free structured lessons for novice traders covering calls, puts, covered calls, spreads, order entry, ETFs, forex, futures, and how to use SIBT. Includes badge paths, streak tracking, reminders, and the trading glossary."
+            description="Free progressive trading academy with locked course paths, lesson-by-lesson teaching views, simulator-linked practice, workflow handoffs into SIBT tools, streak tracking, reminders, badges, and the glossary."
             tag="FREE"
           />
           <FeatureCard
@@ -434,6 +438,11 @@ export function LandingPage() {
           <Step n={1} title="Check The Tape" desc="Start with market regime, breadth, and macro context so you know whether conditions support active trading." />
           <Step n={2} title="Check The Ticker" desc="Review the trade score with earnings, insider, social, and stock-quality context in one place." />
           <Step n={3} title="Decide With Context" desc="Take trades when the market and ticker agree. Skip borderline setups before capital is at risk." />
+        </div>
+        <div className="landing-steps-row" style={{ display: "flex", justifyContent: "center", gap: 48, maxWidth: 800, margin: "28px auto 0" }}>
+          <Step n={1} title="Learn The Concept" desc="Start inside the academy with a lesson that explains the setup, order flow, and real risk in plain English." />
+          <Step n={2} title="Practice In SIBT" desc="Move into simulator and walkthrough mode before using the real screener, order review, or trading workflows." />
+          <Step n={3} title="Apply With Guardrails" desc="Only graduate into live decision workflows after the lesson is complete, the setup is understood, and the next tool is clear." />
         </div>
         <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
           <button onClick={() => navigate("/learn")} style={ctaSecondaryBtn}>

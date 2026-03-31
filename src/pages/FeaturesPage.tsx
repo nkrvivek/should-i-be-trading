@@ -708,13 +708,15 @@ const FEATURES: FeatureSection[] = [
   {
     title: "Learning Academy + Glossary",
     tier: "FREE",
-    description: "Free education layer for novice traders: structured lessons, badge paths, simulator-first strategy walkthroughs, and the glossary that explains the rest of SIBT.",
+    description: "Free progressive academy for novice traders: guided course paths, lesson-level teaching views, simulator practice, workflow handoffs into SIBT, badge ladders, and the glossary that explains the rest of the product.",
     details: [
-      "Guided lessons on calls, puts, covered calls, spreads, ETFs, forex, and futures",
-      "SIBT badge ladders: beginner, intermediate, expert",
+      "Progressive course paths with locked lessons and track-by-track unlocks",
+      "Dedicated lesson viewer so users learn the concept before jumping into tools",
+      "Guided lessons on calls, puts, covered calls, spreads, ETFs, forex, futures, and how to use SIBT well",
+      "SIBT badge ladders across beginner, intermediate, and expert progression",
       "Streak tracking and reminder preferences for daily/weekly practice",
       "Glossary and deep dives for quick lookup and deeper reading",
-      "Simulator-linked walkthroughs so learning starts in practice mode",
+      "Simulator-linked walkthroughs and direct handoffs into relevant research or trading workflows",
       "Process-based progression, not short-term P&L gamification",
     ],
     mockup: `┌──────────────────────────────────────────────┐
@@ -722,14 +724,15 @@ const FEATURES: FeatureSection[] = [
 │                                              │
 │  STREAK 4d   WEEKLY GOAL 2/3   FREE         │
 │                                              │
-│  NEXT LESSON                                │
-│  Buy to Open / Sell to Close                │
-│  14 min  EXECUTION  RISK: MEDIUM            │
+│  ACTIVE TRACK                               │
+│  Options Basics   2/3 complete              │
 │                                              │
-│  BADGE PATHS                                │
-│  ▶ Options Beginner                         │
-│  ▶ ETF Beginner                             │
-│  ▶ Stock Trading Intermediate               │
+│  1 LEARN   Calls, Puts, Contract Basics     │
+│  2 PRACTICE Defined Risk vs Undefined Risk  │
+│  3 APPLY   Open Trading Workflow            │
+│                                              │
+│  NEXT STEP: Buy to Open / Sell to Close     │
+│  [OPEN LESSON]   [SIMULATOR]   [WORKFLOW]   │
 └──────────────────────────────────────────────┘`,
   },
   {

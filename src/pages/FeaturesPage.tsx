@@ -854,6 +854,90 @@ const FEATURES: FeatureSection[] = [
 │  - Consider protective puts for downside     │
 └──────────────────────────────────────────────┘`,
   },
+  {
+    title: "Composite Trade Score",
+    tier: "FREE",
+    description: "Per-ticker TRADE/CAUTION/AVOID verdict combining 9 weighted signals into one actionable score. Covers market regime, insider activity, social sentiment, sector momentum, and more.",
+    details: [
+      "Market quality base score from the 5-category scoring engine",
+      "Regime composite and Financial Stress Indicator integration",
+      "Sector ETF momentum — measures relative sector strength",
+      "Stock-level score from fundamentals or cached SIBT Score",
+      "Insider signal score from SEC Form 4 filing analysis",
+      "Social sentiment score from StockTwits, Reddit, and FinTwit",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  COMPOSITE TRADE SCREENER                    │
+│                                              │
+│  Universe: 250 symbols                       │
+│  TRADE: 82  CAUTION: 104  AVOID: 64         │
+│                                              │
+│  SYMBOL  SECTOR       VERDICT  OVERALL  CONF│
+│  NVDA    Technology   TRADE      78     88% │
+│  AAPL    Technology   TRADE      72     85% │
+│  MSFT    Technology   CAUTION    58     82% │
+│  TSLA    Consumer     AVOID      34     76% │
+│                                              │
+│  Click column labels to sort                 │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Day Trading Activity Monitor",
+    tier: "STARTER",
+    description: "Track the most active stocks, biggest movers, volume leaders, insider clusters, and FINRA short interest data in one consolidated view.",
+    details: [
+      "Volume leaders — stocks with highest trading volume today",
+      "Biggest movers — top gainers and losers by percentage",
+      "Insider clusters — tickers with multiple insider transactions",
+      "FINRA short interest — short volume ratios and trends",
+      "Most active stocks — combined volume and volatility ranking",
+      "Real-time data from Finnhub and FINRA sources",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  DAY TRADING ACTIVITY                        │
+│                                              │
+│  VOLUME LEADERS                              │
+│  NVDA   142M  +3.2%  | AMD    89M  +1.8%   │
+│  TSLA    98M  -2.1%  | AAPL   76M  +0.4%   │
+│                                              │
+│  INSIDER CLUSTERS                            │
+│  LMT   5 buys  +$42M net   HEAVY BUYING    │
+│  DELL   3 sells -$36M net   NET SELLING     │
+│                                              │
+│  SHORT INTEREST                              │
+│  TSLA  18.2% ratio  | GME  22.4% ratio     │
+│  AMC   14.8% ratio  | RIVN 16.1% ratio     │
+└──────────────────────────────────────────────┘`,
+  },
+  {
+    title: "Social Sentiment",
+    tier: "STARTER",
+    description: "Unified social sentiment analysis combining StockTwits, Reddit (WallStreetBets, stocks, investing), and FinTwit data into a single scored view per ticker.",
+    details: [
+      "StockTwits sentiment — bullish/bearish ratios and message volume",
+      "Reddit coverage — mentions across r/wallstreetbets, r/stocks, r/investing",
+      "FinTwit integration — financial Twitter posts via Exa search",
+      "Unified social score combining all three sources",
+      "Bullish/bearish keyword analysis on Reddit posts",
+      "Relevance scoring for FinTwit content quality",
+    ],
+    mockup: `┌──────────────────────────────────────────────┐
+│  SOCIAL SENTIMENT              NVDA          │
+│                                              │
+│  OVERALL SCORE: 72 / 100     BULLISH        │
+│                                              │
+│  STOCKTWITS                                  │
+│  Bullish: 68%  Bearish: 18%  Vol: 2,340     │
+│                                              │
+│  REDDIT  (42 mentions)                       │
+│  Bullish: 28  Bearish: 8  Neutral: 6        │
+│                                              │
+│  FINTWIT  (8 posts)                          │
+│  Relevance: 0.84  Mostly positive            │
+│                                              │
+│  Combined social score feeds into composite  │
+└──────────────────────────────────────────────┘`,
+  },
 ];
 
 const TIER_COLORS: Record<string, string> = {

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { fetchCompanyInfo, getCachedCompanyInfo } from "../../lib/companyInfo";
 
 export function TickerWithCompanyName({
@@ -12,26 +12,36 @@ export function TickerWithCompanyName({
   const [companyInfo, setCompanyInfo] = useState(() => getCachedCompanyInfo(normalizedSymbol));
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
+  const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleOpen = () => {
     setOpen(true);
-
     if (companyInfo || loading) return;
 
-    setLoading(true);
-    fetchCompanyInfo(normalizedSymbol)
-      .then((info) => {
-        if (info) setCompanyInfo(info);
-      })
-      .finally(() => setLoading(false));
+    // Debounce: wait 250ms before fetching to avoid rapid hover spam
+    if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+    hoverTimeout.current = setTimeout(() => {
+      setLoading(true);
+      fetchCompanyInfo(normalizedSymbol)
+        .then((info) => { if (info) setCompanyInfo(info); })
+        .finally(() => setLoading(false));
+    }, 250);
+  };
+
+  const handleClose = () => {
+    setOpen(false);
+    if (hoverTimeout.current) {
+      clearTimeout(hoverTimeout.current);
+      hoverTimeout.current = null;
+    }
   };
 
   return (
     <span
       onMouseEnter={handleOpen}
-      onMouseLeave={() => setOpen(false)}
+      onMouseLeave={handleClose}
       onFocus={handleOpen}
-      onBlur={() => setOpen(false)}
+      onBlur={handleClose}
       tabIndex={0}
       title={companyInfo?.name ?? normalizedSymbol}
       style={{

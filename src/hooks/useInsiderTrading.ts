@@ -114,6 +114,12 @@ async function loadInsiderSummary(symbol: string): Promise<InsiderActivitySummar
   }
 
   const summary = processTransactions(symbol, transactions);
+  if (cache.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of cache) {
+      if (now - v.ts >= CACHE_TTL_MS) cache.delete(k);
+    }
+  }
   cache.set(symbol, { data: summary, ts: Date.now() });
   return summary;
 }

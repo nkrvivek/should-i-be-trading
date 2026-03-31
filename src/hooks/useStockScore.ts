@@ -156,6 +156,14 @@ async function loadStockScore(symbol: string, seedData: StockScoreSeedData = {})
 
     const result = computeStockScore(symbol, buildStockScoreInput(snapshot, incomeStatements, insiderData));
     scoreCache.set(symbol, { score: result, expires: Date.now() + CACHE_TTL });
+
+    if (scoreCache.size > 500) {
+      const now = Date.now();
+      for (const [k, v] of scoreCache) {
+        if (v.expires < now) scoreCache.delete(k);
+      }
+    }
+
     return result;
   })();
 

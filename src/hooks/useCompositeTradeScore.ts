@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   computeCompositeTradeScore,
   type CompositeScoreInputs,
@@ -92,6 +93,18 @@ export function getCompositeTradeScore(symbol: string, overrides?: Partial<Compo
     expires: Date.now() + CACHE_TTL_MS,
   });
 
+  if (compositeCache.size > 500) {
+    const now = Date.now();
+    for (const [k, v] of compositeCache) {
+      if (v.expires < now) compositeCache.delete(k);
+    }
+    // If still over limit, remove oldest
+    if (compositeCache.size > 500) {
+      const oldest = [...compositeCache.entries()].sort((a, b) => a[1].expires - b[1].expires)[0];
+      if (oldest) compositeCache.delete(oldest[0]);
+    }
+  }
+
   return score;
 }
 
@@ -118,6 +131,16 @@ export function useCompositeTradeScore(
   score: CompositeTradeScore | null;
   loading: boolean;
 } {
+  const [, forceUpdate] = useState(0);
+
+  // Re-compute when symbol changes or cache expires
+  useEffect(() => {
+    if (!symbol) return;
+    // Schedule a re-render after cache TTL to pick up fresh data
+    const timer = setTimeout(() => forceUpdate(n => n + 1), CACHE_TTL_MS);
+    return () => clearTimeout(timer);
+  }, [symbol]);
+
   return {
     score: symbol ? getCompositeTradeScore(symbol, overrides) : null,
     loading: false,

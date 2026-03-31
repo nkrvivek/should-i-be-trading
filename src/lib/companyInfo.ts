@@ -48,6 +48,11 @@ export async function fetchCompanyInfo(symbol: string): Promise<CompanyInfo | nu
         sector: (data.finnhubIndustry as string | undefined) ?? "",
       };
 
+      if (companyCache.size > 1000) {
+        // Company names rarely change — just stop adding new ones
+        const first = companyCache.keys().next().value;
+        if (first) companyCache.delete(first);
+      }
       companyCache.set(normalizedSymbol, info);
       return info;
     } catch {

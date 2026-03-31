@@ -115,6 +115,12 @@ async function fetchSocialSentimentData(symbol: string, force = false): Promise<
     }
 
     const result = { sentiment, score: computeSocialScore(sentiment) };
+    if (cache.size > 500) {
+      const now = Date.now();
+      for (const [k, v] of cache) {
+        if (v.expires < now) cache.delete(k);
+      }
+    }
     cache.set(key, { data: result, expires: Date.now() + CACHE_TTL });
     return result;
   })().finally(() => {

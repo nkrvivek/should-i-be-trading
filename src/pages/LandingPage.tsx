@@ -329,6 +329,16 @@ export function LandingPage() {
             description="Real-time composite risk score (A-F) analyzing concentration, diversification, drawdown, position sizing, and hedging across your entire portfolio."
             tag="FREE"
           />
+          <FeatureCard
+            title="Composite Trade Score"
+            description="Per-ticker TRADE/CAUTION/AVOID verdict combining 9 signals across market regime, insider activity, social sentiment, and more."
+            tag="FREE"
+          />
+          <FeatureCard
+            title="Day Trading Activity"
+            description="Volume leaders, insider clusters, FINRA short interest, most active stocks and biggest movers."
+            tag="STARTER"
+          />
         </div>
       </section>
 

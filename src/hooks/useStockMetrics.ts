@@ -25,7 +25,7 @@ export type StockMetrics = {
 };
 
 const ALL_TICKERS = Object.keys(SECTOR_MAP);
-const CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+const CACHE_TTL = 30 * 60 * 1000; // 30 minutes
 const CACHE_KEY = "sibt_stock_metrics_cache";
 
 let cachedMetrics: StockMetrics[] | null = null;

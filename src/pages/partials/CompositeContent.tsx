@@ -50,8 +50,7 @@ export default function CompositeContent() {
   const [tradeOnly, setTradeOnly] = useState(false);
 
   const rows = useMemo(() => {
-    void cacheRevision;
-
+    // cacheRevision triggers recompute when market/regime data changes
     return metrics
       .map((metric) => {
         const estimatedStockScore = estimateStockScoreFromMetrics(metric);

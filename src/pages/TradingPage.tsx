@@ -49,8 +49,49 @@ const monoStyle: React.CSSProperties = {
 };
 
 type TabId = "import" | "strategies" | "portfolio" | "orders" | "flow" | "journal";
+type StageId = "setup" | "review" | "execute" | "reflect";
 
 const BROKER_TABS: TabId[] = ["portfolio", "orders", "flow", "journal"];
+const STAGE_ORDER: StageId[] = ["setup", "review", "execute", "reflect"];
+
+const STAGE_CONFIG: Record<StageId, { label: string; blurb: string; tabs: TabId[] }> = {
+  setup: {
+    label: "Setup",
+    blurb: "Bring in holdings, inspect positions, and decide which symbols deserve deeper work.",
+    tabs: ["import", "portfolio"],
+  },
+  review: {
+    label: "Review",
+    blurb: "Pressure-test the idea with strategy analysis, flow, and account context before sending anything live.",
+    tabs: ["strategies", "flow"],
+  },
+  execute: {
+    label: "Execute",
+    blurb: "Handle live orders and broker-side activity only after the setup and review are already clear.",
+    tabs: ["orders"],
+  },
+  reflect: {
+    label: "Reflect",
+    blurb: "Close the loop with journaling, exits, and trade review discipline.",
+    tabs: ["journal"],
+  },
+};
+
+const TAB_LABELS: Record<TabId, string> = {
+  import: "Import Portfolio",
+  portfolio: "Portfolio",
+  strategies: "Strategy Review",
+  flow: "Flow Analysis",
+  orders: "Orders",
+  journal: "Journal",
+};
+
+function getStageForTab(tab: TabId): StageId {
+  if (tab === "import" || tab === "portfolio") return "setup";
+  if (tab === "strategies" || tab === "flow") return "review";
+  if (tab === "orders") return "execute";
+  return "reflect";
+}
 
 export default function TradingPage() {
   useMarketScore();
@@ -137,6 +178,11 @@ export default function TradingPage() {
     : ["import", "strategies"];
 
   const activeTab = tab;
+  const visibleStages = STAGE_ORDER.filter((stage) =>
+    STAGE_CONFIG[stage].tabs.some((stageTab) => visibleTabs.includes(stageTab)),
+  );
+  const activeStage = getStageForTab(activeTab);
+  const visibleStageTabs = STAGE_CONFIG[activeStage].tabs.filter((stageTab) => visibleTabs.includes(stageTab));
 
   // Wrap placeOrder/cancelOrder for legacy OrdersPanel (uses first connection)
   const handlePlaceOrder = async (order: OrderRequest) => {
@@ -268,28 +314,76 @@ export default function TradingPage() {
         </div>
       )}
 
-      {/* Tab Navigation */}
-      <div style={{ display: "flex", gap: 0, marginBottom: 16, borderBottom: "1px solid var(--border-dim)" }}>
-        {visibleTabs.map((t) => (
-          <button
-            key={t}
-            onClick={() => setTab(t)}
-            style={{
-              ...monoStyle,
-              fontSize: 14,
-              padding: "8px 20px",
-              border: "none",
-              borderBottom: activeTab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
-              background: "none",
-              color: activeTab === t ? "var(--signal-core)" : "var(--text-secondary)",
-              cursor: "pointer",
-              fontWeight: tab === t ? 600 : 400,
-              textTransform: "uppercase",
-            }}
-          >
-            {t === "import" ? "IMPORT PORTFOLIO" : t}
-          </button>
-        ))}
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {visibleStages.map((stage) => {
+            const isActive = stage === activeStage;
+            return (
+              <button
+                key={stage}
+                type="button"
+                onClick={() => {
+                  const fallbackTab = STAGE_CONFIG[stage].tabs.find((stageTab) => visibleTabs.includes(stageTab));
+                  if (fallbackTab) setTab(fallbackTab);
+                }}
+                style={{
+                  ...monoStyle,
+                  fontSize: 12,
+                  fontWeight: 700,
+                  padding: "8px 12px",
+                  borderRadius: 999,
+                  border: `1px solid ${isActive ? "var(--signal-core)" : "var(--border-dim)"}`,
+                  background: isActive ? "rgba(5, 173, 152, 0.12)" : "transparent",
+                  color: isActive ? "var(--signal-core)" : "var(--text-secondary)",
+                  cursor: "pointer",
+                  textTransform: "uppercase",
+                }}
+              >
+                {STAGE_CONFIG[stage].label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{
+          padding: 14,
+          borderRadius: 8,
+          border: "1px solid var(--border-dim)",
+          background: "var(--bg-panel-raised)",
+        }}>
+          <div style={{ ...monoStyle, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>
+            CURRENT STAGE
+          </div>
+          <div style={{ ...monoStyle, fontSize: 18, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+            {STAGE_CONFIG[activeStage].label}
+          </div>
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+            {STAGE_CONFIG[activeStage].blurb}
+          </div>
+        </div>
+
+        <div style={{ display: "flex", gap: 0, borderBottom: "1px solid var(--border-dim)" }}>
+          {visibleStageTabs.map((t) => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              style={{
+                ...monoStyle,
+                fontSize: 14,
+                padding: "8px 20px",
+                border: "none",
+                borderBottom: activeTab === t ? "2px solid var(--signal-core)" : "2px solid transparent",
+                background: "none",
+                color: activeTab === t ? "var(--signal-core)" : "var(--text-secondary)",
+                cursor: "pointer",
+                fontWeight: activeTab === t ? 600 : 400,
+                textTransform: "uppercase",
+              }}
+            >
+              {TAB_LABELS[t]}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Tab content */}

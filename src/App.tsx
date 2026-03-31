@@ -24,6 +24,7 @@ const loadFeaturesPage = () => import("./pages/FeaturesPage").then(m => ({ defau
 const loadResearchPage = () => import("./pages/ResearchPage");
 const loadSignalsPage = () => import("./pages/SignalsPage");
 const loadTradingPage = () => import("./pages/TradingPage");
+const loadProgressPage = () => import("./pages/ProgressPage").then(m => ({ default: m.ProgressPage }));
 
 // Lazy-load all pages — keeps initial bundle small
 const DashboardPage = lazy(loadDashboardPage);
@@ -40,6 +41,7 @@ const FeaturesPage = lazy(loadFeaturesPage);
 const ResearchPage = lazy(loadResearchPage);
 const SignalsPage = lazy(loadSignalsPage);
 const TradingPage = lazy(loadTradingPage);
+const ProgressPage = lazy(loadProgressPage);
 
 const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/": loadDashboardPage,
@@ -47,6 +49,7 @@ const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/signals": loadSignalsPage,
   "/trading": loadTradingPage,
   "/learn": loadGlossaryPage,
+  "/progress": loadProgressPage,
   "/settings": loadSettingsPage,
 };
 
@@ -85,6 +88,7 @@ export default function App() {
           <Route path="/research" element={<ErrorBoundary><ResearchPage /></ErrorBoundary>} />
           <Route path="/signals" element={<ErrorBoundary><SignalsPage /></ErrorBoundary>} />
           <Route path="/trading" element={<ErrorBoundary><GatedPage feature="terminal"><TradingPage /></GatedPage></ErrorBoundary>} />
+          <Route path="/progress" element={<ErrorBoundary><ProgressPage /></ErrorBoundary>} />
 
           {/* Gated utility */}
           <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
@@ -136,18 +140,19 @@ function GatedPage({ feature, children }: { feature: Feature; children: React.Re
   return <>{children}</>;
 }
 
-/** Exported for use in TerminalShell header — now 5 items instead of 12 */
+/** Exported for use in TerminalShell header */
 export function AppNav() {
   const { user, profile, effectiveTier, isTrialActive, trialDaysLeft, hasActiveSubscription } = useAuthStore();
   const navigate = useNavigate();
   const { toggleTheme, theme } = useAppStore();
 
   const links: { to: string; label: string; pro?: boolean }[] = [
-    { to: "/", label: "DASHBOARD" },
+    { to: "/", label: "HOME" },
     { to: "/research", label: "RESEARCH" },
     { to: "/signals", label: "SIGNALS" },
     { to: "/trading", label: "TRADING", pro: true },
     { to: "/learn", label: "LEARN" },
+    { to: "/progress", label: "PROGRESS" },
   ];
 
   return (

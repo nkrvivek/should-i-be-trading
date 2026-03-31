@@ -1,19 +1,9 @@
-/**
- * SIGNALS hub — regime analysis, macro data, COT positioning, backtesting, strategy simulator.
- *
- * Sub-tabs: REGIME | MACRO | COT | BACKTEST | SIMULATOR
- * Consolidates: RegimePage + MacroPage + BacktestPage + StrategiesPage + COT Dashboard
- *
- * Uses visited-tabs pattern: tabs mount on first visit and stay mounted (display:none)
- * to prevent full remount/re-fetch on every tab switch.
- */
-
-import { lazy, Suspense, useState, useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
-import { TabBar, useActiveTab, type TabDef } from "../components/layout/TabBar";
+import { TabBar, type TabDef } from "../components/layout/TabBar";
 import { useRegime } from "../hooks/useRegime";
 
-// Lazy-load sub-tab content to keep initial bundle light
 const RegimeContent = lazy(() => import("./partials/RegimeContent"));
 const MacroContent = lazy(() => import("./partials/MacroContent"));
 const CotContent = lazy(() => import("./partials/CotContent"));
@@ -21,14 +11,35 @@ const BacktestContent = lazy(() => import("./partials/BacktestContent"));
 const SimulatorContent = lazy(() => import("./partials/SimulatorContent"));
 const ActivityContent = lazy(() => import("./partials/ActivityContent"));
 
-const TABS: TabDef[] = [
+const PRIMARY_TABS: TabDef[] = [
+  { id: "validation", label: "Validation" },
+  { id: "practice", label: "Practice" },
+  { id: "advanced", label: "Advanced" },
+];
+
+const VALIDATION_TABS: TabDef[] = [
   { id: "regime", label: "Regime" },
-  { id: "macro", label: "Macro" },
-  { id: "cot", label: "COT", badge: "NEW", badgeColor: "var(--signal-core)" },
   { id: "backtest", label: "Backtest" },
+];
+
+const PRACTICE_TABS: TabDef[] = [
   { id: "simulator", label: "Simulator" },
   { id: "activity", label: "Activity", badge: "NEW", badgeColor: "var(--signal-core)" },
 ];
+
+const ADVANCED_TABS: TabDef[] = [
+  { id: "macro", label: "Macro" },
+  { id: "cot", label: "COT", badge: "NEW", badgeColor: "var(--signal-core)" },
+];
+
+const LEGACY_TAB_MAP: Record<string, { primary: string; view: string }> = {
+  regime: { primary: "validation", view: "regime" },
+  backtest: { primary: "validation", view: "backtest" },
+  simulator: { primary: "practice", view: "simulator" },
+  activity: { primary: "practice", view: "activity" },
+  macro: { primary: "advanced", view: "macro" },
+  cot: { primary: "advanced", view: "cot" },
+};
 
 const loading = (
   <div style={{ padding: 32, textAlign: "center", fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)" }}>
@@ -37,57 +48,137 @@ const loading = (
 );
 
 export default function SignalsPage() {
-  const activeTab = useActiveTab(TABS);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const rawTab = searchParams.get("tab") || "validation";
+  const rawView = searchParams.get("view");
   const { data: cri } = useRegime(true);
 
-  // Track which tabs have been visited so we mount on first visit and keep mounted
-  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(() => new Set([activeTab]));
-
   useEffect(() => {
-    setVisitedTabs((prev) => { // eslint-disable-line react-hooks/set-state-in-effect
-      if (prev.has(activeTab)) return prev;
-      return new Set([...prev, activeTab]);
-    });
-  }, [activeTab]);
+    const legacy = LEGACY_TAB_MAP[rawTab];
+    if (!legacy) return;
+
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", legacy.primary);
+    next.set("view", legacy.view);
+    setSearchParams(next, { replace: true });
+  }, [rawTab, searchParams, setSearchParams]);
+
+  const primaryTab = PRIMARY_TABS.some((tab) => tab.id === rawTab)
+    ? rawTab
+    : LEGACY_TAB_MAP[rawTab]?.primary ?? "validation";
+
+  const activeView = getActiveView(primaryTab, rawView, rawTab);
+
+  const selectPrimaryTab = (id: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", id);
+    if (id === "validation" && !VALIDATION_TABS.some((tab) => tab.id === next.get("view"))) {
+      next.set("view", "regime");
+    } else if (id === "practice" && !PRACTICE_TABS.some((tab) => tab.id === next.get("view"))) {
+      next.set("view", "simulator");
+    } else if (id === "advanced" && !ADVANCED_TABS.some((tab) => tab.id === next.get("view"))) {
+      next.set("view", "macro");
+    }
+    setSearchParams(next, { replace: true });
+  };
+
+  const secondaryTabs = primaryTab === "validation"
+    ? VALIDATION_TABS
+    : primaryTab === "practice"
+      ? PRACTICE_TABS
+      : ADVANCED_TABS;
 
   return (
     <TerminalShell cri={cri}>
       <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: 0 }}>
-        <TabBar tabs={TABS} />
+        <div style={{
+          display: "flex",
+          flexDirection: "column",
+          gap: 0,
+          borderBottom: "1px solid var(--border-dim)",
+          background: "var(--bg-panel)",
+        }}>
+          <PrimarySignalsTabBar tabs={PRIMARY_TABS} active={primaryTab} onSelect={selectPrimaryTab} />
+          <div style={{ padding: "0 12px 8px" }}>
+            <TabBar tabs={secondaryTabs} paramKey="view" />
+          </div>
+        </div>
 
         <div style={{ padding: "12px 0" }}>
-          {visitedTabs.has("regime") && (
-            <div style={{ display: activeTab === "regime" ? "block" : "none" }}>
-              <Suspense fallback={loading}><RegimeContent /></Suspense>
-            </div>
+          {activeView === "regime" && (
+            <Suspense fallback={loading}><RegimeContent /></Suspense>
           )}
-          {visitedTabs.has("macro") && (
-            <div style={{ display: activeTab === "macro" ? "block" : "none" }}>
-              <Suspense fallback={loading}><MacroContent /></Suspense>
-            </div>
+          {activeView === "backtest" && (
+            <Suspense fallback={loading}><BacktestContent /></Suspense>
           )}
-          {visitedTabs.has("cot") && (
-            <div style={{ display: activeTab === "cot" ? "block" : "none" }}>
-              <Suspense fallback={loading}><CotContent /></Suspense>
-            </div>
+          {activeView === "simulator" && (
+            <Suspense fallback={loading}><SimulatorContent /></Suspense>
           )}
-          {visitedTabs.has("backtest") && (
-            <div style={{ display: activeTab === "backtest" ? "block" : "none" }}>
-              <Suspense fallback={loading}><BacktestContent /></Suspense>
-            </div>
+          {activeView === "activity" && (
+            <Suspense fallback={loading}><ActivityContent /></Suspense>
           )}
-          {visitedTabs.has("simulator") && (
-            <div style={{ display: activeTab === "simulator" ? "block" : "none" }}>
-              <Suspense fallback={loading}><SimulatorContent /></Suspense>
-            </div>
+          {activeView === "macro" && (
+            <Suspense fallback={loading}><MacroContent /></Suspense>
           )}
-          {visitedTabs.has("activity") && (
-            <div style={{ display: activeTab === "activity" ? "block" : "none" }}>
-              <Suspense fallback={loading}><ActivityContent /></Suspense>
-            </div>
+          {activeView === "cot" && (
+            <Suspense fallback={loading}><CotContent /></Suspense>
           )}
         </div>
       </div>
     </TerminalShell>
+  );
+}
+
+function getActiveView(primaryTab: string, rawView: string | null, rawTab: string) {
+  if (primaryTab === "validation") {
+    if (VALIDATION_TABS.some((tab) => tab.id === rawView)) return rawView ?? "regime";
+    return LEGACY_TAB_MAP[rawTab]?.view ?? "regime";
+  }
+
+  if (primaryTab === "practice") {
+    if (PRACTICE_TABS.some((tab) => tab.id === rawView)) return rawView ?? "simulator";
+    return LEGACY_TAB_MAP[rawTab]?.view ?? "simulator";
+  }
+
+  if (ADVANCED_TABS.some((tab) => tab.id === rawView)) return rawView ?? "macro";
+  return LEGACY_TAB_MAP[rawTab]?.view ?? "macro";
+}
+
+function PrimarySignalsTabBar({ tabs, active, onSelect }: { tabs: TabDef[]; active: string; onSelect: (id: string) => void }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: 0,
+        overflowX: "auto",
+      }}
+    >
+      {tabs.map((tab) => {
+        const isActive = tab.id === active;
+        return (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => onSelect(tab.id)}
+            style={{
+              padding: "10px 16px",
+              fontFamily: "var(--font-mono)",
+              fontSize: 12,
+              fontWeight: isActive ? 700 : 400,
+              letterSpacing: "0.04em",
+              color: isActive ? "var(--accent-bg)" : "var(--text-muted)",
+              background: "none",
+              border: "none",
+              borderBottom: `2px solid ${isActive ? "var(--accent-bg)" : "transparent"}`,
+              cursor: "pointer",
+              textTransform: "uppercase",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
+    </div>
   );
 }

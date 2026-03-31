@@ -7,7 +7,26 @@ import { useRegimeMonitor } from "../../hooks/useRegimeMonitor";
 import { useStockMetrics } from "../../hooks/useStockMetrics";
 import { estimateStockScoreFromMetrics } from "../../lib/estimatedStockScore";
 
-type SortKey = "overall" | "stockScore" | "confidence" | "marketBase" | "tickerScore" | "symbol";
+type SortKey = "symbol" | "sector" | "price" | "verdict" | "overall" | "stockScore" | "marketBase" | "tickerScore" | "confidence";
+type SortDirection = "asc" | "desc";
+
+const DEFAULT_SORT_DIRECTION: Record<SortKey, SortDirection> = {
+  symbol: "asc",
+  sector: "asc",
+  price: "desc",
+  verdict: "desc",
+  overall: "desc",
+  stockScore: "desc",
+  marketBase: "desc",
+  tickerScore: "desc",
+  confidence: "desc",
+};
+
+const VERDICT_ORDER = {
+  AVOID: 0,
+  CAUTION: 1,
+  TRADE: 2,
+} as const;
 
 function formatPrice(value: number | null): string {
   if (value == null) return "---";
@@ -26,6 +45,7 @@ export default function CompositeContent() {
   const [query, setQuery] = useState("");
   const [sector, setSector] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<SortKey>("overall");
+  const [sortDirection, setSortDirection] = useState<SortDirection>(DEFAULT_SORT_DIRECTION.overall);
   const [tradeOnly, setTradeOnly] = useState(false);
 
   const rows = useMemo(() => {
@@ -66,16 +86,27 @@ export default function CompositeContent() {
     });
 
     next.sort((a, b) => {
-      if (sortBy === "symbol") return a.metric.symbol.localeCompare(b.metric.symbol);
-      if (sortBy === "stockScore") return b.estimatedStockScore.composite - a.estimatedStockScore.composite;
-      if (sortBy === "confidence") return b.composite.confidence - a.composite.confidence;
-      if (sortBy === "marketBase") return b.composite.marketBase - a.composite.marketBase;
-      if (sortBy === "tickerScore") return b.composite.tickerScore - a.composite.tickerScore;
-      return b.composite.overall - a.composite.overall;
+      let comparison = 0;
+
+      if (sortBy === "symbol") comparison = a.metric.symbol.localeCompare(b.metric.symbol);
+      else if (sortBy === "sector") comparison = a.metric.sector.localeCompare(b.metric.sector);
+      else if (sortBy === "price") comparison = compareNullableNumber(a.metric.currentPrice, b.metric.currentPrice);
+      else if (sortBy === "verdict") comparison = VERDICT_ORDER[a.composite.verdict] - VERDICT_ORDER[b.composite.verdict];
+      else if (sortBy === "stockScore") comparison = a.estimatedStockScore.composite - b.estimatedStockScore.composite;
+      else if (sortBy === "confidence") comparison = a.composite.confidence - b.composite.confidence;
+      else if (sortBy === "marketBase") comparison = a.composite.marketBase - b.composite.marketBase;
+      else if (sortBy === "tickerScore") comparison = a.composite.tickerScore - b.composite.tickerScore;
+      else comparison = a.composite.overall - b.composite.overall;
+
+      if (comparison === 0) {
+        comparison = a.metric.symbol.localeCompare(b.metric.symbol);
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
     });
 
     return next;
-  }, [query, rows, sector, sortBy, tradeOnly]);
+  }, [query, rows, sector, sortBy, sortDirection, tradeOnly]);
 
   const verdictCounts = useMemo(() => {
     return rows.reduce(
@@ -86,6 +117,16 @@ export default function CompositeContent() {
       { TRADE: 0, CAUTION: 0, AVOID: 0 },
     );
   }, [rows]);
+
+  const handleSort = (key: SortKey) => {
+    if (sortBy === key) {
+      setSortDirection((direction) => (direction === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortBy(key);
+    setSortDirection(DEFAULT_SORT_DIRECTION[key]);
+  };
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -140,14 +181,6 @@ export default function CompositeContent() {
               </option>
             ))}
           </select>
-          <select value={sortBy} onChange={(event) => setSortBy(event.target.value as SortKey)} style={selectStyle}>
-            <option value="overall">Sort: Overall</option>
-            <option value="stockScore">Sort: Stock Score</option>
-            <option value="marketBase">Sort: Market Base</option>
-            <option value="tickerScore">Sort: Ticker Score</option>
-            <option value="confidence">Sort: Confidence</option>
-            <option value="symbol">Sort: Symbol</option>
-          </select>
           <button
             type="button"
             onClick={() => setTradeOnly((current) => !current)}
@@ -160,6 +193,9 @@ export default function CompositeContent() {
           >
             {tradeOnly ? "Showing TRADE only" : "Show TRADE only"}
           </button>
+          <div style={{ display: "flex", alignItems: "center", padding: "0 4px", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+            Click column labels to sort
+          </div>
         </div>
 
         {loading && metrics.length === 0 ? (
@@ -171,15 +207,15 @@ export default function CompositeContent() {
             <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-                  <Th>Symbol</Th>
-                  <Th>Sector</Th>
-                  <Th align="right">Price</Th>
-                  <Th>Verdict</Th>
-                  <Th align="right">Overall</Th>
-                  <Th align="right">Stock</Th>
-                  <Th align="right">Market</Th>
-                  <Th align="right">Ticker</Th>
-                  <Th align="right">Conf.</Th>
+                  <Th sortKey="symbol" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Symbol</Th>
+                  <Th sortKey="sector" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Sector</Th>
+                  <Th align="right" sortKey="price" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Price</Th>
+                  <Th sortKey="verdict" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Verdict</Th>
+                  <Th align="right" sortKey="overall" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Overall</Th>
+                  <Th align="right" sortKey="stockScore" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Stock</Th>
+                  <Th align="right" sortKey="marketBase" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Market</Th>
+                  <Th align="right" sortKey="tickerScore" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Ticker</Th>
+                  <Th align="right" sortKey="confidence" sortBy={sortBy} sortDirection={sortDirection} onSort={handleSort}>Conf.</Th>
                 </tr>
               </thead>
               <tbody>
@@ -248,20 +284,64 @@ function SummaryCard({ label, value, tone }: { label: string; value: string; ton
   );
 }
 
-function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
+function compareNullableNumber(a: number | null | undefined, b: number | null | undefined): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  return a - b;
+}
+
+function Th({
+  children,
+  align = "left",
+  sortKey,
+  sortBy,
+  sortDirection,
+  onSort,
+}: {
+  children: React.ReactNode;
+  align?: "left" | "right";
+  sortKey: SortKey;
+  sortBy: SortKey;
+  sortDirection: SortDirection;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = sortBy === sortKey;
+
   return (
     <th
       style={{
-        padding: "4px 8px",
+        padding: 0,
         textAlign: align,
         fontWeight: 500,
         fontSize: 11,
         color: "var(--text-muted)",
-        textTransform: "uppercase",
-        letterSpacing: "0.05em",
       }}
     >
-      {children}
+      <button
+        type="button"
+        onClick={() => onSort(sortKey)}
+        style={{
+          width: "100%",
+          padding: "4px 8px",
+          display: "flex",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
+          alignItems: "center",
+          gap: 4,
+          border: "none",
+          background: "transparent",
+          font: "inherit",
+          color: active ? "var(--text-primary)" : "var(--text-muted)",
+          textTransform: "uppercase",
+          letterSpacing: "0.05em",
+          cursor: "pointer",
+        }}
+      >
+        <span>{children}</span>
+        <span style={{ color: active ? "var(--signal-core)" : "var(--text-muted)" }}>
+          {active ? (sortDirection === "asc" ? "▲" : "▼") : "↕"}
+        </span>
+      </button>
     </th>
   );
 }

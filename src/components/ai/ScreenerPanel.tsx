@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { chatWithClaude } from "../../api/anthropicClient";
 import { AiUsageBadge, useAiUsage } from "./AiUsageBadge";
 import { useStockMetrics, type StockMetrics } from "../../hooks/useStockMetrics";
@@ -6,6 +6,7 @@ import {
   SCREENER_SYSTEM_PROMPT,
   parseScreenerResponse,
   applyFilters,
+  type ScreenerSpec,
 } from "../../api/screenerPrompts";
 
 const EXAMPLE_QUERIES = [
@@ -63,6 +64,20 @@ const METRIC_LABELS: Record<string, string> = {
   currentPrice: "Price",
 };
 
+type SortDirection = "asc" | "desc";
+
+function getDefaultSortDirection(column: string): SortDirection {
+  return column === "symbol" || column === "sector" ? "asc" : "desc";
+}
+
+function compareMetricValues(a: unknown, b: unknown): number {
+  if (a == null && b == null) return 0;
+  if (a == null) return 1;
+  if (b == null) return -1;
+  if (typeof a === "string" && typeof b === "string") return a.localeCompare(b);
+  return Number(a) - Number(b);
+}
+
 export function ScreenerPanel() {
   const { metrics, loading: metricsLoading, progress } = useStockMetrics();
   const [query, setQuery] = useState("");
@@ -73,6 +88,15 @@ export function ScreenerPanel() {
   const limitReached = !aiUsage.isOwnKey && aiUsage.used >= aiUsage.limit;
   const [columns, setColumns] = useState<string[]>([]);
   const [filterDescription, setFilterDescription] = useState("");
+  const [sortColumn, setSortColumn] = useState("symbol");
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
+
+  const applyDefaultSort = (spec: ScreenerSpec) => {
+    const nextSortColumn = spec.sort?.field ?? "symbol";
+    const nextSortDirection = spec.sort?.direction ?? getDefaultSortDirection(nextSortColumn);
+    setSortColumn(nextSortColumn);
+    setSortDirection(nextSortDirection);
+  };
 
   const handleScreen = async (q: string) => {
     const input = q.trim();
@@ -104,6 +128,7 @@ export function ScreenerPanel() {
       setFilterDescription(
         spec.filters.map((f) => `${METRIC_LABELS[f.field] ?? f.field} ${f.operator} ${f.value}`).join(", "),
       );
+      applyDefaultSort(spec);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Screening failed");
     } finally {
@@ -115,6 +140,37 @@ export function ScreenerPanel() {
     e.preventDefault();
     handleScreen(query);
   };
+
+  const handleSort = (column: string) => {
+    if (sortColumn === column) {
+      setSortDirection((current) => (current === "asc" ? "desc" : "asc"));
+      return;
+    }
+
+    setSortColumn(column);
+    setSortDirection(getDefaultSortDirection(column));
+  };
+
+  const sortedResults = useMemo(() => {
+    if (!results) return null;
+
+    const next = [...results];
+    next.sort((a, b) => {
+      let comparison = 0;
+
+      if (sortColumn === "symbol") comparison = a.symbol.localeCompare(b.symbol);
+      else if (sortColumn === "sector") comparison = a.sector.localeCompare(b.sector);
+      else comparison = compareMetricValues(a[sortColumn as keyof StockMetrics], b[sortColumn as keyof StockMetrics]);
+
+      if (comparison === 0) {
+        comparison = a.symbol.localeCompare(b.symbol);
+      }
+
+      return sortDirection === "asc" ? comparison : -comparison;
+    });
+
+    return next;
+  }, [results, sortColumn, sortDirection]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 8 }}>
@@ -175,33 +231,34 @@ export function ScreenerPanel() {
           </div>
         )}
 
-        {results && results.length > 0 && (
+        {sortedResults && sortedResults.length > 0 && (
           <>
-            <div style={{ padding: "4px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
-              {results.length} results — {filterDescription}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, flexWrap: "wrap", padding: "4px 0", fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+              <span>{sortedResults.length} results — {filterDescription}</span>
+              <span>Click column labels to sort</span>
             </div>
             <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "var(--font-mono)", fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid var(--border-dim)" }}>
-                  <th style={{ padding: "4px 8px", textAlign: "left", fontWeight: 500, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase" }}>
+                  <SortableHeader column="symbol" sortColumn={sortColumn} sortDirection={sortDirection} onSort={handleSort}>
                     Symbol
-                  </th>
+                  </SortableHeader>
                   {columns.map((col) => (
-                    <th key={col} style={{
-                      padding: "4px 8px",
-                      textAlign: col === "sector" ? "left" : "right",
-                      fontWeight: 500,
-                      fontSize: 11,
-                      color: "var(--text-muted)",
-                      textTransform: "uppercase",
-                    }}>
+                    <SortableHeader
+                      key={col}
+                      column={col}
+                      align={col === "sector" ? "left" : "right"}
+                      sortColumn={sortColumn}
+                      sortDirection={sortDirection}
+                      onSort={handleSort}
+                    >
                       {METRIC_LABELS[col] ?? col}
-                    </th>
+                    </SortableHeader>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {results.map((r) => (
+                {sortedResults.map((r) => (
                   <tr key={r.symbol} style={{ borderBottom: "1px solid var(--border-dim)", height: 32 }}>
                     <td style={{ padding: "0 8px", fontWeight: 700, color: "var(--text-primary)" }}>
                       {r.symbol}
@@ -276,5 +333,51 @@ export function ScreenerPanel() {
         </div>
       </div>
     </div>
+  );
+}
+
+function SortableHeader({
+  children,
+  column,
+  align = "left",
+  sortColumn,
+  sortDirection,
+  onSort,
+}: {
+  children: React.ReactNode;
+  column: string;
+  align?: "left" | "right";
+  sortColumn: string;
+  sortDirection: SortDirection;
+  onSort: (column: string) => void;
+}) {
+  const active = sortColumn === column;
+
+  return (
+    <th style={{ padding: 0, textAlign: align, fontWeight: 500, fontSize: 11 }}>
+      <button
+        type="button"
+        onClick={() => onSort(column)}
+        style={{
+          width: "100%",
+          padding: "4px 8px",
+          display: "flex",
+          justifyContent: align === "right" ? "flex-end" : "flex-start",
+          alignItems: "center",
+          gap: 4,
+          border: "none",
+          background: "transparent",
+          font: "inherit",
+          color: active ? "var(--text-primary)" : "var(--text-muted)",
+          textTransform: "uppercase",
+          cursor: "pointer",
+        }}
+      >
+        <span>{children}</span>
+        <span style={{ color: active ? "var(--signal-core)" : "var(--text-muted)" }}>
+          {active ? (sortDirection === "asc" ? "▲" : "▼") : "↕"}
+        </span>
+      </button>
+    </th>
   );
 }

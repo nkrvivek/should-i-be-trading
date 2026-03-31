@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useRegime } from "../hooks/useRegime";
 import { usePortfolio } from "../hooks/usePortfolio";
 import { useMarketHours } from "../hooks/useMarketHours";
@@ -8,6 +8,7 @@ import { computeVerdict } from "../lib/trafficLight";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { TabBar, type TabDef } from "../components/layout/TabBar";
 import { Panel } from "../components/layout/Panel";
+import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
 import { ChatPanel } from "../components/ai/ChatPanel";
 import { ResearchPanel } from "../components/ai/ResearchPanel";
 import { ScreenerPanel } from "../components/ai/ScreenerPanel";
@@ -59,6 +60,7 @@ const loading = (
 );
 
 export default function ResearchPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab") || "composite";
   const rawView = searchParams.get("view");
@@ -128,6 +130,33 @@ export default function ResearchPage() {
         </div>
 
         <div style={{ flex: 1, overflow: "auto", padding: "12px 0" }}>
+          <div style={{ marginBottom: 12 }}>
+            <WorkflowHandoffCard
+              eyebrow="Next Step"
+              title={primaryTab === "composite"
+                ? "Take the best-ranked name into validation."
+                : primaryTab === "ticker"
+                  ? "If the thesis holds, move into review."
+                  : "Use the signal only if it improves the setup."}
+              body={primaryTab === "composite"
+                ? "Composite should narrow your attention, not force a trade. After triage, validate with regime, backtest, or simulator before execution."
+                : primaryTab === "ticker"
+                  ? "Once the ticker-level work is coherent, move into Trade to review structure, order quality, and actual execution choices."
+                  : "Secondary research is most useful when it sharpens the setup. If it doesn’t change the decision, go back to the main workflow."}
+              actions={[
+                {
+                  label: primaryTab === "ticker" ? "Open Trading Review" : "Open Signals",
+                  onClick: () => navigate(primaryTab === "ticker" ? "/trading" : "/signals"),
+                },
+                {
+                  label: "View Progress",
+                  onClick: () => navigate("/progress"),
+                  tone: "secondary",
+                },
+              ]}
+            />
+          </div>
+
           {primaryTab === "composite" && (
             <Suspense fallback={loading}>
               <CompositeContent />

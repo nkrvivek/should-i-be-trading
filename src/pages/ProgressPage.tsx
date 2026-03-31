@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { Panel } from "../components/layout/Panel";
+import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
 import { useLearningAcademy } from "../hooks/useLearningAcademy";
 import { useTradeJournal } from "../hooks/useTradeJournal";
 import { ALL_LEARNING_LESSONS, LEARNING_TRACKS } from "../lib/academy";
@@ -78,6 +79,28 @@ export function ProgressPage() {
   return (
     <TerminalShell>
       <div style={{ maxWidth: 1400, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 }}>
+        <WorkflowHandoffCard
+          eyebrow="Next Step"
+          title="Turn progress into the next action."
+          body="Progress only matters if it changes what you do next. Continue a lesson, review a setup, or close a journal loop while the feedback is still fresh."
+          actions={[
+            {
+              label: "Continue Learn",
+              onClick: () => navigate("/learn"),
+            },
+            {
+              label: "Open Research",
+              onClick: () => navigate("/research"),
+              tone: "secondary",
+            },
+            {
+              label: "Open Trading",
+              onClick: () => navigate("/trading"),
+              tone: "secondary",
+            },
+          ]}
+        />
+
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.2fr) minmax(300px, 0.8fr)", gap: 16 }}>
           <Panel title="Progress Overview">
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

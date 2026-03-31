@@ -6,6 +6,7 @@ import { useTradeJournal } from "../hooks/useTradeJournal";
 import { useMarketScore } from "../hooks/useMarketScore";
 import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import { TradeVerdictBadgeWithScore } from "../components/trading/TradeVerdictBadge";
+import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
 import { detectWashSales } from "../lib/strategy/washSaleDetector";
 import type { OrderRequest } from "../lib/brokers/types";
 import type { SimulatorLeg } from "../lib/strategy/payoff";
@@ -384,6 +385,48 @@ export default function TradingPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div style={{ marginBottom: 16 }}>
+        <WorkflowHandoffCard
+          eyebrow="Next Step"
+          title={activeStage === "setup"
+            ? "Move into review before you commit."
+            : activeStage === "review"
+              ? "If the setup survives review, execute with discipline."
+              : activeStage === "execute"
+                ? "After execution, close the loop."
+                : "Use reflection to improve the next decision."}
+          body={activeStage === "setup"
+            ? "Importing and positions are just the starting point. Pressure-test the ticker with strategy review, flow, or order analysis before any live order."
+            : activeStage === "review"
+              ? "A clean review should hand you either a better order plan or a clear reason to skip the trade."
+              : activeStage === "execute"
+                ? "Execution is not the end of the process. Journal the trade and compare the result to the original setup."
+                : "Reflection should feed the next watchlist, next lesson, or next setup review instead of sitting in isolation."}
+          actions={[
+            {
+              label: activeStage === "setup"
+                ? "Open Signals"
+                : activeStage === "review"
+                  ? "Open Orders"
+                  : activeStage === "execute"
+                    ? "Open Journal"
+                    : "Open Progress",
+              onClick: () => {
+                if (activeStage === "setup") navigate("/signals");
+                else if (activeStage === "review") setTab("orders");
+                else if (activeStage === "execute") setTab("journal");
+                else navigate("/progress");
+              },
+            },
+            {
+              label: "Open Research",
+              onClick: () => navigate("/research"),
+              tone: "secondary",
+            },
+          ]}
+        />
       </div>
 
       {/* Tab content */}

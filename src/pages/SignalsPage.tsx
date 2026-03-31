@@ -1,8 +1,9 @@
 import { lazy, Suspense, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { TabBar, type TabDef } from "../components/layout/TabBar";
 import { useRegime } from "../hooks/useRegime";
+import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
 
 const RegimeContent = lazy(() => import("./partials/RegimeContent"));
 const MacroContent = lazy(() => import("./partials/MacroContent"));
@@ -48,6 +49,7 @@ const loading = (
 );
 
 export default function SignalsPage() {
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab") || "validation";
   const rawView = searchParams.get("view");
@@ -105,6 +107,33 @@ export default function SignalsPage() {
         </div>
 
         <div style={{ padding: "12px 0" }}>
+          <div style={{ marginBottom: 12 }}>
+            <WorkflowHandoffCard
+              eyebrow="Next Step"
+              title={primaryTab === "validation"
+                ? "Use this to decide whether the setup deserves action."
+                : primaryTab === "practice"
+                  ? "Turn practice into a cleaner real workflow."
+                  : "Advanced context should support, not replace, the main process."}
+              body={primaryTab === "validation"
+                ? "Validation is where you confirm or reject the setup. If it still holds, move into Trade review. If not, go back to Research and keep triaging."
+                : primaryTab === "practice"
+                  ? "Once the simulator or activity view makes the setup clear, move into Trade review or log the lesson in Progress."
+                  : "Macro and COT should sharpen conviction, not become a detour. Use them when they change risk framing."}
+              actions={[
+                {
+                  label: primaryTab === "practice" ? "Open Trading" : "Open Research",
+                  onClick: () => navigate(primaryTab === "practice" ? "/trading" : "/research"),
+                },
+                {
+                  label: "Open Progress",
+                  onClick: () => navigate("/progress"),
+                  tone: "secondary",
+                },
+              ]}
+            />
+          </div>
+
           {activeView === "regime" && (
             <Suspense fallback={loading}><RegimeContent /></Suspense>
           )}

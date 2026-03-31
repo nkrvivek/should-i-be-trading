@@ -129,7 +129,7 @@ export default function CompositeContent() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div data-testid="composite-content" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       <div
         style={{
           padding: "12px 16px",
@@ -166,6 +166,7 @@ export default function CompositeContent() {
         <SummaryCard label="Avoid" value={`${verdictCounts.AVOID}`} tone="var(--negative)" />
       </div>
 
+      <div data-testid="composite-rankings">
       <Panel title="Composite Rankings">
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
           <input
@@ -265,6 +266,7 @@ export default function CompositeContent() {
           </div>
         )}
       </Panel>
+      </div>
     </div>
   );
 }

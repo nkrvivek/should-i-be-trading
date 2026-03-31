@@ -87,7 +87,7 @@ export default function SocialContent() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div data-testid="social-content" style={{ display: "flex", flexDirection: "column", gap: 16 }}>
       {/* Header */}
       <div
         style={{
@@ -182,7 +182,7 @@ export default function SocialContent() {
 
       {/* Ticker Info Bar */}
       {activeTicker && quote && (
-        <div style={{
+        <div data-testid="social-ticker-bar" style={{
           display: "flex",
           alignItems: "center",
           gap: 16,
@@ -251,7 +251,7 @@ export default function SocialContent() {
       {data && !loading && (
         <>
           {/* Top row: gauge + score card */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+          <div data-testid="social-results" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
             {/* Sentiment Gauge */}
             <div
               style={{
@@ -416,6 +416,7 @@ export default function SocialContent() {
       {/* Trending */}
       {trendingTickers.length > 0 && (
         <div
+          data-testid="social-trending"
           style={{
             padding: 16,
             background: "var(--bg-panel)",

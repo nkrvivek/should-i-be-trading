@@ -20,10 +20,10 @@ test.describe("Landing Page", () => {
     await expect(page.getByText("TRADE", { exact: true }).first()).toBeVisible();
   });
 
-  test('"Should You Be Trading Right Now?" heading is visible', async ({ page }) => {
+  test('"Know When to Trade. Know When to Wait." heading is visible', async ({ page }) => {
     const heading = page.locator("h1");
-    await expect(heading).toContainText("Should You Be Trading");
-    await expect(heading).toContainText("Right Now?");
+    await expect(heading).toContainText("Know When to Trade.");
+    await expect(heading).toContainText("Know When to Wait.");
   });
 
   test("SIGN IN and GET STARTED buttons are visible", async ({ page }) => {
@@ -37,8 +37,8 @@ test.describe("Landing Page", () => {
     expect(page.url()).toContain("/login");
   });
 
-  test("TRY FREE button navigates to /login", async ({ page }) => {
-    await page.locator("button", { hasText: "TRY FREE" }).first().click();
+  test("START FREE TRIAL button navigates to /login", async ({ page }) => {
+    await page.locator("button", { hasText: "START FREE TRIAL" }).first().click();
     await page.waitForURL(/\/login/, { timeout: 10_000 });
     expect(page.url()).toContain("/login");
   });
@@ -58,8 +58,7 @@ test.describe("Landing Page", () => {
   });
 
   test("features section is present with feature cards", async ({ page }) => {
-    // "What You Get" heading in the features section
-    await expect(page.getByText("What You Get").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("Built For Active Traders").first()).toBeVisible({ timeout: 10_000 });
     // Verify a sampling of feature card titles
     await expect(page.getByText("Market Quality Score").first()).toBeVisible();
     await expect(page.getByText("Technical Signal Overlays").first()).toBeVisible();
@@ -73,12 +72,12 @@ test.describe("Landing Page", () => {
     await expect(page.getByText("PRO", { exact: true }).first()).toBeVisible();
   });
 
-  test("How It Works section is present", async ({ page }) => {
-    await expect(page.getByText("How It Works").first()).toBeVisible({ timeout: 10_000 });
+  test("How Traders Use It section is present", async ({ page }) => {
+    await expect(page.getByText("How Traders Use It").first()).toBeVisible({ timeout: 10_000 });
     // Steps rendered by the Step component
-    await expect(page.getByText("Sign Up").first()).toBeVisible();
-    await expect(page.getByText("Analyze").first()).toBeVisible();
-    await expect(page.getByText("Decide").first()).toBeVisible();
+    await expect(page.getByText("Check The Tape").first()).toBeVisible();
+    await expect(page.getByText("Check The Ticker").first()).toBeVisible();
+    await expect(page.getByText("Decide With Context").first()).toBeVisible();
   });
 
   test("POWERED BY section lists data providers", async ({ page }) => {
@@ -112,7 +111,7 @@ test.describe("Landing Page", () => {
     await page.waitForLoadState("domcontentloaded");
 
     // Page should render
-    await expect(page.locator("h1")).toContainText("Should You Be Trading");
+    await expect(page.locator("h1")).toContainText("Know When to Trade.");
 
     // No horizontal overflow
     const bodyWidth = await page.evaluate(() => document.body.scrollWidth);

@@ -47,7 +47,7 @@ export function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="landing-hero" style={{
+      <section data-testid="landing-hero" className="landing-hero" style={{
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
@@ -84,6 +84,18 @@ export function LandingPage() {
           </div>
         </div>
 
+        <div style={{
+          position: "relative",
+          marginBottom: 14,
+          fontFamily: "var(--font-mono)",
+          fontSize: 12,
+          fontWeight: 700,
+          letterSpacing: "0.14em",
+          color: "#05AD98",
+        }}>
+          EXPLAINABLE TRADE DECISION ENGINE
+        </div>
+
         <h1 className="landing-hero-heading" style={{
           position: "relative",
           fontFamily: "var(--font-mono)",
@@ -93,8 +105,9 @@ export function LandingPage() {
           maxWidth: 700,
           marginBottom: 16,
         }}>
-          Should You Be Trading{" "}
-          <span style={{ color: "#05AD98" }}>Right Now?</span>
+          Know When to Trade.
+          <br />
+          <span style={{ color: "#05AD98" }}>Know When to Wait.</span>
         </h1>
 
         <p className="landing-hero-desc" style={{
@@ -105,16 +118,14 @@ export function LandingPage() {
           lineHeight: 1.7,
           marginBottom: 32,
         }}>
-          One dashboard. One verdict. Market regime analysis, technical signal overlays,
-          earnings intelligence, institutional 13F filings, insider &amp; congressional trades,
-          news sentiment, SIBT Score, multi-brokerage portfolio sync, strategy execution,
-          and portfolio-aware AI.
-          Combined into a simple traffic light that tells you whether the market conditions favor trading today.
+          SIBT turns market regime, ticker quality, earnings context, insider activity, and
+          social sentiment into a fast <span style={{ color: "#e2e8f0", fontWeight: 600 }}>TRADE / CAUTION / AVOID</span> verdict.
+          Built for active stock traders who need a better decision before they place the order.
         </p>
 
         <div className="landing-cta-row" style={{ position: "relative", display: "flex", gap: 12 }}>
           <button onClick={() => navigate("/login")} style={ctaBtn}>
-            TRY FREE
+            START FREE TRIAL
           </button>
           <button onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })} style={ctaSecondaryBtn}>
             SEE PRICING
@@ -122,6 +133,41 @@ export function LandingPage() {
         </div>
 
         <p style={{ position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", marginTop: 16 }}>
+          14-day Pro trial. No credit card required.
+        </p>
+
+        <div data-testid="landing-hero-proof" style={{
+          position: "relative",
+          display: "flex",
+          gap: 10,
+          flexWrap: "wrap",
+          justifyContent: "center",
+          marginTop: 18,
+          maxWidth: 820,
+        }}>
+          {[
+            "Market + ticker signals in one score",
+            "Explainable verdicts, not black-box picks",
+            "Built for active stock traders",
+          ].map((item) => (
+            <span
+              key={item}
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: 11,
+                color: "#cbd5e1",
+                padding: "6px 10px",
+                border: "1px solid #1e293b",
+                borderRadius: 999,
+                background: "rgba(15, 21, 25, 0.8)",
+              }}
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+
+        <p style={{ position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", marginTop: 18 }}>
           Not investment advice. Analytical tool only.
         </p>
       </section>
@@ -193,10 +239,47 @@ export function LandingPage() {
         </p>
       </section>
 
+      <section data-testid="landing-differentiators" className="landing-section" style={{
+        padding: "24px 32px 72px",
+        maxWidth: 1100,
+        margin: "0 auto",
+      }}>
+        <h2 style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, textAlign: "center", marginBottom: 16 }}>
+          Why Traders Use SIBT
+        </h2>
+        <p style={{
+          maxWidth: 720,
+          margin: "0 auto 36px",
+          textAlign: "center",
+          color: "#94a3b8",
+          lineHeight: 1.7,
+          fontSize: 15,
+        }}>
+          Most tools give you more data. SIBT is designed to improve the actual trade decision.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 18 }}>
+          <FeatureCard
+            title="Start With The Tape"
+            description="Check market regime first so strong names in weak conditions do not get over-promoted."
+            tag="CORE"
+          />
+          <FeatureCard
+            title="Get A Verdict, Not Just Data"
+            description="See TRADE, CAUTION, or AVOID instead of stitching together five disconnected dashboards."
+            tag="CORE"
+          />
+          <FeatureCard
+            title="See Why The Score Changed"
+            description="Break out market and ticker inputs so you understand the signal before you trust it."
+            tag="CORE"
+          />
+        </div>
+      </section>
+
       {/* Features */}
-      <section className="landing-section" style={{ padding: "80px 32px", maxWidth: 1100, margin: "0 auto" }}>
+      <section data-testid="landing-features" className="landing-section" style={{ padding: "80px 32px", maxWidth: 1100, margin: "0 auto" }}>
         <h2 style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, textAlign: "center", marginBottom: 48 }}>
-          What You Get
+          Built For Active Traders
         </h2>
         <div className="landing-features-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 24 }}>
           <FeatureCard
@@ -343,19 +426,19 @@ export function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="landing-section" style={{ padding: "80px 32px", borderTop: "1px solid #1e293b" }}>
+      <section data-testid="landing-how-it-works" className="landing-section" style={{ padding: "80px 32px", borderTop: "1px solid #1e293b" }}>
         <h2 style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 600, textAlign: "center", marginBottom: 48 }}>
-          How It Works
+          How Traders Use It
         </h2>
         <div className="landing-steps-row" style={{ display: "flex", justifyContent: "center", gap: 48, maxWidth: 800, margin: "0 auto" }}>
-          <Step n={1} title="Sign Up" desc="14-day Pro trial, no credit card required. Free tier available permanently." />
-          <Step n={2} title="Analyze" desc="Market Quality Score, technical signals, SIBT Score, earnings intelligence, insider activity, 13F filings, news sentiment, COT data, and AI briefings — all computed automatically. Import your portfolio via CSV or connect your broker." />
-          <Step n={3} title="Decide" desc="Get a clear verdict: TRADE, CAUTION, or NO TRADE. Bring your own keys for advanced features." />
+          <Step n={1} title="Check The Tape" desc="Start with market regime, breadth, and macro context so you know whether conditions support active trading." />
+          <Step n={2} title="Check The Ticker" desc="Review the trade score with earnings, insider, social, and stock-quality context in one place." />
+          <Step n={3} title="Decide With Context" desc="Take trades when the market and ticker agree. Skip borderline setups before capital is at risk." />
         </div>
       </section>
 
       {/* Pricing */}
-      <section id="pricing" data-theme="dark" className="landing-section" style={{ padding: "80px 24px", borderTop: "1px solid #1e293b" }}>
+      <section id="pricing" data-testid="landing-pricing" data-theme="dark" className="landing-section" style={{ padding: "80px 24px", borderTop: "1px solid #1e293b" }}>
         <PricingContent />
       </section>
 

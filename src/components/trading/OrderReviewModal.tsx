@@ -253,10 +253,10 @@ export default function OrderReviewModal({
   }, []);
 
   return (
-    <div style={overlayStyle} onClick={onClose}>
-      <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
+    <div data-testid="order-review-overlay" style={overlayStyle} onClick={onClose}>
+      <div data-testid="order-review-modal" style={modalStyle} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div style={headerStyle}>
+        <div data-testid="order-review-header" style={headerStyle}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               <span style={{ ...monoStyle, fontSize: 16, fontWeight: 700 }}>

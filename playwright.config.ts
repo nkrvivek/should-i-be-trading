@@ -26,7 +26,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
 
   use: {
-    baseURL: process.env.TEST_BASE_URL || "http://localhost:5173",
+    baseURL: process.env.TEST_BASE_URL || "http://127.0.0.1:5173",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
@@ -36,7 +36,7 @@ export default defineConfig({
     // Public pages — no auth required, can run independently
     {
       name: "public",
-      testMatch: /public-pages\.spec\.ts/,
+      testMatch: /(public-pages|marketing-screenshots)\.spec\.ts/,
       use: { ...devices["Desktop Chrome"], storageState: { cookies: [], origins: [] } },
     },
     // Auth setup — runs first, saves session to e2e/.auth/user.json
@@ -55,7 +55,7 @@ export default defineConfig({
     // Main tests — reuse saved auth session
     {
       name: "chromium",
-      testIgnore: [/public-pages\.spec\.ts/, /auth-flows\.spec\.ts/],
+      testIgnore: [/public-pages\.spec\.ts/, /marketing-screenshots\.spec\.ts/, /auth-flows\.spec\.ts/],
       use: { ...devices["Desktop Chrome"], storageState: "e2e/.auth/user.json" },
       dependencies: ["setup"],
     },
@@ -63,7 +63,7 @@ export default defineConfig({
 
   // Start dev server automatically if not already running
   webServer: {
-    command: "npm run dev",
+    command: "npm run dev -- --host 127.0.0.1",
     port: 5173,
     reuseExistingServer: true,
     timeout: 30_000,

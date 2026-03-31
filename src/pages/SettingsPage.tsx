@@ -2,6 +2,7 @@ import { useState } from "react";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { ProfileForm } from "../components/settings/ProfileForm";
 import { RiskPreferencesForm } from "../components/settings/RiskPreferencesForm";
+import { WorkflowProfileForm } from "../components/settings/WorkflowProfileForm";
 import { ApiKeyForm } from "../components/settings/ApiKeyForm";
 import BrokerageSettings from "../components/settings/BrokerageSettings";
 import { TierManager } from "../components/settings/TierManager";
@@ -83,6 +84,8 @@ export function SettingsPage() {
         {activeTab === "profile" && (
           <>
             <ProfileForm />
+            <div style={{ height: 1, background: "var(--border-dim)", margin: "24px 0" }} />
+            <WorkflowProfileForm />
             <div style={{ height: 1, background: "var(--border-dim)", margin: "24px 0" }} />
             <RiskPreferencesForm />
           </>

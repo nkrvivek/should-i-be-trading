@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { exaSearch, type ExaResult } from "../../api/exaClient";
+import { isSupabaseConfigured } from "../../lib/supabase";
 
 export function ResearchPanel() {
   const [query, setQuery] = useState("");
@@ -7,14 +8,15 @@ export function ResearchPanel() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const hasKey = !!import.meta.env.VITE_EXA_API_KEY;
+  // Available if user has local env key OR Supabase is configured (edge function has server-side key)
+  const hasAccess = !!import.meta.env.VITE_EXA_API_KEY || isSupabaseConfigured();
 
   const handleSearch = async (e?: React.SyntheticEvent) => {
     e?.preventDefault();
     if (!query.trim() || loading) return;
 
-    if (!hasKey) {
-      setError("Exa API key not configured. Add VITE_EXA_API_KEY to your .env file or configure it in Settings.");
+    if (!hasAccess) {
+      setError("Sign in and configure your Exa API key in Settings, or the server-side proxy will handle it automatically.");
       return;
     }
 
@@ -117,7 +119,7 @@ export function ResearchPanel() {
         ))}
         {!loading && results.length === 0 && !error && (
           <div style={{ padding: 16, fontFamily: "var(--font-mono)", fontSize: 13, color: "var(--text-muted)", textAlign: "center" }}>
-            {hasKey
+            {hasAccess
               ? "Search for market news, company research, or trading topics via Exa."
               : "Configure your Exa API key in Settings to enable research. Get a free key at exa.ai"}
           </div>

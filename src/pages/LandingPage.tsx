@@ -261,17 +261,14 @@ export function LandingPage() {
           <FeatureCard
             title="Start With The Tape"
             description="Check market regime first so strong names in weak conditions do not get over-promoted."
-            tag="CORE"
           />
           <FeatureCard
             title="Get A Verdict, Not Just Data"
             description="See TRADE, CAUTION, or AVOID instead of stitching together five disconnected dashboards."
-            tag="CORE"
           />
           <FeatureCard
             title="See Why The Score Changed"
             description="Break out market and ticker inputs so you understand the signal before you trust it."
-            tag="CORE"
           />
         </div>
       </section>
@@ -514,7 +511,7 @@ function Light({ color, label, active }: { color: string; label: string; active?
   );
 }
 
-function FeatureCard({ title, description, tag }: { title: string; description: string; tag: string }) {
+function FeatureCard({ title, description, tag }: { title: string; description: string; tag?: string }) {
   const tagColor = tag === "FREE" ? "#05AD98" : tag === "STARTER" ? "#60a5fa" : tag === "PRO" ? "#F5A623" : "#8B5CF6";
   return (
     <div style={{
@@ -525,17 +522,19 @@ function FeatureCard({ title, description, tag }: { title: string; description: 
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
         <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600 }}>{title}</span>
-        <span style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: 11,
-          padding: "2px 8px",
-          borderRadius: 999,
-          background: `${tagColor}22`,
-          color: tagColor,
-          fontWeight: 600,
-        }}>
-          {tag}
-        </span>
+        {tag ? (
+          <span style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: 11,
+            padding: "2px 8px",
+            borderRadius: 999,
+            background: `${tagColor}22`,
+            color: tagColor,
+            fontWeight: 600,
+          }}>
+            {tag}
+          </span>
+        ) : null}
       </div>
       <p style={{ fontSize: 14, color: "#94a3b8", lineHeight: 1.6, margin: 0 }}>{description}</p>
     </div>

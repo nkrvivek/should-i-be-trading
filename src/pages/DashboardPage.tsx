@@ -28,11 +28,13 @@ import { FearGreedGauge } from "../components/dashboard/FearGreedGauge";
 import { QuickMarketStats } from "../components/dashboard/QuickMarketStats";
 import { TradeVerdictBadgeWithScore } from "../components/trading/TradeVerdictBadge";
 import { TickerWithCompanyName } from "../components/shared/TickerWithCompanyName";
+import { useAppStore, type WorkflowProfile } from "../stores/appStore";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
 export function DashboardPage() {
   const navigate = useNavigate();
+  const { workflowProfile, setWorkflowProfile } = useAppStore();
   const { status } = useMarketHours();
   const { history, recordVerdict } = useSignalHistory();
   const { score: marketScore, loading: scoreLoading, refresh: refreshScore } = useMarketScore();
@@ -120,6 +122,7 @@ export function DashboardPage() {
   const lastJournalEntry = entries[0] ?? null;
   const stance = regime?.actionStance ?? verdict.vixRegime.label;
   const regimeLabel = regime?.marketState ?? verdict.signal.replace("_", " ");
+  const workflowPreset = WORKFLOW_PRESETS[workflowProfile];
 
   return (
     <TerminalShell>
@@ -165,8 +168,41 @@ export function DashboardPage() {
                       {regimeLabel}
                     </div>
                     <p style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.65, color: "var(--text-secondary)" }}>
-                      Start with the tape, stay selective when the market is fragile, and only push into setup review when the ticker and regime align.
+                      {workflowPreset.stanceCopy}
                     </p>
+                  </div>
+                  <div style={presetCardStyle}>
+                    <div style={{ ...mono, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>
+                      WORKFLOW PROFILE
+                    </div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                      {WORKFLOW_OPTIONS.map((option) => {
+                        const active = option.id === workflowProfile;
+                        return (
+                          <button
+                            key={option.id}
+                            type="button"
+                            onClick={() => setWorkflowProfile(option.id)}
+                            style={{
+                              ...mono,
+                              fontSize: 12,
+                              fontWeight: 700,
+                              padding: "6px 10px",
+                              borderRadius: 999,
+                              border: `1px solid ${active ? "var(--signal-core)" : "var(--border-dim)"}`,
+                              background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
+                              color: active ? "var(--signal-core)" : "var(--text-secondary)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            {option.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                      {workflowPreset.summary}
+                    </div>
                   </div>
                   {marketScore && <QuickMarketStats score={marketScore} />}
                 </div>
@@ -179,39 +215,39 @@ export function DashboardPage() {
             <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
               <ActionCard
                 eyebrow="Learn"
-                title={nextLesson ? nextLesson.title : "Start the academy"}
+                title={workflowPreset.learnTitle(nextLesson?.title)}
                 body={nextLessonTrack
-                  ? `${nextLessonTrack.title} • ${nextLesson.durationMinutes} min • ${nextLesson.riskLevel.toUpperCase()} risk framing`
-                  : "Pick up the next lesson, then move directly into simulator or research practice."}
-                cta="Resume Lesson"
-                secondary={nextLesson?.simulatorRoute ? "Open Simulator" : nextLesson?.followUpRoute ? "Open Follow-Up" : undefined}
+                  ? `${nextLessonTrack.title} • ${nextLesson.durationMinutes} min • ${nextLesson.riskLevel.toUpperCase()} risk framing • ${workflowPreset.learnBody}`
+                  : workflowPreset.learnFallback}
+                cta={workflowPreset.learnCta}
+                secondary={workflowPreset.learnSecondaryLabel(nextLesson)}
                 onClick={() => navigate("/learn")}
                 onSecondaryClick={() => {
-                  if (nextLesson?.simulatorRoute) navigate(nextLesson.simulatorRoute);
-                  else if (nextLesson?.followUpRoute) navigate(nextLesson.followUpRoute);
+                  const route = workflowPreset.learnSecondaryRoute(nextLesson);
+                  if (route) navigate(route);
                 }}
               />
               <ActionCard
                 eyebrow="Research"
-                title="Focus on the best-ranked setups"
+                title={workflowPreset.researchTitle}
                 body={topOpportunities.length
-                  ? `${topOpportunities[0].symbol} leads the current composite list. Review the top-ranked names before widening out into lower-conviction ideas.`
+                  ? `${topOpportunities[0].symbol} leads the current composite list. ${workflowPreset.researchBody}`
                   : metricsLoading
                     ? `Loading fundamentals universe ${metricsProgress.done}/${metricsProgress.total}`
-                    : "Open the composite screener to triage what deserves attention first."}
-                cta="Open Composite"
-                secondary={watchlistFocus.length ? "Review Watchlist" : undefined}
+                    : workflowPreset.researchFallback}
+                cta={workflowPreset.researchCta}
+                secondary={watchlistFocus.length ? workflowPreset.researchSecondary : undefined}
                 onClick={() => navigate("/research?tab=composite")}
                 onSecondaryClick={watchlistFocus.length ? () => navigate("/research") : undefined}
               />
               <ActionCard
                 eyebrow="Trade"
-                title={openTrades.length ? `${openTrades.length} trade${openTrades.length === 1 ? "" : "s"} need follow-up` : "Review before you execute"}
+                title={openTrades.length ? `${openTrades.length} trade${openTrades.length === 1 ? "" : "s"} need follow-up` : workflowPreset.tradeTitle}
                 body={openTrades.length
                   ? `You have ${openTrades.length} open journal ${openTrades.length === 1 ? "entry" : "entries"} to revisit. Close the loop with execution review and journaling.`
-                  : "Use order review and the trade checklist before sending anything to a broker."}
-                cta={openTrades.length ? "Open Journal" : "Open Trading"}
-                secondary="Order Review"
+                  : workflowPreset.tradeBody}
+                cta={openTrades.length ? "Open Journal" : workflowPreset.tradeCta}
+                secondary={workflowPreset.tradeSecondary}
                 onClick={() => navigate(openTrades.length ? "/trading?tab=journal" : "/trading")}
                 onSecondaryClick={() => navigate("/trading")}
               />
@@ -535,4 +571,95 @@ const secondaryBtnStyle: React.CSSProperties = {
   background: "transparent",
   color: "var(--text-secondary)",
   cursor: "pointer",
+};
+
+const presetCardStyle: React.CSSProperties = {
+  padding: 12,
+  borderRadius: 8,
+  border: "1px solid var(--border-dim)",
+  background: "var(--bg-panel-raised)",
+};
+
+const WORKFLOW_OPTIONS: Array<{ id: WorkflowProfile; label: string }> = [
+  { id: "beginner", label: "Beginner" },
+  { id: "active_trader", label: "Active Trader" },
+  { id: "options_trader", label: "Options Trader" },
+];
+
+const WORKFLOW_PRESETS: Record<WorkflowProfile, {
+  summary: string;
+  stanceCopy: string;
+  learnTitle: (lessonTitle?: string) => string;
+  learnBody: string;
+  learnFallback: string;
+  learnCta: string;
+  learnSecondaryLabel: (lesson?: { simulatorRoute?: string; followUpRoute?: string }) => string | undefined;
+  learnSecondaryRoute: (lesson?: { simulatorRoute?: string; followUpRoute?: string }) => string | undefined;
+  researchTitle: string;
+  researchBody: string;
+  researchFallback: string;
+  researchCta: string;
+  researchSecondary: string;
+  tradeTitle: string;
+  tradeBody: string;
+  tradeCta: string;
+  tradeSecondary: string;
+}> = {
+  beginner: {
+    summary: "Start with education and simulator reps before pushing into live execution. The app should slow you down and make the next step obvious.",
+    stanceCopy: "Start with the tape, keep the process simple, and only move into review when the ticker and regime align. Learn first, simulate second, trade last.",
+    learnTitle: (lessonTitle) => lessonTitle ?? "Start the academy",
+    learnBody: "Stay on the guided lesson path until the order ticket and risk framing feel obvious.",
+    learnFallback: "Pick up the next lesson, then move into simulator practice instead of skipping straight to live trading.",
+    learnCta: "Resume Lesson",
+    learnSecondaryLabel: (lesson) => lesson?.simulatorRoute ? "Open Simulator" : lesson?.followUpRoute ? "Open Follow-Up" : undefined,
+    learnSecondaryRoute: (lesson) => lesson?.simulatorRoute ?? lesson?.followUpRoute,
+    researchTitle: "Focus on the clearest setups",
+    researchBody: "Review the highest-ranked ideas first and ignore lower-conviction noise.",
+    researchFallback: "Open the composite screener to triage what deserves attention first.",
+    researchCta: "Open Composite",
+    researchSecondary: "Review Watchlist",
+    tradeTitle: "Review before you execute",
+    tradeBody: "Use order review and the trade checklist before sending anything to a broker.",
+    tradeCta: "Open Trading",
+    tradeSecondary: "Order Review",
+  },
+  active_trader: {
+    summary: "Bias toward fast triage, tighter validation, and cleaner review loops. The app should help you narrow faster without skipping discipline.",
+    stanceCopy: "Start with the tape, narrow quickly to the highest-conviction names, and use review to reject weak setups before they reach execution.",
+    learnTitle: (lessonTitle) => lessonTitle ? `Sharpen with ${lessonTitle}` : "Refresh the playbook",
+    learnBody: "Use shorter refreshers to reinforce discipline and stop drift in your process.",
+    learnFallback: "Use the academy as a fast refresher, then move into research or trading review.",
+    learnCta: "Open Learn",
+    learnSecondaryLabel: () => "Open Progress",
+    learnSecondaryRoute: () => "/progress",
+    researchTitle: "Work the ranked list fast",
+    researchBody: "Take the best names into validation quickly, but keep the bar high.",
+    researchFallback: "Open the composite screener and move straight into validation on the top names.",
+    researchCta: "Open Composite",
+    researchSecondary: "Open Research",
+    tradeTitle: "Keep the review loop tight",
+    tradeBody: "Execution should be fast only after the structure, risk, and thesis are already clear.",
+    tradeCta: "Open Trading",
+    tradeSecondary: "Order Review",
+  },
+  options_trader: {
+    summary: "Bias toward structure, risk definition, and simulator/order-review repetition. The app should route you into spreads, order entry, and trade review discipline.",
+    stanceCopy: "Start with the tape, but do not let a strong opinion skip structure. For options, review, simulator context, and order quality matter as much as direction.",
+    learnTitle: (lessonTitle) => lessonTitle ? `Practice ${lessonTitle}` : "Refresh options workflows",
+    learnBody: "Use lessons to reinforce structure, defined risk, and order-entry discipline before execution.",
+    learnFallback: "Revisit the options tracks, then move into simulator reps or trade review flows.",
+    learnCta: "Open Learn",
+    learnSecondaryLabel: () => "Open Simulator",
+    learnSecondaryRoute: () => "/signals?tab=practice&view=simulator",
+    researchTitle: "Find setups worth structuring",
+    researchBody: "Look for names where the regime and ticker score justify an options structure, not just a directional opinion.",
+    researchFallback: "Use composite and ticker research to narrow to names worth structuring into spreads or defined-risk setups.",
+    researchCta: "Open Composite",
+    researchSecondary: "Open Research",
+    tradeTitle: "Structure before execution",
+    tradeBody: "Use review and order quality checks before sending a multi-leg trade or options order.",
+    tradeCta: "Open Trading",
+    tradeSecondary: "Order Review",
+  },
 };

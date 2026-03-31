@@ -3,14 +3,24 @@
  * Fetches StockTwits, Reddit, and FinTwit data for a given ticker.
  */
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuthStore } from "../../stores/authStore";
 import { hasFeature } from "../../lib/featureGates";
+import { isSupabaseConfigured } from "../../lib/supabase";
+import { getEdgeHeaders } from "../../api/edgeHeaders";
+import { dedupFetch } from "../../api/fetchDedup";
 import { UpgradePrompt } from "../../components/shared/UpgradePrompt";
 import { SentimentGauge } from "../../components/social/SentimentGauge";
 import { SocialFeed } from "../../components/social/SocialFeed";
 import { TrendingTickers } from "../../components/social/TrendingTickers";
 import { useSocialSentiment } from "../../hooks/useSocialSentiment";
+
+interface TickerQuote {
+  name: string;
+  price: number;
+  change: number;
+  changePercent: number;
+}
 
 export default function SocialContent() {
   const effectiveTier = useAuthStore((s) => s.effectiveTier);
@@ -18,6 +28,45 @@ export default function SocialContent() {
   const [ticker, setTicker] = useState("");
   const [activeTicker, setActiveTicker] = useState<string | null>(null);
   const { data, loading, error, refresh } = useSocialSentiment(activeTicker);
+  const [quote, setQuote] = useState<TickerQuote | null>(null);
+
+  // Fetch company profile + quote when ticker changes
+  useEffect(() => {
+    if (!activeTicker || !isSupabaseConfigured()) { setQuote(null); return; }
+    let cancelled = false;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+
+    async function fetchQuote() {
+      const headers = await getEdgeHeaders();
+      try {
+        // Fetch Finnhub quote + FMP profile in parallel
+        const [qRes, pRes] = await Promise.allSettled([
+          dedupFetch(`${supabaseUrl}/functions/v1/finnhub?endpoint=quote&symbol=${activeTicker}`, { headers }, 60_000),
+          dedupFetch(`${supabaseUrl}/functions/v1/fmp`, {
+            method: "POST",
+            headers: { ...headers, "Content-Type": "application/json" },
+            body: JSON.stringify({ endpoint: "profile", symbol: activeTicker }),
+          }, 3600_000),
+        ]);
+
+        const q = qRes.status === "fulfilled" && qRes.value.ok ? await qRes.value.json() : null;
+        const p = pRes.status === "fulfilled" && pRes.value.ok ? await pRes.value.json() : null;
+        const profile = Array.isArray(p?.data) ? p.data[0] : p?.data;
+
+        if (!cancelled && q?.c) {
+          setQuote({
+            name: profile?.companyName ?? profile?.name ?? activeTicker,
+            price: q.c,
+            change: q.d ?? 0,
+            changePercent: q.dp ?? 0,
+          });
+        }
+      } catch { /* non-critical */ }
+    }
+
+    fetchQuote();
+    return () => { cancelled = true; };
+  }, [activeTicker]);
 
   if (!hasFeature(tier, "social_sentiment")) {
     return <UpgradePrompt feature="social_sentiment" inline />;
@@ -126,6 +175,38 @@ export default function SocialContent() {
           )}
         </div>
       </div>
+
+      {/* Ticker Info Bar */}
+      {activeTicker && quote && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          padding: "10px 16px",
+          background: "var(--bg-panel)",
+          border: "1px solid var(--border-dim)",
+          borderRadius: 4,
+          fontFamily: "var(--font-mono)",
+        }}>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
+            {activeTicker}
+          </span>
+          <span style={{ fontSize: 13, color: "var(--text-secondary)", flex: 1 }}>
+            {quote.name}
+          </span>
+          <span style={{ fontSize: 16, fontWeight: 700, color: "var(--text-primary)" }}>
+            ${quote.price.toFixed(2)}
+          </span>
+          <span style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color: quote.changePercent >= 0 ? "var(--positive)" : "var(--negative)",
+          }}>
+            {quote.change >= 0 ? "+" : ""}{quote.change.toFixed(2)} ({quote.changePercent >= 0 ? "+" : ""}{quote.changePercent.toFixed(2)}%)
+            {quote.changePercent >= 0 ? " ▲" : " ▼"}
+          </span>
+        </div>
+      )}
 
       {/* Loading / Error */}
       {loading && (

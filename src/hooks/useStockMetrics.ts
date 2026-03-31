@@ -6,6 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "../api/edgeHeaders";
+import { SECTOR_MAP } from "../lib/sectorMapping";
 
 export type StockMetrics = {
   symbol: string;
@@ -21,25 +22,6 @@ export type StockMetrics = {
   fiftyTwoWeekHigh: number | null;
   fiftyTwoWeekLow: number | null;
   currentPrice: number | null;
-};
-
-const SECTOR_MAP: Record<string, string> = {
-  AAPL: "Technology", MSFT: "Technology", NVDA: "Technology", GOOG: "Technology",
-  AMZN: "Consumer", META: "Technology", TSLA: "Consumer", AMD: "Technology", NFLX: "Communication",
-  AVGO: "Technology", CRM: "Technology", ORCL: "Technology", ADBE: "Technology", INTC: "Technology",
-  CSCO: "Technology", QCOM: "Technology", MU: "Technology", SNOW: "Technology", PLTR: "Technology",
-  DELL: "Technology", APP: "Technology", SHOP: "Technology", NOW: "Technology", PANW: "Technology",
-  JPM: "Financials", BAC: "Financials", GS: "Financials", MS: "Financials", WFC: "Financials",
-  C: "Financials", BX: "Financials", KKR: "Financials", SCHW: "Financials", AXP: "Financials",
-  V: "Financials", MA: "Financials", COF: "Financials",
-  UNH: "Healthcare", JNJ: "Healthcare", LLY: "Healthcare", PFE: "Healthcare", ABBV: "Healthcare",
-  MRK: "Healthcare", TMO: "Healthcare", ABT: "Healthcare", BMY: "Healthcare", AMGN: "Healthcare",
-  XOM: "Energy", CVX: "Energy", COP: "Energy", SLB: "Energy", EOG: "Energy",
-  DIS: "Communication", HD: "Consumer", MCD: "Consumer", NKE: "Consumer", SBUX: "Consumer",
-  WMT: "Consumer", COST: "Consumer", TGT: "Consumer", LOW: "Consumer",
-  CAT: "Industrials", BA: "Industrials", HON: "Industrials", UPS: "Industrials", RTX: "Industrials",
-  NEE: "Utilities", SO: "Utilities", DUK: "Utilities",
-  PG: "Consumer Staples", KO: "Consumer Staples", PEP: "Consumer Staples", PM: "Consumer Staples",
 };
 
 const ALL_TICKERS = Object.keys(SECTOR_MAP);

@@ -10,6 +10,21 @@ const INITIAL_DELAY_MS = 8000; // Wait 8s for sector/score fetches to finish fir
 type CacheEntry = { data: InsiderActivitySummary; ts: number };
 const cache = new Map<string, CacheEntry>();
 
+export function getCachedInsiderData(symbol: string): InsiderActivitySummary | null {
+  const trimmed = symbol.trim();
+  if (!trimmed) return null;
+
+  const candidates = Array.from(new Set([trimmed, trimmed.toUpperCase()]));
+  for (const key of candidates) {
+    const cached = cache.get(key);
+    if (cached && Date.now() - cached.ts < CACHE_TTL_MS) {
+      return cached.data;
+    }
+  }
+
+  return null;
+}
+
 function classifySignal(buyValue: number, sellValue: number): { signal: InsiderSignal; score: number } {
   const total = buyValue + sellValue;
   if (total === 0) return { signal: "NEUTRAL", score: 0 };

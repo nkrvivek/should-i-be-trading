@@ -18,6 +18,26 @@ const CLOSED_CACHE_TTL = 30 * 60_000; // 30 min when closed
 
 type FinnhubQuote = { c: number; dp: number; pc: number; o: number; h: number; l: number };
 
+function readCachedRegime(): { data: RegimeMonitorResult; ts: number } | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { data?: RegimeMonitorResult; ts?: number };
+    if (!parsed?.data || typeof parsed.ts !== "number") return null;
+    return { data: parsed.data, ts: parsed.ts };
+  } catch {
+    return null;
+  }
+}
+
+export function getCachedRegimeMonitor(): RegimeMonitorResult | null {
+  const cached = readCachedRegime();
+  if (!cached) return null;
+  return Date.now() - cached.ts < CLOSED_CACHE_TTL ? cached.data : null;
+}
+
 // ── Hook ───────────────────────────────────────────────────────────────
 
 export function useRegimeMonitor() {
@@ -176,19 +196,14 @@ export function useRegimeMonitor() {
 
   // Load from cache on mount
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const { data, ts } = JSON.parse(raw);
-        const isOpen = status === "OPEN";
-        const ttl = isOpen ? CACHE_TTL : CLOSED_CACHE_TTL;
-        if (Date.now() - ts < ttl && data) {
-          setRegime(data);
-          return;
-        }
+    const cached = readCachedRegime();
+    if (cached) {
+      const isOpen = status === "OPEN";
+      const ttl = isOpen ? CACHE_TTL : CLOSED_CACHE_TTL;
+      if (Date.now() - cached.ts < ttl) {
+        setRegime(cached.data);
+        return;
       }
-    } catch {
-      // ignore cache errors
     }
     fetchRegime();
   }, [fetchRegime, status]);

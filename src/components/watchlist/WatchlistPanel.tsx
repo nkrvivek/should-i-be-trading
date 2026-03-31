@@ -1,5 +1,6 @@
 import type { PriceData } from "../../api/types";
 import { formatPrice, formatVolume, calcChangePercent } from "../../lib/format";
+import { TradeVerdictBadgeWithScore } from "../trading/TradeVerdictBadge";
 
 type Props = {
   prices: Record<string, PriceData>;
@@ -30,7 +31,12 @@ export function WatchlistPanel({ prices, symbols }: Props) {
 
             return (
               <tr key={sym} style={{ borderBottom: "1px solid var(--border-dim)", height: 28 }}>
-                <td style={{ padding: "0 8px", fontWeight: 500, color: "var(--text-primary)" }}>{sym}</td>
+                <td style={{ padding: "0 8px", fontWeight: 500, color: "var(--text-primary)" }}>
+                  <div style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>
+                    <span>{sym}</span>
+                    <TradeVerdictBadgeWithScore symbol={sym} showScore={false} />
+                  </div>
+                </td>
                 <td style={{ padding: "0 8px", textAlign: "right", color: tone }}>{p ? formatPrice(p.last) : "---"}</td>
                 <td style={{ padding: "0 8px", textAlign: "right", color: tone }}>
                   {chg != null ? `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}` : "---"}

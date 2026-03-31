@@ -25,6 +25,14 @@ interface UseStockScoreResult {
 const scoreCache = new Map<string, { score: StockScore; expires: number }>();
 const CACHE_TTL = 20 * 60 * 1000; // 20 minutes
 
+export function getCachedStockScore(symbol: string): StockScore | null {
+  const ticker = symbol.toUpperCase().trim();
+  if (!ticker) return null;
+
+  const cached = scoreCache.get(ticker);
+  return cached && cached.expires > Date.now() ? cached.score : null;
+}
+
 export function useStockScore(): UseStockScoreResult {
   const [score, setScore] = useState<StockScore | null>(null);
   const [loading, setLoading] = useState(false);

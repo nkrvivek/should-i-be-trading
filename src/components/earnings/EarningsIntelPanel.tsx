@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useEarningsIntel, type EarningsHistoryEntry } from "../../hooks/useEarningsIntel";
 import { EarningsSummaryPanel } from "../ai/EarningsSummaryPanel";
+import { TradeVerdictBadgeWithScore } from "../trading/TradeVerdictBadge";
 
 type Props = {
   symbol: string;
@@ -198,8 +199,15 @@ export function EarningsIntelPanel({
         flexShrink: 0,
       }}>
         <div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
-            {symbol} — Q{quarter} {year} EARNINGS INTEL
+          <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 14, fontWeight: 700, color: "var(--text-primary)" }}>
+              {symbol} — Q{quarter} {year} EARNINGS INTEL
+            </div>
+            <TradeVerdictBadgeWithScore
+              symbol={symbol}
+              size="md"
+              inputs={data ? { earningsScore: data.earningsScore } : undefined}
+            />
           </div>
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginTop: 2 }}>
             SIBT Deterministic Analysis

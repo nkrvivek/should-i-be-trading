@@ -29,6 +29,16 @@ interface SocialSentimentResult {
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
 const cache = new Map<string, { data: SocialSentimentResult["data"]; expires: number }>();
 
+export function getCachedSocialScore(symbol: string): SocialScore | null {
+  const key = symbol.toUpperCase().trim();
+  if (!key) return null;
+
+  const cached = cache.get(key);
+  if (!cached || Date.now() >= cached.expires) return null;
+
+  return cached.data?.score ?? null;
+}
+
 const BULLISH_KEYWORDS = ["buy", "bull", "calls", "moon", "long", "breakout", "rally"];
 const BEARISH_KEYWORDS = ["sell", "bear", "puts", "short", "crash", "dump", "drop"];
 

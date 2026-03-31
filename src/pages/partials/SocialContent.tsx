@@ -13,6 +13,7 @@ import { UpgradePrompt } from "../../components/shared/UpgradePrompt";
 import { SentimentGauge } from "../../components/social/SentimentGauge";
 import { SocialFeed } from "../../components/social/SocialFeed";
 import { TrendingTickers } from "../../components/social/TrendingTickers";
+import { TradeVerdictBadgeWithScore } from "../../components/trading/TradeVerdictBadge";
 import { useSocialSentiment } from "../../hooks/useSocialSentiment";
 
 interface TickerQuote {
@@ -32,7 +33,7 @@ export default function SocialContent() {
 
   // Fetch company profile + quote when ticker changes
   useEffect(() => {
-    if (!activeTicker || !isSupabaseConfigured()) { setQuote(null); return; }
+    if (!activeTicker || !isSupabaseConfigured()) return;
     let cancelled = false;
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
@@ -74,11 +75,15 @@ export default function SocialContent() {
 
   const handleSearch = () => {
     const t = ticker.trim().toUpperCase();
-    if (t) setActiveTicker(t);
+    if (t) {
+      setQuote(null);
+      setActiveTicker(t);
+    }
   };
 
   const handleTrendingSelect = (symbol: string) => {
     setTicker(symbol);
+    setQuote(null);
     setActiveTicker(symbol);
   };
 
@@ -191,6 +196,10 @@ export default function SocialContent() {
           <span style={{ fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>
             {activeTicker}
           </span>
+          <TradeVerdictBadgeWithScore
+            symbol={activeTicker}
+            inputs={data ? { socialScore: data.score.overall } : undefined}
+          />
           <span style={{ fontSize: 13, color: "var(--text-secondary)", flex: 1 }}>
             {quote.name}
           </span>

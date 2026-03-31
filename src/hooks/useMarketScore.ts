@@ -9,6 +9,33 @@ const CACHE_TTL = 3 * 60_000; // 3 min during market hours
 const CLOSED_CACHE_TTL = 30 * 60_000; // 30 min when closed
 
 type FinnhubQuote = { c: number; dp: number; pc: number; o: number; h: number; l: number };
+type SectorChange = { symbol: string; change: number };
+
+export interface CachedMarketScoreSnapshot {
+  score: MarketScore;
+  sectorChanges?: SectorChange[];
+  ts: number;
+}
+
+function readCachedMarketScore(): CachedMarketScoreSnapshot | null {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as CachedMarketScoreSnapshot;
+    if (!parsed?.score || typeof parsed.ts !== "number") return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+export function getCachedMarketScore(): CachedMarketScoreSnapshot | null {
+  const cached = readCachedMarketScore();
+  if (!cached) return null;
+  return Date.now() - cached.ts < CLOSED_CACHE_TTL ? cached : null;
+}
 
 export function useMarketScore() {
   const [score, setScore] = useState<MarketScore | null>(null);
@@ -69,7 +96,7 @@ export function useMarketScore() {
       if (spyQuote?.c) spyPrice = spyQuote.c;
 
       // Phase 2: Sector quotes from Finnhub
-      const sectorChanges: { symbol: string; change: number }[] = [];
+      const sectorChanges: SectorChange[] = [];
       for (let i = 0; i < sectors.length; i += 4) {
         if (controller.signal.aborted) return;
         const batch = sectors.slice(i, i + 4);
@@ -116,7 +143,7 @@ export function useMarketScore() {
 
       // Cache
       try {
-        localStorage.setItem(CACHE_KEY, JSON.stringify({ score: result, ts: Date.now() }));
+        localStorage.setItem(CACHE_KEY, JSON.stringify({ score: result, sectorChanges, ts: Date.now() }));
       } catch { /* ignore */ }
     } catch (e) {
       if (controller.signal.aborted) return;
@@ -131,17 +158,14 @@ export function useMarketScore() {
 
   // Load from cache, then refresh
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const { score: cached, ts } = JSON.parse(raw);
-        const ttl = status === "OPEN" ? CACHE_TTL : CLOSED_CACHE_TTL;
-        if (Date.now() - ts < ttl) {
-          setScore(cached);
-          return;
-        }
+    const cached = readCachedMarketScore();
+    if (cached) {
+      const ttl = status === "OPEN" ? CACHE_TTL : CLOSED_CACHE_TTL;
+      if (Date.now() - cached.ts < ttl) {
+        setScore(cached.score);
+        return;
       }
-    } catch { /* ignore */ }
+    }
     fetchScore();
   }, [fetchScore, status]);
 

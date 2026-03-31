@@ -9,6 +9,7 @@ import StrategyAnalysisPanel from "../components/portfolio/StrategyAnalysisPanel
 import WashSalePanel from "../components/portfolio/WashSalePanel";
 import { PortfolioRiskWidget } from "../components/portfolio/PortfolioRiskWidget";
 import OrderReviewModal from "../components/trading/OrderReviewModal";
+import { TradeVerdictBadgeWithScore } from "../components/trading/TradeVerdictBadge";
 import { detectWashSales } from "../lib/strategy/washSaleDetector";
 import type { OrderRequest } from "../lib/brokers/types";
 import type { SimulatorLeg } from "../lib/strategy/payoff";
@@ -426,7 +427,12 @@ function PositionsTable({ positions, onViewStrategies }: { positions: import("..
                   </span>
                 </td>
               )}
-              <td style={{ padding: "8px 12px", fontWeight: 600, textAlign: "right" }}>{p.symbol}</td>
+              <td style={{ padding: "8px 12px", fontWeight: 600, textAlign: "right" }}>
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "flex-end" }}>
+                  <span>{p.symbol}</span>
+                  <TradeVerdictBadgeWithScore symbol={p.symbol} />
+                </div>
+              </td>
               <td style={{ padding: "8px 12px", textAlign: "right", color: p.side === "long" ? "var(--signal-core)" : "var(--fault, #E85D6C)" }}>{p.side.toUpperCase()}</td>
               <td style={{ padding: "8px 12px", textAlign: "right" }}>{p.qty}</td>
               <td style={{ padding: "8px 12px", textAlign: "right" }}>{fmt(p.avgEntryPrice)}</td>

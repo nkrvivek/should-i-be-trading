@@ -7,6 +7,7 @@ import { runPreExecutionChecks } from "../../lib/execution/riskChecks";
 import { executeStrategy } from "../../lib/execution/executionEngine";
 import type { ExecutionPlan, ExecutionLeg, ExecutionResult } from "../../lib/execution/types";
 import { useRiskPrefsStore } from "../../stores/riskPrefsStore";
+import { TradeVerdictBadgeWithScore } from "./TradeVerdictBadge";
 
 interface Props {
   symbol: string;
@@ -256,19 +257,27 @@ export default function OrderReviewModal({
       <div style={modalStyle} onClick={(e) => e.stopPropagation()}>
         {/* Header */}
         <div style={headerStyle}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <span style={{ ...monoStyle, fontSize: 16, fontWeight: 700 }}>
-              Execute Strategy: {suggestion.strategyName}
-            </span>
-            <span
-              style={{
-                ...badgeStyle,
-                background: riskBadgeColors[suggestion.riskLevel]?.bg,
-                color: riskBadgeColors[suggestion.riskLevel]?.color,
-              }}
-            >
-              {suggestion.riskLevel.toUpperCase()}
-            </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+              <span style={{ ...monoStyle, fontSize: 16, fontWeight: 700 }}>
+                Execute Strategy: {suggestion.strategyName}
+              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ ...monoStyle, fontSize: 13, color: "var(--text-secondary)" }}>
+                  {symbol}
+                </span>
+                <TradeVerdictBadgeWithScore symbol={symbol} size="md" />
+                <span
+                  style={{
+                    ...badgeStyle,
+                    background: riskBadgeColors[suggestion.riskLevel]?.bg,
+                    color: riskBadgeColors[suggestion.riskLevel]?.color,
+                  }}
+                >
+                  {suggestion.riskLevel.toUpperCase()}
+                </span>
+              </div>
+            </div>
           </div>
           <button
             onClick={onClose}

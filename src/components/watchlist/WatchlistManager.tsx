@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { Panel } from "../layout/Panel";
 import { useWatchlists } from "../../hooks/useWatchlists";
+import { TradeVerdictBadgeWithScore } from "../trading/TradeVerdictBadge";
 
 export function WatchlistManager() {
   const {
@@ -128,6 +129,7 @@ export function WatchlistManager() {
               <span style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                 {ticker}
               </span>
+              <TradeVerdictBadgeWithScore symbol={ticker} showScore={false} />
               <button
                 onClick={() => handleRemoveTicker(ticker)}
                 style={{

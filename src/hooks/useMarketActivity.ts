@@ -23,16 +23,23 @@ export interface MarketActivityData {
 const CACHE_KEY = "sibt_market_activity_cache";
 const CACHE_MAX_AGE_MS = 5 * 60 * 1000; // 5 min
 
-function loadCached(): MarketActivityData | null {
+function loadCached(): { data: MarketActivityData; ts: number } | null {
+  if (typeof window === "undefined") return null;
+
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const { data, ts } = JSON.parse(raw);
+    const { data, ts } = JSON.parse(raw) as { data?: MarketActivityData; ts?: number };
+    if (!data || typeof ts !== "number") return null;
     if (Date.now() - ts > CACHE_MAX_AGE_MS) return null;
-    return data as MarketActivityData;
+    return { data, ts };
   } catch {
     return null;
   }
+}
+
+export function getCachedMarketActivity(): MarketActivityData | null {
+  return loadCached()?.data ?? null;
 }
 
 function saveCache(data: MarketActivityData) {
@@ -47,7 +54,7 @@ export function useMarketActivity(): {
   error: string | null;
   refresh: () => void;
 } {
-  const [data, setData] = useState<MarketActivityData | null>(loadCached);
+  const [data, setData] = useState<MarketActivityData | null>(() => loadCached()?.data ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);

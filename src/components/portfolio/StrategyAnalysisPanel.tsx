@@ -6,6 +6,7 @@ import { analyzePositions } from "../../lib/portfolio/strategyAnalyzer";
 import { filterSuggestions } from "../../lib/portfolio/riskFilter";
 import type { PositionAnalysis, StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
 import type { SimulatorLeg } from "../../lib/strategy/payoff";
+import { TradeVerdictBadgeWithScore } from "../trading/TradeVerdictBadge";
 
 interface Props {
   onSimulate: (symbol: string, price: number, legs: SimulatorLeg[]) => void;
@@ -234,6 +235,7 @@ function PositionCard({
           >
             {symbol}
           </span>
+          <TradeVerdictBadgeWithScore symbol={symbol} />
           <span
             style={{
               fontFamily: "var(--font-mono)",

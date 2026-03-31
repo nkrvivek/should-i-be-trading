@@ -83,7 +83,7 @@ export default function SocialContent() {
               padding: "6px 12px",
               fontFamily: "var(--font-mono)",
               fontSize: 13,
-              background: "var(--bg-surface, #1a1a2e)",
+              background: "var(--bg-panel-raised)",
               border: "1px solid var(--border-dim)",
               borderRadius: 4,
               color: "var(--text-primary)",

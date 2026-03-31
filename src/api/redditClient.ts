@@ -1,12 +1,14 @@
 /**
- * Reddit public JSON API client — no authentication needed.
+ * Reddit API client — proxied through Supabase edge function to avoid CORS.
  * Uses dedupFetch for caching. Returns empty arrays on failure.
  */
 
 import { dedupFetch } from "./fetchDedup";
+import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "./edgeHeaders";
 import type { RedditPost } from "../lib/socialScoring";
 
-const TRADING_SUBREDDITS = "wallstreetbets+stocks+options";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parsePost(child: any): RedditPost {
@@ -25,10 +27,11 @@ function parsePost(child: any): RedditPost {
 
 export async function searchRedditForTicker(ticker: string): Promise<RedditPost[]> {
   try {
-    const q = encodeURIComponent(ticker.toUpperCase());
+    if (!isSupabaseConfigured()) return [];
+    const headers = await getEdgeHeaders();
     const res = await dedupFetch(
-      `https://www.reddit.com/r/${TRADING_SUBREDDITS}/search.json?q=${q}&sort=new&limit=15&restrict_sr=on&raw_json=1`,
-      undefined,
+      `${SUPABASE_URL}/functions/v1/proxy-social?source=reddit&action=search&symbol=${encodeURIComponent(ticker.toUpperCase())}`,
+      { headers },
       120_000,
     );
     if (!res.ok) return [];
@@ -46,9 +49,11 @@ export async function getHotRedditPosts(
   limit = 10,
 ): Promise<RedditPost[]> {
   try {
+    if (!isSupabaseConfigured()) return [];
+    const headers = await getEdgeHeaders();
     const res = await dedupFetch(
-      `https://www.reddit.com/r/${encodeURIComponent(subreddit)}/hot.json?limit=${limit}&raw_json=1`,
-      undefined,
+      `${SUPABASE_URL}/functions/v1/proxy-social?source=reddit&action=hot&subreddit=${encodeURIComponent(subreddit)}&limit=${limit}`,
+      { headers },
       120_000,
     );
     if (!res.ok) return [];

@@ -4,6 +4,8 @@
  */
 
 import { dedupFetch } from "./fetchDedup";
+import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "./edgeHeaders";
 import type { StockTwitsMessage } from "../lib/socialScoring";
 
 export interface StockTwitsSentimentResult {
@@ -20,15 +22,17 @@ export interface TrendingSymbol {
   watchlistCount: number;
 }
 
-const BASE_URL = "https://api.stocktwits.com/api/2";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 
 export async function getStockTwitsSentiment(
   symbol: string,
 ): Promise<StockTwitsSentimentResult | null> {
   try {
+    if (!isSupabaseConfigured()) return null;
+    const headers = await getEdgeHeaders();
     const res = await dedupFetch(
-      `${BASE_URL}/streams/symbol/${encodeURIComponent(symbol.toUpperCase())}.json`,
-      undefined,
+      `${SUPABASE_URL}/functions/v1/proxy-social?source=stocktwits&action=sentiment&symbol=${encodeURIComponent(symbol.toUpperCase())}`,
+      { headers },
       60_000,
     );
     if (!res.ok) return null;
@@ -63,7 +67,13 @@ export async function getStockTwitsSentiment(
 
 export async function getTrendingSymbols(): Promise<TrendingSymbol[]> {
   try {
-    const res = await dedupFetch(`${BASE_URL}/trending/symbols.json`, undefined, 60_000);
+    if (!isSupabaseConfigured()) return [];
+    const headers = await getEdgeHeaders();
+    const res = await dedupFetch(
+      `${SUPABASE_URL}/functions/v1/proxy-social?source=stocktwits&action=trending`,
+      { headers },
+      60_000,
+    );
     if (!res.ok) return [];
 
     const json = await res.json();

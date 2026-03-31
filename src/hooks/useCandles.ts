@@ -37,7 +37,7 @@ interface FmpHistoricalItem {
 }
 
 async function fetchFromFMP(symbol: string, days: number): Promise<OHLCV[]> {
-  if (!isSupabaseConfigured()) throw new Error("FMP requires Supabase");
+  if (!isSupabaseConfigured()) throw new Error("Chart data unavailable. Please sign in for automatic access.");
 
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fmp`;
 

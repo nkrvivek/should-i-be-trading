@@ -10,7 +10,7 @@ import { getEdgeHeaders } from "./edgeHeaders";
 
 async function tradierCall<T>(params: Record<string, unknown>): Promise<T> {
   if (!isSupabaseConfigured()) {
-    throw new Error("Tradier requires Supabase. Configure VITE_SUPABASE_URL.");
+    throw new Error("Tradier data unavailable. Please sign in for automatic access.");
   }
 
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/tradier`;

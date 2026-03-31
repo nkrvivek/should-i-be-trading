@@ -42,7 +42,8 @@ export default function CompositeContent() {
   const { metrics, loading, progress } = useStockMetrics();
   const { score: marketScore, loading: marketLoading } = useMarketScore();
   const { regime, loading: regimeLoading } = useRegimeMonitor();
-  const cacheRevision = `${marketScore?.timestamp ?? 0}-${regime?.timestamp ?? 0}`;
+  const marketRevision = marketScore?.timestamp ?? 0;
+  const regimeRevision = regime?.timestamp ?? 0;
   const [query, setQuery] = useState("");
   const [sector, setSector] = useState<string>("ALL");
   const [sortBy, setSortBy] = useState<SortKey>("overall");
@@ -50,7 +51,10 @@ export default function CompositeContent() {
   const [tradeOnly, setTradeOnly] = useState(false);
 
   const rows = useMemo(() => {
-    // cacheRevision triggers recompute when market/regime data changes
+    // Reading these revisions forces recompute when cached market inputs change.
+    void marketRevision;
+    void regimeRevision;
+
     return metrics
       .map((metric) => {
         const estimatedStockScore = estimateStockScoreFromMetrics(metric);
@@ -67,7 +71,7 @@ export default function CompositeContent() {
         };
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);
-  }, [cacheRevision, metrics]);
+  }, [marketRevision, metrics, regimeRevision]);
 
   const sectors = useMemo(
     () => ["ALL", ...new Set(metrics.map((metric) => metric.sector).filter(Boolean))].sort(),

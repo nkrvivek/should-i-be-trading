@@ -47,19 +47,25 @@ export function PortfolioRiskWidget() {
   const accounts = allAccounts();
 
   // Merge broker + manual positions for risk scoring
-  const manualAsBroker: BrokerPosition[] = manualPositions.map((p) => ({
-    symbol: p.symbol,
-    qty: p.qty,
-    side: p.side,
-    avgEntryPrice: p.avgEntryPrice,
-    currentPrice: p.currentPrice,
-    marketValue: p.marketValue,
-    unrealizedPL: p.unrealizedPL,
-    unrealizedPLPercent: p.unrealizedPLPercent,
-    assetType: p.assetType,
-  }));
+  const manualAsBroker: BrokerPosition[] = useMemo(
+    () => manualPositions.map((p) => ({
+      symbol: p.symbol,
+      qty: p.qty,
+      side: p.side,
+      avgEntryPrice: p.avgEntryPrice,
+      currentPrice: p.currentPrice,
+      marketValue: p.marketValue,
+      unrealizedPL: p.unrealizedPL,
+      unrealizedPLPercent: p.unrealizedPLPercent,
+      assetType: p.assetType,
+    })),
+    [manualPositions],
+  );
 
-  const positions = [...brokerPositions, ...manualAsBroker];
+  const positions = useMemo(
+    () => [...brokerPositions, ...manualAsBroker],
+    [brokerPositions, manualAsBroker],
+  );
   const manualEquity = manualAsBroker.reduce((s, p) => s + p.marketValue, 0);
   const totalEquity = accounts.reduce((sum, a) => sum + a.equity, 0) + manualEquity;
 

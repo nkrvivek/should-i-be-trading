@@ -9,7 +9,7 @@ const TIER_INFO: Record<UserTier, { label: string; color: string; features: stri
   free: {
     label: "FREE",
     color: "var(--neutral)",
-    features: ["Regime Dashboard", "Macro Data (FRED)", "Glossary", "Signal History"],
+    features: ["Learning Academy", "Glossary + Deep Dives", "Regime Dashboard", "Macro Data (FRED)", "Signal History"],
   },
   starter: {
     label: "STARTER",

@@ -271,50 +271,39 @@ test.describe("Features Page", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Glossary / Learn Page (/learn)
+// Learn Page (/learn)
 // ---------------------------------------------------------------------------
-test.describe("Glossary Page", () => {
+test.describe("Learn Page", () => {
   test.beforeEach(async ({ page }) => {
     await page.goto("/learn");
     await page.waitForLoadState("domcontentloaded");
   });
 
-  test("page loads with Glossary heading", async ({ page }) => {
-    await expect(
-      page.getByText(/LEARN|TRADING GLOSSARY/i).first()
-    ).toBeVisible({ timeout: 10_000 });
+  test("page loads with academy as the default view", async ({ page }) => {
+    await expect(page.getByText("LEARN").first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText("FREE-TIER LEARNING HUB").first()).toBeVisible();
+    await expect(page.locator("button", { hasText: "Academy" }).first()).toBeVisible();
+    await expect(page.locator("button", { hasText: "Glossary" }).first()).toBeVisible();
   });
 
-  test("search input is present", async ({ page }) => {
+  test("academy content and badge paths are visible", async ({ page }) => {
+    await expect(page.getByText("Learning Tracks").first()).toBeVisible();
+    await expect(page.getByText("SIBT Badge Paths").first()).toBeVisible();
+    await expect(page.getByText("Options Basics").first()).toBeVisible();
+    await expect(page.getByText("Stock Trading").first()).toBeVisible();
+  });
+
+  test("glossary tab exposes search and filters", async ({ page }) => {
+    await page.locator("button", { hasText: "Glossary" }).first().click();
     const searchInput = page.locator('input[placeholder="Search terms..."]');
     await expect(searchInput).toBeVisible();
-  });
-
-  test("at least 10 glossary terms are visible", async ({ page }) => {
-    // Some terms may be collapsed; check for at least 10 category labels
-    const allCategories = page.locator("text=/Technical|Fundamental|Sentiment|Options|Market|Macro|General|Risk|Trading Basics|Strategies|Tax|Deep Dives/");
-    expect(await allCategories.count()).toBeGreaterThanOrEqual(10);
-  });
-
-  test("category filter buttons are present including new categories", async ({ page }) => {
-    // "All" button should be present
     await expect(page.locator("button", { hasText: "All" }).first()).toBeVisible();
-
-    // New category filter buttons
-    await expect(page.locator("button", { hasText: "Trading Basics" }).first()).toBeVisible();
-    await expect(page.locator("button", { hasText: "Technical Analysis" }).first()).toBeVisible();
-    await expect(page.locator("button", { hasText: "Fundamental Analysis" }).first()).toBeVisible();
-    await expect(page.locator("button", { hasText: "Strategies" }).first()).toBeVisible();
-    await expect(page.locator("button", { hasText: /Tax.*Compliance/i }).first()).toBeVisible();
-
-    // At least 5 category buttons (excluding "All")
-    const categoryButtons = page.locator("button").filter({
-      hasText: /Technical|Fundamental|Sentiment|Options|Market|Macro|General|Risk|Trading Basics|Strategies|Tax|Deep Dives/,
-    });
-    expect(await categoryButtons.count()).toBeGreaterThanOrEqual(5);
+    await expect(page.getByText(/CATEGORY:/i).first()).toBeVisible();
+    await expect(page.getByText(/LEVEL:/i).first()).toBeVisible();
   });
 
   test("Deep Dives category filter shows educational articles", async ({ page }) => {
+    await page.locator("button", { hasText: "Glossary" }).first().click();
     const deepDivesBtn = page.locator("button", { hasText: "Deep Dives" }).first();
     await expect(deepDivesBtn).toBeVisible({ timeout: 5_000 });
     await deepDivesBtn.click();
@@ -326,6 +315,7 @@ test.describe("Glossary Page", () => {
   });
 
   test("search filters glossary terms", async ({ page }) => {
+    await page.locator("button", { hasText: "Glossary" }).first().click();
     const searchInput = page.locator('input[placeholder="Search terms..."]');
     await searchInput.fill("VIX");
     // Wait for filter to apply
@@ -341,6 +331,7 @@ test.describe("Glossary Page", () => {
   });
 
   test("category filter narrows results", async ({ page }) => {
+    await page.locator("button", { hasText: "Glossary" }).first().click();
     // Click a specific category to filter
     const technicalBtn = page.locator("button", { hasText: "Technical" }).first();
     if (await technicalBtn.isVisible()) {
@@ -352,12 +343,18 @@ test.describe("Glossary Page", () => {
     }
   });
 
-  test("term definitions are present (not just titles)", async ({ page }) => {
-    // Definitions are longer text blocks — check that at least some have substantial content
-    const definitionTexts = page.locator(
-      "div >> text=/[A-Z].*\\w{10,}/"
-    );
-    expect(await definitionTexts.count()).toBeGreaterThanOrEqual(5);
+  test("term definitions are present when a glossary card is opened", async ({ page }) => {
+    await page.locator("button", { hasText: "Glossary" }).first().click();
+    const firstTerm = page.locator('button:has-text("VIX")').first();
+    await firstTerm.click();
+    await expect(page.getByText(/fear gauge/i).first()).toBeVisible();
+  });
+
+  test("term deep links open glossary view automatically", async ({ page }) => {
+    await page.goto("/learn?term=vix");
+    await page.waitForLoadState("domcontentloaded");
+    await expect(page.locator('input[placeholder="Search terms..."]')).toBeVisible();
+    await expect(page.getByText("VIX", { exact: true }).first()).toBeVisible();
   });
 });
 

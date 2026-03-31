@@ -706,33 +706,30 @@ const FEATURES: FeatureSection[] = [
 └──────────────────────────────────────────────┘`,
   },
   {
-    title: "82-Term Trading Glossary",
+    title: "Learning Academy + Glossary",
     tier: "FREE",
-    description: "Searchable glossary with 82 trading terms and 9 deep-dive articles covering options strategies, market regimes, technical analysis, and risk management.",
+    description: "Free education layer for novice traders: structured lessons, badge paths, simulator-first strategy walkthroughs, and the glossary that explains the rest of SIBT.",
     details: [
-      "82 terms from basic to advanced concepts",
-      "9 in-depth articles with examples and visuals",
-      "Covers: options, technical analysis, market regimes, risk management",
-      "Full-text search across all terms and articles",
-      "Quick-reference cards with one-line definitions",
-      "Cross-linked terms for discovery",
+      "Guided lessons on calls, puts, covered calls, spreads, ETFs, forex, and futures",
+      "SIBT badge ladders: beginner, intermediate, expert",
+      "Streak tracking and reminder preferences for daily/weekly practice",
+      "Glossary and deep dives for quick lookup and deeper reading",
+      "Simulator-linked walkthroughs so learning starts in practice mode",
+      "Process-based progression, not short-term P&L gamification",
     ],
     mockup: `┌──────────────────────────────────────────────┐
-│  GLOSSARY                    [SEARCH]       │
+│  LEARN                       [ACADEMY]      │
 │                                              │
-│  82 terms  |  9 deep-dive articles          │
+│  STREAK 4d   WEEKLY GOAL 2/3   FREE         │
 │                                              │
-│  IRON CONDOR                                │
-│  A neutral options strategy combining a     │
-│  bull put spread and bear call spread.      │
-│  Profits when the underlying stays in a     │
-│  defined range. Max profit = net premium.   │
+│  NEXT LESSON                                │
+│  Buy to Open / Sell to Close                │
+│  14 min  EXECUTION  RISK: MEDIUM            │
 │                                              │
-│  DEEP DIVES                                 │
-│  ▶ Options Greeks Explained                 │
-│  ▶ Understanding Market Regimes             │
-│  ▶ Covered Call Strategy Guide              │
-│  ▶ Reading Dark Pool Flow                   │
+│  BADGE PATHS                                │
+│  ▶ Options Beginner                         │
+│  ▶ ETF Beginner                             │
+│  ▶ Stock Trading Intermediate               │
 └──────────────────────────────────────────────┘`,
   },
   {
@@ -1030,6 +1027,24 @@ export function FeaturesPage() {
 
         {/* CTA */}
         <div style={{ textAlign: "center", padding: "32px 0" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
+            <button
+              onClick={() => navigate("/learn")}
+              style={{
+                padding: "12px 28px",
+                fontFamily: "var(--font-mono)",
+                fontSize: 13,
+                fontWeight: 600,
+                background: "transparent",
+                color: "var(--signal-core)",
+                border: "1px solid var(--signal-core)",
+                borderRadius: 4,
+                cursor: "pointer",
+                letterSpacing: "0.03em",
+              }}
+            >
+              EXPLORE FREE LEARNING
+            </button>
           <button
             onClick={() => navigate("/pricing")}
             style={{
@@ -1047,8 +1062,9 @@ export function FeaturesPage() {
           >
             START 14-DAY FREE TRIAL
           </button>
+          </div>
           <p style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--text-muted)", marginTop: 12 }}>
-            No credit card required. All features unlocked for 14 days.
+            Free plan forever. New accounts also get a 14-day Pro trial with no card required.
           </p>
         </div>
       </div>

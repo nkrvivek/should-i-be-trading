@@ -41,7 +41,7 @@ const FEATURE_MAP: Record<Feature, UserTier[]> = {
   regime_detail: ["starter", "pro", "enterprise"],
   regime_ai: ["pro", "enterprise"],
   notifications_all: ["starter", "pro", "enterprise"],
-  strategy_simulator: ["starter", "pro", "enterprise"],
+  strategy_simulator: ["free", "starter", "pro", "enterprise"],
   technical_signals: ["starter", "pro", "enterprise"],
   csv_upload: ["starter", "pro", "enterprise"],
   snaptrade: ["pro", "enterprise"],

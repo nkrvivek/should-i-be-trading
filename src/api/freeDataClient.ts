@@ -13,7 +13,7 @@ async function callEdgeFunction<T>(
   ttlMs = 60_000,
 ): Promise<T> {
   if (!isSupabaseConfigured()) {
-    throw new Error(`${functionName} requires Supabase. Configure VITE_SUPABASE_URL.`);
+    throw new Error(`${functionName} unavailable. Please sign in for automatic access.`);
   }
 
   const searchParams = new URLSearchParams(params);

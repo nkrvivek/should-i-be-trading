@@ -36,7 +36,7 @@ export type BacktestResult = {
 
 async function fetchFredSeries(seriesId: string, limit: number): Promise<{ date: string; value: number }[]> {
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  if (!supabaseUrl) throw new Error("Supabase not configured");
+  if (!supabaseUrl) throw new Error("Backtest data unavailable. Please sign in for automatic access.");
 
   const headers = await getEdgeHeaders();
   const res = await fetch(`${supabaseUrl}/functions/v1/fred?series_id=${seriesId}&limit=${limit + 20}&sort_order=desc`, {

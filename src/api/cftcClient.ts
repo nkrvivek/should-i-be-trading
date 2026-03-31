@@ -44,7 +44,7 @@ export interface CftcResponse {
 
 export async function getCotData(weeks = 12): Promise<CftcResponse> {
   if (!isSupabaseConfigured()) {
-    throw new Error("CFTC requires Supabase. Configure VITE_SUPABASE_URL.");
+    throw new Error("CFTC data unavailable. Please sign in for automatic access.");
   }
 
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/cftc?weeks=${weeks}`;

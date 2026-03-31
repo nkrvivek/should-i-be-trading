@@ -123,9 +123,12 @@ export function LandingPage() {
           Built for active stock traders who need a better decision before they place the order.
         </p>
 
-        <div className="landing-cta-row" style={{ position: "relative", display: "flex", gap: 12 }}>
+        <div className="landing-cta-row" style={{ position: "relative", display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
           <button onClick={() => navigate("/login")} style={ctaBtn}>
             START FREE TRIAL
+          </button>
+          <button onClick={() => navigate("/learn")} style={ctaSecondaryBtn}>
+            START LEARNING FREE
           </button>
           <button onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })} style={ctaSecondaryBtn}>
             SEE PRICING
@@ -133,7 +136,7 @@ export function LandingPage() {
         </div>
 
         <p style={{ position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", marginTop: 16 }}>
-          14-day Pro trial. No credit card required.
+          Free plan forever. New accounts also get a 14-day Pro trial. No card required.
         </p>
 
         <div data-testid="landing-hero-proof" style={{
@@ -395,8 +398,8 @@ export function LandingPage() {
             tag="PRO"
           />
           <FeatureCard
-            title="82-Term Trading Glossary"
-            description="Searchable glossary with 82 trading terms and 9 deep-dive articles covering options strategies, market regimes, technical analysis, and risk management. Built-in education for every skill level."
+            title="Learning Academy + Glossary"
+            description="Free structured lessons for novice traders covering calls, puts, covered calls, spreads, order entry, ETFs, forex, futures, and how to use SIBT. Includes badge paths, streak tracking, reminders, and the trading glossary."
             tag="FREE"
           />
           <FeatureCard
@@ -431,6 +434,11 @@ export function LandingPage() {
           <Step n={1} title="Check The Tape" desc="Start with market regime, breadth, and macro context so you know whether conditions support active trading." />
           <Step n={2} title="Check The Ticker" desc="Review the trade score with earnings, insider, social, and stock-quality context in one place." />
           <Step n={3} title="Decide With Context" desc="Take trades when the market and ticker agree. Skip borderline setups before capital is at risk." />
+        </div>
+        <div style={{ display: "flex", justifyContent: "center", marginTop: 28 }}>
+          <button onClick={() => navigate("/learn")} style={ctaSecondaryBtn}>
+            EXPLORE THE LEARNING ACADEMY
+          </button>
         </div>
       </section>
 

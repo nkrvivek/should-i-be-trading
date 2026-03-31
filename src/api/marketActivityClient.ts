@@ -33,7 +33,7 @@ export interface ShortVolumeEntry {
 /* ─── Internal helpers ─────────────────────────────── */
 
 async function finnhubActivityCall(type: "actives" | "gainers" | "losers"): Promise<ActiveStock[]> {
-  if (!isSupabaseConfigured()) throw new Error("Supabase not configured");
+  if (!isSupabaseConfigured()) throw new Error("Market data unavailable. Please sign in for automatic access.");
 
   const headers = await getEdgeHeaders();
 
@@ -102,7 +102,7 @@ export async function getLosers(): Promise<ActiveStock[]> {
 
 export async function getShortVolume(symbol?: string): Promise<ShortVolumeEntry[]> {
   if (!isSupabaseConfigured()) {
-    throw new Error("Supabase not configured");
+    throw new Error("Market data unavailable. Please sign in for automatic access.");
   }
 
   const params = symbol ? `?symbol=${symbol.toUpperCase()}` : "";

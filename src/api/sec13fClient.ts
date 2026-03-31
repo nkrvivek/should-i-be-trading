@@ -10,7 +10,7 @@ import { getEdgeHeaders } from "./edgeHeaders";
 
 async function sec13fCall<T>(params: Record<string, unknown>): Promise<T> {
   if (!isSupabaseConfigured()) {
-    throw new Error("SEC 13F requires Supabase. Configure VITE_SUPABASE_URL.");
+    throw new Error("SEC 13F data unavailable. Please sign in for automatic access.");
   }
 
   const url = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/sec-13f`;

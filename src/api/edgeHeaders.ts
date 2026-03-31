@@ -37,6 +37,9 @@ async function getUserToken(): Promise<string | null> {
  */
 export async function getEdgeHeaders(): Promise<Record<string, string>> {
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+  if (!anonKey) {
+    console.warn("VITE_SUPABASE_ANON_KEY not set — edge function calls will fail");
+  }
   const headers: Record<string, string> = {
     Authorization: `Bearer ${anonKey}`,
     apikey: anonKey,

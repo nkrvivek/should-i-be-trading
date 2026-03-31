@@ -1,6 +1,7 @@
 import { Suspense, lazy, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
+import { getAcademyViewState, saveAcademyViewState } from "../lib/academyViewState";
 
 const AcademyView = lazy(() => import("../components/learn/AcademyView").then((m) => ({ default: m.AcademyView })));
 const GlossaryView = lazy(() => import("../components/learn/GlossaryView").then((m) => ({ default: m.GlossaryView })));
@@ -18,8 +19,20 @@ export function GlossaryPage() {
   const searchQuery = searchParams.get("q") ?? "";
   const deepLinkTerm = searchParams.get("term") ?? "";
   const startsInGlossary = Boolean(searchQuery || deepLinkTerm);
-  const [manualActiveView, setManualActiveView] = useState<"academy" | "glossary">(startsInGlossary ? "glossary" : "academy");
+  const [manualActiveView, setManualActiveView] = useState<"academy" | "glossary">(() => {
+    const persisted = getAcademyViewState();
+    if (startsInGlossary) return "glossary";
+    return persisted.activeView;
+  });
   const activeView = startsInGlossary ? "glossary" : manualActiveView;
+
+  const handleChangeView = (nextView: "academy" | "glossary") => {
+    setManualActiveView(nextView);
+    saveAcademyViewState({
+      ...getAcademyViewState(),
+      activeView: nextView,
+    });
+  };
 
   return (
     <TerminalShell cri={null}>
@@ -32,17 +45,17 @@ export function GlossaryPage() {
         </div>
 
         <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
-          <LearnTabButton active={activeView === "academy"} onClick={() => setManualActiveView("academy")}>
+          <LearnTabButton active={activeView === "academy"} onClick={() => handleChangeView("academy")}>
             Academy
           </LearnTabButton>
-          <LearnTabButton active={activeView === "glossary"} onClick={() => setManualActiveView("glossary")}>
+          <LearnTabButton active={activeView === "glossary"} onClick={() => handleChangeView("glossary")}>
             Glossary
           </LearnTabButton>
         </div>
 
         <Suspense fallback={learnLoader}>
           {activeView === "academy" ? (
-            <AcademyView onOpenGlossary={() => setManualActiveView("glossary")} />
+            <AcademyView onOpenGlossary={() => handleChangeView("glossary")} />
           ) : (
             <GlossaryView searchQuery={searchQuery} deepLinkTerm={deepLinkTerm} />
           )}

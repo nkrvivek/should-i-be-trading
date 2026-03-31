@@ -1,10 +1,11 @@
-import { useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { ALL_LEARNING_LESSONS, LEARNING_TRACKS, type LearningLesson } from "../../lib/academy";
 import { computeLearningStats } from "../../lib/learningProgress";
 import { SIBT_BADGE_PATHS } from "../../lib/learningBadges";
 import { useLearningAcademy } from "../../hooks/useLearningAcademy";
 import { isTrackUnlocked, isLessonUnlocked, getUnlockRequirement } from "../../lib/academyUnlock";
-import { LessonViewer } from "./LessonViewer";
+import { LazyLessonViewer, prefetchLessonViewer, scheduleLessonViewerPrefetch } from "./lazyLessonViewer";
+import { getAcademyViewState, saveAcademyViewState } from "../../lib/academyViewState";
 
 const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
@@ -16,7 +17,8 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
     [progress],
   );
 
-  const [viewingLesson, setViewingLesson] = useState<string | null>(null);
+  const persistedState = getAcademyViewState();
+  const [viewingLesson, setViewingLesson] = useState<string | null>(persistedState.viewingLessonSlug);
 
   const nextLesson = useMemo(
     () => ALL_LEARNING_LESSONS.find((lesson) =>
@@ -29,8 +31,12 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
     () => LEARNING_TRACKS.find((track) => track.lessons.some((lesson) => lesson.slug === nextLesson?.slug)) ?? LEARNING_TRACKS[0],
     [nextLesson],
   );
-  const [selectedTrackSlug, setSelectedTrackSlug] = useState(nextTrack?.slug ?? LEARNING_TRACKS[0]?.slug ?? "");
-  const [selectedLessonSlug, setSelectedLessonSlug] = useState(nextLesson?.slug ?? LEARNING_TRACKS[0]?.lessons[0]?.slug ?? "");
+  const [selectedTrackSlug, setSelectedTrackSlug] = useState(
+    persistedState.selectedTrackSlug ?? nextTrack?.slug ?? LEARNING_TRACKS[0]?.slug ?? "",
+  );
+  const [selectedLessonSlug, setSelectedLessonSlug] = useState(
+    persistedState.selectedLessonSlug ?? nextLesson?.slug ?? LEARNING_TRACKS[0]?.lessons[0]?.slug ?? "",
+  );
 
   const activeTrack = useMemo(() => {
     return LEARNING_TRACKS.find((track) => track.slug === selectedTrackSlug)
@@ -48,6 +54,29 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
     const completed = activeTrack.lessons.filter((lesson) => progress.completedLessons[lesson.slug]).length;
     return { completed, total: activeTrack.lessons.length };
   }, [activeTrack, progress.completedLessons]);
+  const warmLessonViewer = useCallback(() => {
+    prefetchLessonViewer();
+  }, []);
+
+  useEffect(() => {
+    if (!activeLesson?.slug && !nextLesson?.slug) return;
+    return scheduleLessonViewerPrefetch();
+  }, [activeLesson, nextLesson]);
+
+  useEffect(() => {
+    saveAcademyViewState({
+      ...getAcademyViewState(),
+      activeView: "academy",
+      selectedTrackSlug,
+      selectedLessonSlug,
+      viewingLessonSlug: viewingLesson,
+    });
+  }, [selectedLessonSlug, selectedTrackSlug, viewingLesson]);
+
+  const openLesson = useCallback((slug: string) => {
+    prefetchLessonViewer();
+    setViewingLesson(slug);
+  }, []);
 
   // LessonViewer mode
   if (viewingLesson) {
@@ -57,19 +86,22 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
       const lessonIdx = viewTrack.lessons.indexOf(viewLesson);
       const nextInTrack = viewTrack.lessons[lessonIdx + 1];
       const hasNext = nextInTrack && isLessonUnlocked(viewTrack.slug, nextInTrack.slug, progress.completedLessons);
+      const handleBackFromLesson = () => {
+        setViewingLesson(null);
+        setSelectedTrackSlug(viewTrack.slug);
+        setSelectedLessonSlug(viewLesson.slug);
+      };
       return (
-        <LessonViewer
-          lesson={viewLesson}
-          trackSlug={viewTrack.slug}
-          isCompleted={Boolean(progress.completedLessons[viewLesson.slug])}
-          onComplete={() => void markLessonComplete(viewLesson.slug)}
-          onBack={() => {
-            setViewingLesson(null);
-            setSelectedTrackSlug(viewTrack.slug);
-            setSelectedLessonSlug(viewLesson.slug);
-          }}
-          onNextLesson={hasNext ? () => setViewingLesson(nextInTrack.slug) : undefined}
-        />
+        <Suspense fallback={<LessonViewerFallback lesson={viewLesson} onBack={handleBackFromLesson} />}>
+          <LazyLessonViewer
+            lesson={viewLesson}
+            trackSlug={viewTrack.slug}
+            isCompleted={Boolean(progress.completedLessons[viewLesson.slug])}
+            onComplete={() => void markLessonComplete(viewLesson.slug)}
+            onBack={handleBackFromLesson}
+            onNextLesson={hasNext ? () => openLesson(nextInTrack.slug) : undefined}
+          />
+        </Suspense>
       );
     }
     setViewingLesson(null);
@@ -196,8 +228,11 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                     key={lesson.slug}
                     onClick={() => {
                       if (lessonLocked) return;
+                      prefetchLessonViewer();
                       setSelectedLessonSlug(lesson.slug);
                     }}
+                    onPointerEnter={lessonLocked ? undefined : warmLessonViewer}
+                    onFocus={lessonLocked ? undefined : warmLessonViewer}
                     style={{
                       display: "grid",
                       gridTemplateColumns: "34px minmax(0, 1fr) auto",
@@ -285,7 +320,9 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
               <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
                 {isLessonUnlocked(activeTrack.slug, activeLesson.slug, progress.completedLessons) ? (
                   <button
-                    onClick={() => setViewingLesson(activeLesson.slug)}
+                    onClick={() => openLesson(activeLesson.slug)}
+                    onPointerEnter={warmLessonViewer}
+                    onFocus={warmLessonViewer}
                     style={progress.completedLessons[activeLesson.slug] ? secondarySmallBtn : primarySmallBtn}
                   >
                     {progress.completedLessons[activeLesson.slug] ? "REVIEW LESSON" : "START LESSON"}
@@ -342,7 +379,12 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
           </div>
           {nextLesson && (
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={() => setViewingLesson(nextLesson.slug)} style={primarySmallBtn}>
+              <button
+                onClick={() => openLesson(nextLesson.slug)}
+                onPointerEnter={warmLessonViewer}
+                onFocus={warmLessonViewer}
+                style={primarySmallBtn}
+              >
                 START LESSON
               </button>
               {nextLesson.simulatorRoute && <a href={nextLesson.simulatorRoute} style={linkChipStyle}>OPEN SIMULATOR</a>}
@@ -463,7 +505,12 @@ export function AcademyView({ onOpenGlossary }: { onOpenGlossary: () => void }) 
                               {getUnlockRequirement(track.slug, lesson.slug, progress.completedLessons) ?? "Locked"}
                             </span>
                           ) : (
-                            <button onClick={() => setViewingLesson(lesson.slug)} style={isComplete ? secondarySmallBtn : primarySmallBtn}>
+                            <button
+                              onClick={() => openLesson(lesson.slug)}
+                              onPointerEnter={warmLessonViewer}
+                              onFocus={warmLessonViewer}
+                              style={isComplete ? secondarySmallBtn : primarySmallBtn}
+                            >
                               {isComplete ? "REVIEW LESSON" : "START LESSON"}
                             </button>
                           )}
@@ -532,6 +579,39 @@ function AcademyStatCard({ label, value, sublabel, tone }: { label: string; valu
       <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 8 }}>{label.toUpperCase()}</div>
       <div style={{ ...mono, fontSize: 24, fontWeight: 700, color: tone, marginBottom: 4 }}>{value}</div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)" }}>{sublabel}</div>
+    </div>
+  );
+}
+
+function LessonViewerFallback({ lesson, onBack }: { lesson: LearningLesson; onBack: () => void }) {
+  return (
+    <div style={{ maxWidth: 800, margin: "0 auto", paddingBottom: 40 }}>
+      <div style={{ marginBottom: 20 }}>
+        <button onClick={onBack} style={secondarySmallBtn}>BACK TO TRACK</button>
+        <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginTop: 12, marginBottom: 10 }}>
+          {lesson.title}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <span style={stagePillStyle(lesson.format)}>{academyStageLabel(lesson.format)}</span>
+          <span style={riskPillStyle(lesson.riskLevel)}>{lesson.riskLevel.toUpperCase()} RISK</span>
+          <span style={{ ...mono, fontSize: 10, fontWeight: 700, padding: "2px 6px", borderRadius: 999, background: "rgba(148, 163, 184, 0.12)", color: "var(--text-muted)" }}>
+            LOADING LESSON
+          </span>
+        </div>
+      </div>
+      <div style={{ ...academyPanelStyle, display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--signal-core)" }}>
+          PREPARING VIEWER
+        </div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.65 }}>
+          Loading the lesson content and checkpoint.
+        </div>
+        <div style={{ display: "grid", gap: 10 }}>
+          {[0, 1, 2].map((item) => (
+            <div key={item} style={{ height: 56, borderRadius: 8, background: "rgba(148, 163, 184, 0.08)", border: "1px solid var(--border-dim)" }} />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }

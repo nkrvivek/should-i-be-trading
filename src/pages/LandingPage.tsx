@@ -1,5 +1,6 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { ACADEMY_MARKETING } from "../content/academyMarketing";
 import { PricingContent } from "./PricingPage";
 
 export function LandingPage() {
@@ -402,8 +403,8 @@ export function LandingPage() {
             tag="PRO"
           />
           <FeatureCard
-            title="Learning Academy + Glossary"
-            description="Free progressive trading academy with locked course paths, lesson-by-lesson teaching views, simulator-linked practice, workflow handoffs into SIBT tools, streak tracking, reminders, badges, and the glossary."
+            title={ACADEMY_MARKETING.title}
+            description={ACADEMY_MARKETING.description}
             tag="FREE"
           />
           <FeatureCard

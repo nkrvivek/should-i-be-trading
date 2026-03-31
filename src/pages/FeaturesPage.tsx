@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
+import { ACADEMY_FEATURE_DETAILS, ACADEMY_MARKETING } from "../content/academyMarketing";
 
 type FeatureSection = {
   title: string;
@@ -706,19 +707,10 @@ const FEATURES: FeatureSection[] = [
 └──────────────────────────────────────────────┘`,
   },
   {
-    title: "Learning Academy + Glossary",
+    title: ACADEMY_MARKETING.title,
     tier: "FREE",
-    description: "Free progressive academy for novice traders: guided course paths, lesson-level teaching views, simulator practice, workflow handoffs into SIBT, badge ladders, and the glossary that explains the rest of the product.",
-    details: [
-      "Progressive course paths with locked lessons and track-by-track unlocks",
-      "Dedicated lesson viewer so users learn the concept before jumping into tools",
-      "Guided lessons on calls, puts, covered calls, spreads, ETFs, forex, futures, and how to use SIBT well",
-      "SIBT badge ladders across beginner, intermediate, and expert progression",
-      "Streak tracking and reminder preferences for daily/weekly practice",
-      "Glossary and deep dives for quick lookup and deeper reading",
-      "Simulator-linked walkthroughs and direct handoffs into relevant research or trading workflows",
-      "Process-based progression, not short-term P&L gamification",
-    ],
+    description: ACADEMY_MARKETING.description,
+    details: ACADEMY_FEATURE_DETAILS,
     mockup: `┌──────────────────────────────────────────────┐
 │  LEARN                       [ACADEMY]      │
 │                                              │

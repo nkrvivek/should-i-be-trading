@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { ACADEMY_FREE_TIER_FEATURES } from "../content/academyMarketing";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useAuthStore } from "../stores/authStore";
 import { redirectToCheckout } from "../lib/stripe";
@@ -25,9 +26,7 @@ const TIERS: Tier[] = [
     yearlyPrice: 0,
     description: "Market regime dashboard with real-time signals",
     features: [
-      "Progressive learning academy with guided course paths and lesson unlocks",
-      "Lesson viewer with learn -> practice -> apply flow into SIBT tools",
-      "Daily/weekly learning streaks, reminders, and badge progression",
+      ...ACADEMY_FREE_TIER_FEATURES,
       "Traffic Light verdict (TRADE / CAUTION / NO TRADE)",
       "Market Quality Score (5-category, 0-100)",
       "Market Regime & Fragility Monitor (8 signals)",
@@ -37,12 +36,10 @@ const TIERS: Tier[] = [
       "Earnings calendar (80+ stocks, 10 sectors)",
       "Earnings intelligence (beat/miss patterns, post-earnings moves)",
       "News sentiment feed (market-wide)",
-      "Glossary + deep dives + structured lessons on options, spreads, ETFs, forex, and futures",
       "Dark / light theme",
       "Risk profile preferences (appetite, loss/profit targets)",
       "Portfolio risk score (A-F grade with 5-pillar analysis)",
       "Composite trade scores (TRADE/CAUTION/AVOID per ticker)",
-      "Simulator-linked lessons for covered calls, puts, spreads, and execution basics",
     ],
     tier: "free",
   },

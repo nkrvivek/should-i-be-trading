@@ -1,14 +1,19 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { exaSearch, type ExaResult } from "../../api/exaClient";
 import { isSupabaseConfigured } from "../../lib/supabase";
 
-export function ResearchPanel() {
+export function ResearchPanel({ initialQuery }: { initialQuery?: string }) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<ExaResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const hasAccess = isSupabaseConfigured();
+
+  useEffect(() => {
+    if (!initialQuery?.trim()) return;
+    setQuery((current) => current || initialQuery.trim().toUpperCase());
+  }, [initialQuery]);
 
   const handleSearch = async (e?: React.SyntheticEvent) => {
     e?.preventDefault();

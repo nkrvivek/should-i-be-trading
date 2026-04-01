@@ -9,6 +9,7 @@ type Props = {
   cri?: CriData | null;
   portfolio?: PortfolioData | null;
   verdict?: TrafficLightVerdict;
+  initialPrompt?: string;
 };
 
 /** Quick-action prompt suggestions for the chat */
@@ -95,7 +96,7 @@ function buildSystemPrompt(cri: CriData | null, portfolio: PortfolioData | null,
   return parts.join("\n");
 }
 
-export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
+export function ChatPanel({ cri = null, portfolio = null, verdict, initialPrompt }: Props) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -107,6 +108,11 @@ export function ChatPanel({ cri = null, portfolio = null, verdict }: Props) {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  useEffect(() => {
+    if (!initialPrompt?.trim()) return;
+    setInput((current) => current || initialPrompt.trim());
+  }, [initialPrompt]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

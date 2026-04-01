@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useMemo, lazy, Suspense, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useBrokerStore } from "../stores/brokerStore";
 import { useTradeJournal } from "../hooks/useTradeJournal";
@@ -95,6 +95,7 @@ function getStageForTab(tab: TabId): StageId {
 }
 
 export default function TradingPage() {
+  const [searchParams] = useSearchParams();
   useMarketScore();
   useRegimeMonitor();
 
@@ -113,6 +114,7 @@ export default function TradingPage() {
   } = useBrokerStore();
 
   const navigate = useNavigate();
+  const selectedSymbol = (searchParams.get("symbol") || "").trim().toUpperCase();
   const hasConnections = connections.length > 0;
   const hasAnyAccount = Object.keys(accounts).length > 0;
   const brokerReady = hasConnections && hasAnyAccount;
@@ -316,6 +318,35 @@ export default function TradingPage() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
+        {selectedSymbol && (
+          <div style={{
+            padding: 14,
+            borderRadius: 8,
+            border: "1px solid rgba(5, 173, 152, 0.25)",
+            background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
+          }}>
+            <div style={{ ...monoStyle, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>
+              ACTIVE TICKER
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, alignItems: "center", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ ...monoStyle, fontSize: 20, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+                  {selectedSymbol}
+                </div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+                  Keep this symbol as the main thread while you move through setup, review, execution, and reflection.
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <TradeVerdictBadgeWithScore symbol={selectedSymbol} showScore={false} />
+                <button type="button" onClick={() => navigate(`/research?tab=ticker&view=research&symbol=${selectedSymbol}`)} style={{ ...monoStyle, fontSize: 12, fontWeight: 700, padding: "8px 12px", borderRadius: 6, border: "1px solid var(--border-dim)", background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>
+                  BACK TO RESEARCH
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
           {visibleStages.map((stage) => {
             const isActive = stage === activeStage;
@@ -798,9 +829,49 @@ function OrdersPanel({ orders, onCancel, onPlace }: {
 }
 
 function JournalPanel() {
-  const { entries, stats, closeTrade, deleteTrade } = useTradeJournal();
+  const { entries, stats, closeTrade, deleteTrade, updateTrade } = useTradeJournal();
   const fmt = (n: number) => n.toLocaleString("en-US", { style: "currency", currency: "USD" });
   const pct = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const [exitPriceInput, setExitPriceInput] = useState("");
+  const [executionQuality, setExecutionQuality] = useState<"A" | "B" | "C">("B");
+  const [thesisOutcome, setThesisOutcome] = useState<"worked" | "mixed" | "failed">("mixed");
+  const [nextAction, setNextAction] = useState("Keep on watchlist");
+  const [reviewNotes, setReviewNotes] = useState("");
+
+  const startReview = (entry: import("../lib/strategy/types").TradeJournalEntry) => {
+    setReviewingId(entry.id);
+    setExitPriceInput(entry.exit?.price?.toString() ?? "");
+    setExecutionQuality(entry.review?.executionQuality ?? "B");
+    setThesisOutcome(entry.review?.thesisOutcome ?? "mixed");
+    setNextAction(entry.review?.nextAction ?? "Keep on watchlist");
+    setReviewNotes(entry.review?.notes ?? "");
+  };
+
+  const saveReview = () => {
+    if (!reviewingId) return;
+    const trimmedExit = exitPriceInput.trim();
+    if (trimmedExit) {
+      const parsed = Number(trimmedExit);
+      if (Number.isFinite(parsed) && parsed > 0) {
+        closeTrade(reviewingId, parsed);
+      }
+    }
+    updateTrade(reviewingId, {
+      review: {
+        executionQuality,
+        thesisOutcome,
+        nextAction,
+        notes: reviewNotes.trim(),
+        reviewedAt: new Date().toISOString(),
+      },
+    });
+    setReviewingId(null);
+    setExitPriceInput("");
+    setReviewNotes("");
+  };
+
+  const activeReviewEntry = reviewingId ? entries.find((entry) => entry.id === reviewingId) ?? null : null;
 
   return (
     <div>
@@ -817,6 +888,70 @@ function JournalPanel() {
             <div style={{ ...monoStyle, fontSize: 18, fontWeight: 700, color: m.color }}>{m.value}</div>
           </div>
         ))}
+      </div>
+
+      <div style={{ ...panelStyle, marginBottom: 16 }}>
+        <div style={headerStyle}>Post-Trade Review</div>
+        {activeReviewEntry ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              Close the loop on <strong style={{ color: "var(--text-primary)" }}>{activeReviewEntry.ticker}</strong>. Record how the trade actually played out so the next setup benefits from it.
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 10 }}>
+              <label style={reviewFieldStyle}>
+                <span style={reviewLabelStyle}>Exit Price</span>
+                <input value={exitPriceInput} onChange={(e) => setExitPriceInput(e.target.value)} placeholder="Optional if already closed" style={reviewInputStyle} />
+              </label>
+              <label style={reviewFieldStyle}>
+                <span style={reviewLabelStyle}>Execution</span>
+                <select value={executionQuality} onChange={(e) => setExecutionQuality(e.target.value as "A" | "B" | "C")} style={reviewInputStyle}>
+                  <option value="A">A - matched the plan</option>
+                  <option value="B">B - acceptable</option>
+                  <option value="C">C - sloppy</option>
+                </select>
+              </label>
+              <label style={reviewFieldStyle}>
+                <span style={reviewLabelStyle}>Thesis Outcome</span>
+                <select value={thesisOutcome} onChange={(e) => setThesisOutcome(e.target.value as "worked" | "mixed" | "failed")} style={reviewInputStyle}>
+                  <option value="worked">Worked</option>
+                  <option value="mixed">Mixed</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </label>
+              <label style={reviewFieldStyle}>
+                <span style={reviewLabelStyle}>Next Action</span>
+                <select value={nextAction} onChange={(e) => setNextAction(e.target.value)} style={reviewInputStyle}>
+                  <option>Keep on watchlist</option>
+                  <option>Trade smaller next time</option>
+                  <option>Only simulate next time</option>
+                  <option>Retire this setup for now</option>
+                </select>
+              </label>
+            </div>
+            <label style={reviewFieldStyle}>
+              <span style={reviewLabelStyle}>Review Notes</span>
+              <textarea
+                value={reviewNotes}
+                onChange={(e) => setReviewNotes(e.target.value)}
+                rows={4}
+                placeholder="What confirmed the trade, what invalidated it, and what you would change next time."
+                style={{ ...reviewInputStyle, resize: "vertical" }}
+              />
+            </label>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button onClick={saveReview} style={{ ...monoStyle, fontSize: 12, fontWeight: 700, padding: "8px 12px", border: "1px solid var(--signal-core)", borderRadius: 6, background: "rgba(5, 173, 152, 0.12)", color: "var(--signal-core)", cursor: "pointer" }}>
+                SAVE REVIEW
+              </button>
+              <button onClick={() => setReviewingId(null)} style={{ ...monoStyle, fontSize: 12, fontWeight: 700, padding: "8px 12px", border: "1px solid var(--border-dim)", borderRadius: 6, background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>
+                CANCEL
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+            Pick any open or recently closed trade below to log execution quality, thesis outcome, and the next action. This is meant to be fast enough that you actually do it.
+          </div>
+        )}
       </div>
 
       {!entries.length ? (
@@ -851,9 +986,9 @@ function JournalPanel() {
                   </span>
                 </td>
                 <td style={{ padding: "8px 10px", textAlign: "right", display: "flex", gap: 4 }}>
-                  {e.status === "open" && (
-                    <button onClick={() => { const p = prompt("Exit price?"); if (p) closeTrade(e.id, parseFloat(p)); }} style={{ ...monoStyle, fontSize: 12, padding: "2px 8px", border: "1px solid var(--signal-core)", color: "var(--signal-core)", borderRadius: 4, background: "none", cursor: "pointer" }}>CLOSE</button>
-                  )}
+                  <button onClick={() => startReview(e)} style={{ ...monoStyle, fontSize: 12, padding: "2px 8px", border: "1px solid var(--signal-core)", color: "var(--signal-core)", borderRadius: 4, background: "none", cursor: "pointer" }}>
+                    {e.status === "open" ? "REVIEW" : "EDIT"}
+                  </button>
                   <button onClick={() => deleteTrade(e.id)} style={{ ...monoStyle, fontSize: 12, padding: "2px 8px", border: "1px solid var(--fault)", color: "var(--fault)", borderRadius: 4, background: "none", cursor: "pointer" }}>DEL</button>
                 </td>
               </tr>
@@ -864,6 +999,31 @@ function JournalPanel() {
     </div>
   );
 }
+
+const reviewFieldStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
+};
+
+const reviewLabelStyle: React.CSSProperties = {
+  ...monoStyle,
+  fontSize: 11,
+  fontWeight: 700,
+  color: "var(--text-muted)",
+  letterSpacing: "0.04em",
+  textTransform: "uppercase",
+};
+
+const reviewInputStyle: React.CSSProperties = {
+  ...monoStyle,
+  fontSize: 13,
+  padding: "8px 10px",
+  border: "1px solid var(--border-dim)",
+  borderRadius: 6,
+  background: "var(--bg-panel-raised, #f8fafc)",
+  color: "var(--text-primary)",
+};
 
 function StrategiesPanel({ positions, orders, onSimulate, onExecute }: {
   positions: import("../lib/brokers/types").BrokerPosition[];

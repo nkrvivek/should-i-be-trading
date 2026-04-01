@@ -77,7 +77,7 @@ function colorForValue(value: number | null | undefined, positiveIsGood = true):
 
 /* ─── Main Component ───────────────────────────────── */
 
-export default function FundamentalsContent() {
+export default function FundamentalsContent({ initialSymbol }: { initialSymbol?: string }) {
   const [query, setQuery] = useState("");
   const [symbol, setSymbol] = useState("");
   const [suggestions, setSuggestions] = useState<SearchResult[]>([]);
@@ -158,6 +158,14 @@ export default function FundamentalsContent() {
       }
     }
   }, [computeScore]);
+
+  useEffect(() => {
+    if (!initialSymbol?.trim()) return;
+    const ticker = initialSymbol.trim().toUpperCase();
+    setQuery((current) => current || ticker);
+    if (symbol === ticker || loading) return;
+    void loadFundamentals(ticker);
+  }, [initialSymbol, loadFundamentals, loading, symbol]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter") {

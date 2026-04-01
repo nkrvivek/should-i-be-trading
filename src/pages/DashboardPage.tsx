@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMarketHours } from "../hooks/useMarketHours";
 import { useSignalHistory } from "../hooks/useSignalHistory";
@@ -34,7 +34,13 @@ const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
 
 export function DashboardPage() {
   const navigate = useNavigate();
-  const { workflowProfile, setWorkflowProfile } = useAppStore();
+  const {
+    workflowProfile,
+    setWorkflowProfile,
+    hasChosenWorkflowProfile,
+    workflowProfilePromptDismissed,
+    dismissWorkflowProfilePrompt,
+  } = useAppStore();
   const { status } = useMarketHours();
   const { history, recordVerdict } = useSignalHistory();
   const { score: marketScore, loading: scoreLoading, refresh: refreshScore } = useMarketScore();
@@ -123,6 +129,10 @@ export function DashboardPage() {
   const stance = regime?.actionStance ?? verdict.vixRegime.label;
   const regimeLabel = regime?.marketState ?? verdict.signal.replace("_", " ");
   const workflowPreset = WORKFLOW_PRESETS[workflowProfile];
+  const [showDeeperMarketDetail, setShowDeeperMarketDetail] = useState(false);
+  const [showWatchlistWorkspace, setShowWatchlistWorkspace] = useState(false);
+  const [showSignalHistory, setShowSignalHistory] = useState(false);
+  const showWorkflowPrompt = !hasChosenWorkflowProfile && !workflowProfilePromptDismissed;
 
   return (
     <TerminalShell>
@@ -148,10 +158,55 @@ export function DashboardPage() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 1400, margin: "0 auto" }}>
+        {showWorkflowPrompt && (
+          <Panel title="Choose Your Default Workflow">
+            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+              <div style={heroCardStyle}>
+                <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
+                  FIRST-RUN SETUP
+                </div>
+                <div style={{ ...mono, fontSize: 20, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
+                  Make the app feel more like your process.
+                </div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.65, color: "var(--text-secondary)", maxWidth: 860 }}>
+                  Pick the workflow that matches how you trade right now. This changes the default guidance across Home, Learn, and the rest of the product without hiding any of the core tools you already have.
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                {WORKFLOW_OPTIONS.map((option) => (
+                  <button
+                    key={option.id}
+                    type="button"
+                    onClick={() => setWorkflowProfile(option.id)}
+                    style={{
+                      ...listRowButtonStyle,
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                      justifyContent: "flex-start",
+                    }}
+                  >
+                    <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+                      {option.label}
+                    </div>
+                    <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.55, color: "var(--text-secondary)" }}>
+                      {WORKFLOW_PRESETS[option.id].summary}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div>
+                <button type="button" onClick={dismissWorkflowProfilePrompt} style={secondaryBtnStyle}>
+                  Choose Later
+                </button>
+              </div>
+            </div>
+          </Panel>
+        )}
+
         <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.55fr) minmax(340px, 0.85fr)", gap: 16, alignItems: "stretch" }}>
           <Panel title="Today">
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 0.95fr) minmax(0, 1.35fr)", gap: 14, alignItems: "stretch" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 0.95fr) minmax(0, 1.35fr)", gap: 14, alignItems: "start" }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "center" }}>
                   <TrafficLight verdict={verdict} />
                   {marketScore && (
@@ -163,7 +218,7 @@ export function DashboardPage() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.25fr) minmax(240px, 0.9fr)", gap: 12, alignItems: "stretch" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.25fr) minmax(240px, 0.9fr)", gap: 12, alignItems: "start" }}>
                   <div style={heroCardStyle}>
                     <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
                       TODAY&apos;S STANCE
@@ -178,7 +233,7 @@ export function DashboardPage() {
                       {workflowPreset.stanceCopy}
                     </p>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12, alignSelf: "start" }}>
                     <div style={presetCardStyle}>
                       <div style={{ ...mono, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>
                         WORKFLOW PROFILE
@@ -327,7 +382,7 @@ export function DashboardPage() {
           </Panel>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.8fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)", gap: 16 }}>
           <Panel title="Focus List">
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {watchlistFocus.length === 0 ? (
@@ -343,8 +398,8 @@ export function DashboardPage() {
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", justifyContent: "flex-end" }}>
                       <TradeVerdictBadgeWithScore symbol={symbol} showScore={false} />
-                      <button type="button" onClick={() => navigate("/research?tab=composite")} style={secondaryBtnStyle}>RESEARCH</button>
-                      <button type="button" onClick={() => navigate("/trading")} style={primaryBtnStyle}>TRADE</button>
+                      <button type="button" onClick={() => navigate(`/research?tab=ticker&view=research&symbol=${symbol}`)} style={secondaryBtnStyle}>RESEARCH</button>
+                      <button type="button" onClick={() => navigate(`/trading?symbol=${symbol}`)} style={primaryBtnStyle}>TRADE</button>
                     </div>
                   </div>
                 ))
@@ -367,6 +422,12 @@ export function DashboardPage() {
                 onClick={() => navigate("/research?tab=composite")}
               />
               <ChecklistRow
+                title="Do one focused ticker review"
+                body="Take one name through the ticker workspace instead of bouncing between unrelated tabs."
+                cta="Open Ticker Workspace"
+                onClick={() => navigate(topOpportunities[0] ? `/research?tab=ticker&view=research&symbol=${topOpportunities[0].symbol}` : "/research?tab=ticker&view=research")}
+              />
+              <ChecklistRow
                 title="Practice before execution"
                 body="If the setup is new or complex, route through the simulator before a live order."
                 cta="Open Simulator"
@@ -382,26 +443,55 @@ export function DashboardPage() {
           </Panel>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }}>
+        <Panel title="Deeper Workspace">
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-            <ScoreBreakdown score={marketScore} loading={scoreLoading} onRefresh={refreshScore} />
-          </div>
-          <Panel title="Market Detail">
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, minHeight: 460 }}>
-              <div style={{ minHeight: 0 }}>
-                <SectorHeatMap />
-              </div>
-              <div style={{ minHeight: 0 }}>
-                <TickerChart />
-              </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+              <ExpandableWorkspaceCard
+                title="Market Detail"
+                body="Open the lower-priority market panels only when you want more context behind the top-level stance."
+                cta={showDeeperMarketDetail ? "Hide Detail" : "Open Detail"}
+                onClick={() => setShowDeeperMarketDetail((value) => !value)}
+              />
+              <ExpandableWorkspaceCard
+                title="Watchlist Workspace"
+                body="Keep the watchlist manager available, but don’t let it compete with the first-screen decision flow."
+                cta={showWatchlistWorkspace ? "Hide Watchlists" : "Open Watchlists"}
+                onClick={() => setShowWatchlistWorkspace((value) => !value)}
+              />
+              <ExpandableWorkspaceCard
+                title={`Signal History (${history.length})`}
+                body="Use history when you need context on prior stance changes, not as a default homepage focus."
+                cta={showSignalHistory ? "Hide History" : "Open History"}
+                onClick={() => setShowSignalHistory((value) => !value)}
+              />
             </div>
-          </Panel>
-        </div>
 
-        <WatchlistManager />
+            {showDeeperMarketDetail && (
+              <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", gap: 16 }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  <ScoreBreakdown score={marketScore} loading={scoreLoading} onRefresh={refreshScore} />
+                </div>
+                <Panel title="Market Detail">
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, minHeight: 460 }}>
+                    <div style={{ minHeight: 0 }}>
+                      <SectorHeatMap />
+                    </div>
+                    <div style={{ minHeight: 0 }}>
+                      <TickerChart />
+                    </div>
+                  </div>
+                </Panel>
+              </div>
+            )}
 
-        <Panel title={`Signal History (${history.length})`}>
-          <SignalTimeline history={history} />
+            {showWatchlistWorkspace && <WatchlistManager />}
+
+            {showSignalHistory && (
+              <Panel title={`Signal History (${history.length})`}>
+                <SignalTimeline history={history} />
+              </Panel>
+            )}
+          </div>
         </Panel>
       </div>
     </TerminalShell>
@@ -483,6 +573,34 @@ function EmptyState({ text }: { text: string }) {
   return (
     <div style={{ padding: 24, textAlign: "center", ...mono, fontSize: 13, color: "var(--text-muted)" }}>
       {text}
+    </div>
+  );
+}
+
+function ExpandableWorkspaceCard({
+  title,
+  body,
+  cta,
+  onClick,
+}: {
+  title: string;
+  body: string;
+  cta: string;
+  onClick: () => void;
+}) {
+  return (
+    <div style={actionCardStyle}>
+      <div>
+        <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+          {title}
+        </div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+          {body}
+        </div>
+      </div>
+      <div>
+        <button type="button" onClick={onClick} style={secondaryBtnStyle}>{cta}</button>
+      </div>
     </div>
   );
 }

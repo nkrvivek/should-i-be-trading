@@ -64,6 +64,7 @@ export default function ResearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const rawTab = searchParams.get("tab") || "composite";
   const rawView = searchParams.get("view");
+  const symbolParam = (searchParams.get("symbol") || "").trim().toUpperCase();
   const { data: cri } = useRegime(true);
   const { data: portfolio } = usePortfolio();
   const { status } = useMarketHours();
@@ -100,6 +101,10 @@ export default function ResearchPage() {
   const moreView: string = MORE_TABS.some((tab) => tab.id === rawView)
     ? (rawView ?? "screener")
     : (LEGACY_TAB_MAP[rawTab]?.view ?? "screener");
+  const selectedSymbol = symbolParam || inferFocusedSymbol(portfolio?.positions?.[0]?.ticker);
+  const chatPrompt = selectedSymbol
+    ? `Walk me through the current thesis for ${selectedSymbol}. What would need to be true for this setup to deserve attention right now?`
+    : undefined;
 
   const selectPrimaryTab = (id: string) => {
     const next = new URLSearchParams(searchParams);
@@ -111,6 +116,14 @@ export default function ResearchPage() {
     } else if (id !== "ticker" && id !== "more") {
       next.delete("view");
     }
+    setSearchParams(next, { replace: true });
+  };
+
+  const setSelectedSymbol = (symbol: string) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", "ticker");
+    next.set("view", "research");
+    next.set("symbol", symbol.toUpperCase());
     setSearchParams(next, { replace: true });
   };
 
@@ -146,7 +159,7 @@ export default function ResearchPage() {
               actions={[
                 {
                   label: primaryTab === "ticker" ? "Open Trading Review" : "Open Signals",
-                  onClick: () => navigate(primaryTab === "ticker" ? "/trading" : "/signals"),
+                  onClick: () => navigate(primaryTab === "ticker" ? selectedSymbol ? `/trading?symbol=${selectedSymbol}` : "/trading" : "/signals"),
                 },
                 {
                   label: "View Progress",
@@ -156,6 +169,17 @@ export default function ResearchPage() {
               ]}
             />
           </div>
+
+          {primaryTab === "ticker" && (
+            <div style={{ marginBottom: 12 }}>
+              <TickerWorkspaceHeader
+                symbol={selectedSymbol}
+                onSelectSymbol={setSelectedSymbol}
+                onOpenComposite={() => navigate("/research?tab=composite")}
+                onOpenTrading={() => navigate(selectedSymbol ? `/trading?symbol=${selectedSymbol}` : "/trading")}
+              />
+            </div>
+          )}
 
           {primaryTab === "composite" && (
             <Suspense fallback={loading}>
@@ -178,17 +202,21 @@ export default function ResearchPage() {
           {primaryTab === "ticker" && tickerView === "chat" && (
             <div style={{ display: "grid", gridTemplateColumns: "1fr minmax(320px, 0.9fr)", gap: 12, minHeight: 500 }}>
               <Panel title="Ticker Conversation">
-                <ChatPanel cri={cri} portfolio={portfolio} verdict={verdict} />
+                <ChatPanel cri={cri} portfolio={portfolio} verdict={verdict} initialPrompt={chatPrompt} />
               </Panel>
               <Panel title="Why This Matters">
                 <div style={contextStackStyle}>
                   <ResearchSummaryCard
                     title="Ask for a thesis, not just facts"
-                    body="Use AI Chat to challenge a setup, compare strategies, or pressure-test why a ticker deserves attention right now."
+                    body={selectedSymbol
+                      ? `Use AI Chat to challenge the thesis for ${selectedSymbol}, compare strategies, or pressure-test why it deserves attention right now.`
+                      : "Use AI Chat to challenge a setup, compare strategies, or pressure-test why a ticker deserves attention right now."}
                   />
                   <ResearchSummaryCard
                     title="Keep the workflow connected"
-                    body="If the thesis survives, move into Research or Fundamentals next. If not, go back to Composite and keep triaging."
+                    body={selectedSymbol
+                      ? `If ${selectedSymbol} survives the thesis check, move into Research or Fundamentals next. If not, go back to Composite and keep triaging.`
+                      : "If the thesis survives, move into Research or Fundamentals next. If not, go back to Composite and keep triaging."}
                   />
                 </div>
               </Panel>
@@ -197,13 +225,13 @@ export default function ResearchPage() {
 
           {primaryTab === "ticker" && tickerView === "research" && (
             <Panel title="Ticker Research">
-              <ResearchPanel />
+              <ResearchPanel initialQuery={selectedSymbol} />
             </Panel>
           )}
 
           {primaryTab === "ticker" && tickerView === "fundamentals" && (
             <Suspense fallback={loading}>
-              <FundamentalsContent />
+              <FundamentalsContent initialSymbol={selectedSymbol} />
             </Suspense>
           )}
 
@@ -305,6 +333,64 @@ function SecondaryTabBar({ tabs }: { tabs: TabDef[] }) {
   );
 }
 
+function TickerWorkspaceHeader({
+  symbol,
+  onSelectSymbol,
+  onOpenComposite,
+  onOpenTrading,
+}: {
+  symbol: string;
+  onSelectSymbol: (symbol: string) => void;
+  onOpenComposite: () => void;
+  onOpenTrading: () => void;
+}) {
+  const quickSymbols = ["AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "META"];
+
+  return (
+    <Panel title="Ticker Workspace">
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={workspaceHeroStyle}>
+          <div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
+              FOCUSED WORKSPACE
+            </div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+              {symbol ? `Working on ${symbol}` : "Choose one ticker and stay with it"}
+            </div>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "var(--text-secondary)", lineHeight: 1.6 }}>
+              Use one symbol across thesis, research, and fundamentals. Once the case is coherent, hand it off into Trading review instead of bouncing across unrelated tabs.
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button type="button" onClick={onOpenComposite} style={secondaryTabActionStyle}>OPEN COMPOSITE</button>
+            <button type="button" onClick={onOpenTrading} style={primaryTabActionStyle}>OPEN TRADING REVIEW</button>
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {quickSymbols.map((candidate) => {
+            const active = candidate === symbol;
+            return (
+              <button
+                key={candidate}
+                type="button"
+                onClick={() => onSelectSymbol(candidate)}
+                style={{
+                  ...secondaryTabActionStyle,
+                  borderColor: active ? "var(--signal-core)" : "var(--border-dim)",
+                  color: active ? "var(--signal-core)" : "var(--text-secondary)",
+                  background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
+                }}
+              >
+                {candidate}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </Panel>
+  );
+}
+
 function ResearchSummaryCard({ title, body }: { title: string; body: string }) {
   return (
     <div style={{
@@ -323,9 +409,49 @@ function ResearchSummaryCard({ title, body }: { title: string; body: string }) {
   );
 }
 
+function inferFocusedSymbol(symbol?: string | null): string {
+  return symbol?.trim().toUpperCase() || "";
+}
+
 const contextStackStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
   gap: 12,
   minHeight: 0,
+};
+
+const workspaceHeroStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 16,
+  alignItems: "flex-start",
+  flexWrap: "wrap",
+  padding: 14,
+  borderRadius: 8,
+  border: "1px solid rgba(5, 173, 152, 0.25)",
+  background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
+};
+
+const primaryTabActionStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 12,
+  fontWeight: 700,
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid var(--signal-core)",
+  background: "rgba(5, 173, 152, 0.12)",
+  color: "var(--signal-core)",
+  cursor: "pointer",
+};
+
+const secondaryTabActionStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 12,
+  fontWeight: 700,
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid var(--border-dim)",
+  background: "transparent",
+  color: "var(--text-secondary)",
+  cursor: "pointer",
 };

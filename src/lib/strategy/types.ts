@@ -44,6 +44,13 @@ export interface TradeJournalEntry {
   verdictAtEntry: string;
   notes: string;
   broker?: string;
+  review?: {
+    executionQuality?: "A" | "B" | "C";
+    thesisOutcome?: "worked" | "mixed" | "failed";
+    nextAction?: string;
+    notes?: string;
+    reviewedAt?: string;
+  };
 }
 
 export interface CoveredCallOpportunity {

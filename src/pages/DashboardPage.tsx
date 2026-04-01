@@ -148,15 +148,22 @@ export function DashboardPage() {
       )}
 
       <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 1400, margin: "0 auto" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.4fr) minmax(320px, 0.8fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.55fr) minmax(340px, 0.85fr)", gap: 16, alignItems: "stretch" }}>
           <Panel title="Today">
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "280px minmax(0, 1fr)", gap: 16 }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 0.95fr) minmax(0, 1.35fr)", gap: 14, alignItems: "stretch" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "center" }}>
                   <TrafficLight verdict={verdict} />
-                  {marketScore && <FearGreedGauge score={marketScore.total} />}
+                  {marketScore && (
+                    <div style={marketAccentCardStyle}>
+                      <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
+                        MARKET PULSE
+                      </div>
+                      <FearGreedGauge score={marketScore.total} />
+                    </div>
+                  )}
                 </div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.25fr) minmax(240px, 0.9fr)", gap: 12, alignItems: "stretch" }}>
                   <div style={heroCardStyle}>
                     <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
                       TODAY&apos;S STANCE
@@ -171,40 +178,42 @@ export function DashboardPage() {
                       {workflowPreset.stanceCopy}
                     </p>
                   </div>
-                  <div style={presetCardStyle}>
-                    <div style={{ ...mono, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>
-                      WORKFLOW PROFILE
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <div style={presetCardStyle}>
+                      <div style={{ ...mono, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>
+                        WORKFLOW PROFILE
+                      </div>
+                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+                        {WORKFLOW_OPTIONS.map((option) => {
+                          const active = option.id === workflowProfile;
+                          return (
+                            <button
+                              key={option.id}
+                              type="button"
+                              onClick={() => setWorkflowProfile(option.id)}
+                              style={{
+                                ...mono,
+                                fontSize: 12,
+                                fontWeight: 700,
+                                padding: "6px 10px",
+                                borderRadius: 999,
+                                border: `1px solid ${active ? "var(--signal-core)" : "var(--border-dim)"}`,
+                                background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
+                                color: active ? "var(--signal-core)" : "var(--text-secondary)",
+                                cursor: "pointer",
+                              }}
+                            >
+                              {option.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                        {workflowPreset.summary}
+                      </div>
                     </div>
-                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                      {WORKFLOW_OPTIONS.map((option) => {
-                        const active = option.id === workflowProfile;
-                        return (
-                          <button
-                            key={option.id}
-                            type="button"
-                            onClick={() => setWorkflowProfile(option.id)}
-                            style={{
-                              ...mono,
-                              fontSize: 12,
-                              fontWeight: 700,
-                              padding: "6px 10px",
-                              borderRadius: 999,
-                              border: `1px solid ${active ? "var(--signal-core)" : "var(--border-dim)"}`,
-                              background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
-                              color: active ? "var(--signal-core)" : "var(--text-secondary)",
-                              cursor: "pointer",
-                            }}
-                          >
-                            {option.label}
-                          </button>
-                        );
-                      })}
-                    </div>
-                    <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
-                      {workflowPreset.summary}
-                    </div>
+                    {marketScore && <QuickMarketStats score={marketScore} />}
                   </div>
-                  {marketScore && <QuickMarketStats score={marketScore} />}
                 </div>
               </div>
               <DailyBriefing cri={null} verdict={verdict} marketScore={marketScore} />
@@ -578,6 +587,13 @@ const presetCardStyle: React.CSSProperties = {
   borderRadius: 8,
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
+};
+
+const marketAccentCardStyle: React.CSSProperties = {
+  padding: 12,
+  borderRadius: 8,
+  border: "1px solid rgba(5, 173, 152, 0.2)",
+  background: "linear-gradient(180deg, rgba(5, 173, 152, 0.06), rgba(5, 173, 152, 0.01))",
 };
 
 const WORKFLOW_OPTIONS: Array<{ id: WorkflowProfile; label: string }> = [

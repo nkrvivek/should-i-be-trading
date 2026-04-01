@@ -12,7 +12,6 @@ import { OrdersPanel } from "../components/trading/OrdersPanel";
 import { JournalPanel } from "../components/trading/JournalPanel";
 import { StrategiesPanel } from "../components/trading/StrategiesPanel";
 import type { OrderRequest } from "../lib/brokers/types";
-import type { SimulatorLeg } from "../lib/strategy/payoff";
 import type { StrategySuggestion } from "../lib/portfolio/strategyAnalyzer";
 
 const CsvUploadPanel = lazy(() => import("../components/portfolio/CsvUploadPanel"));
@@ -115,7 +114,7 @@ function getStageSupportNote(stage: StageId, symbol: string): string {
   return "The goal is a better next decision, not just a logged trade.";
 }
 
-function deriveInitialTab(brokerReady: boolean, hasConnections: boolean): TabId {
+function deriveInitialTab(brokerReady: boolean): TabId {
   if (brokerReady) return "portfolio";
   return "import";
 }
@@ -145,7 +144,7 @@ export default function TradingPage() {
   const hasAnyAccount = Object.keys(accounts).length > 0;
   const brokerReady = hasConnections && hasAnyAccount;
 
-  const [tab, setTab] = useState<TabId>(() => deriveInitialTab(brokerReady, hasConnections));
+  const [tab, setTab] = useState<TabId>(() => deriveInitialTab(brokerReady));
   const brokerSyncAttemptedRef = useRef(false);
   const [executionModal, setExecutionModal] = useState<{
     open: boolean;

@@ -21,20 +21,23 @@ function persistTheme(theme: Theme) {
   document.documentElement.setAttribute("data-theme", theme);
 }
 
+const VALID_PROFILES: readonly WorkflowProfile[] = ["beginner", "active_trader", "options_trader"];
+
+function isValidProfile(value: string | null): value is WorkflowProfile {
+  return VALID_PROFILES.includes(value as WorkflowProfile);
+}
+
 function loadWorkflowProfile(): WorkflowProfile {
   try {
     const stored = localStorage.getItem(WORKFLOW_PROFILE_KEY);
-    if (stored === "beginner" || stored === "active_trader" || stored === "options_trader") {
-      return stored;
-    }
+    if (isValidProfile(stored)) return stored;
   } catch { /* ignore */ }
   return "beginner";
 }
 
 function hasStoredWorkflowProfile(): boolean {
   try {
-    const stored = localStorage.getItem(WORKFLOW_PROFILE_KEY);
-    return stored === "beginner" || stored === "active_trader" || stored === "options_trader";
+    return isValidProfile(localStorage.getItem(WORKFLOW_PROFILE_KEY));
   } catch {
     return false;
   }

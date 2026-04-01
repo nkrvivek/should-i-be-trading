@@ -25,7 +25,6 @@ import { TickerChart } from "../components/market/TickerChart";
 import { WatchlistManager } from "../components/watchlist/WatchlistManager";
 import { Panel } from "../components/layout/Panel";
 import { FearGreedGauge } from "../components/dashboard/FearGreedGauge";
-import { QuickMarketStats } from "../components/dashboard/QuickMarketStats";
 import { TradeVerdictBadgeWithScore } from "../components/trading/TradeVerdictBadge";
 import { TickerWithCompanyName } from "../components/shared/TickerWithCompanyName";
 import { useAppStore, type WorkflowProfile } from "../stores/appStore";
@@ -218,7 +217,7 @@ export function DashboardPage() {
                     </div>
                   )}
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.25fr) minmax(240px, 0.9fr)", gap: 12, alignItems: "start" }}>
+                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.2fr) minmax(250px, 0.95fr)", gap: 12, alignItems: "start" }}>
                   <div style={heroCardStyle}>
                     <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
                       TODAY&apos;S STANCE
@@ -232,6 +231,11 @@ export function DashboardPage() {
                     <p style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.65, color: "var(--text-secondary)" }}>
                       {workflowPreset.stanceCopy}
                     </p>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
+                      <CompactStanceRow label="Bias" value={getBiasLabel(stance)} />
+                      <CompactStanceRow label="Best Fit" value={getBestFitLabel(workflowProfile, stance)} />
+                      <CompactStanceRow label="Risk Note" value={getRiskNote(status, marketScore?.total ?? null)} />
+                    </div>
                   </div>
                   <div style={{ display: "flex", flexDirection: "column", gap: 12, alignSelf: "start" }}>
                     <div style={presetCardStyle}>
@@ -263,11 +267,27 @@ export function DashboardPage() {
                           );
                         })}
                       </div>
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
                         {workflowPreset.summary}
                       </div>
                     </div>
-                    {marketScore && <QuickMarketStats score={marketScore} />}
+                    <div style={actionCardStyle}>
+                      <div>
+                        <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
+                          WHAT TO DO TODAY
+                        </div>
+                        <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+                          {getTodayActionTitle(workflowProfile, status, stance)}
+                        </div>
+                        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.55, color: "var(--text-secondary)" }}>
+                          {getTodayActionBody(workflowProfile, status, stance)}
+                        </div>
+                      </div>
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                        <MiniStat label="Window" value={marketScore ? `${marketScore.executionWindow}%` : "---"} tone="var(--warning)" />
+                        <MiniStat label="Score" value={marketScore ? `${marketScore.total}/100` : "---"} tone="var(--signal-core)" />
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -557,6 +577,15 @@ function ProgressNote({ label, value, detail }: { label: string; value: string; 
   );
 }
 
+function CompactStanceRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div style={compactStanceRowStyle}>
+      <span style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>{label}</span>
+      <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", textAlign: "right" }}>{value}</span>
+    </div>
+  );
+}
+
 function ChecklistRow({ title, body, cta, onClick }: { title: string; body: string; cta: string; onClick: () => void }) {
   return (
     <div style={checklistRowStyle}>
@@ -609,6 +638,49 @@ function formatCurrency(value: number): string {
   return value.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 }
 
+function getBiasLabel(stance: string): string {
+  const normalized = stance.toLowerCase();
+  if (normalized.includes("no trade") || normalized.includes("hedged") || normalized.includes("defensive")) return "Defensive";
+  if (normalized.includes("selective") || normalized.includes("caution")) return "Selective";
+  return "Offensive";
+}
+
+function getBestFitLabel(profile: WorkflowProfile, stance: string): string {
+  const defensive = getBiasLabel(stance) === "Defensive";
+  if (profile === "options_trader") return defensive ? "Defined-risk only" : "Structured options";
+  if (profile === "active_trader") return defensive ? "Wait or trim size" : "Fast validation";
+  return defensive ? "Learn or simulate" : "Simple stock setups";
+}
+
+function getRiskNote(status: string, score: number | null): string {
+  if (status !== "open") return "Market closed";
+  if (score != null && score < 45) return "Weak quality tape";
+  if (score != null && score < 60) return "Stay selective";
+  return "Risk is manageable";
+}
+
+function getTodayActionTitle(profile: WorkflowProfile, status: string, stance: string): string {
+  if (status !== "open") return profile === "beginner" ? "Use the closed session to learn" : "Prep before the open";
+  if (getBiasLabel(stance) === "Defensive") return "Slow down and filter harder";
+  if (profile === "options_trader") return "Structure only the clearest setups";
+  return "Work only the top-ranked names";
+}
+
+function getTodayActionBody(profile: WorkflowProfile, status: string, stance: string): string {
+  if (status !== "open") {
+    return profile === "beginner"
+      ? "Stay in Learn or Simulator first, then revisit the top composite names before the next session."
+      : "Use this time to narrow watchlist names, review one setup, and queue the next action before the open.";
+  }
+  if (getBiasLabel(stance) === "Defensive") {
+    return "Keep size down, skip marginal names, and route anything unfamiliar through review or simulator first.";
+  }
+  if (profile === "options_trader") {
+    return "Only move into execution after structure, risk, and order quality are already clear.";
+  }
+  return "Let composite and regime narrow the field, then hand one clean setup into review instead of chasing breadth.";
+}
+
 const heroCardStyle: React.CSSProperties = {
   border: "1px solid rgba(5, 173, 152, 0.25)",
   borderRadius: 8,
@@ -638,6 +710,15 @@ const progressNoteStyle: React.CSSProperties = {
   borderRadius: 8,
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
+};
+
+const compactStanceRowStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  gap: 12,
+  alignItems: "center",
+  paddingTop: 8,
+  borderTop: "1px solid rgba(5, 173, 152, 0.12)",
 };
 
 const checklistRowStyle: React.CSSProperties = {

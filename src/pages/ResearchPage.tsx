@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useRegime } from "../hooks/useRegime";
 import { usePortfolio } from "../hooks/usePortfolio";
+import { useWatchlists } from "../hooks/useWatchlists";
 import { useMarketHours } from "../hooks/useMarketHours";
 import { useMarketScore } from "../hooks/useMarketScore";
 import { computeVerdict } from "../lib/trafficLight";
@@ -9,6 +10,7 @@ import { TerminalShell } from "../components/layout/TerminalShell";
 import { TabBar, type TabDef } from "../components/layout/TabBar";
 import { Panel } from "../components/layout/Panel";
 import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
+import { TickerPicker, type TickerPickerOption } from "../components/shared/TickerPicker";
 import { ChatPanel } from "../components/ai/ChatPanel";
 import { ResearchPanel } from "../components/ai/ResearchPanel";
 import { ScreenerPanel } from "../components/ai/ScreenerPanel";
@@ -59,6 +61,7 @@ const loading = (
   </div>
 );
 
+
 export default function ResearchPage() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -67,6 +70,7 @@ export default function ResearchPage() {
   const symbolParam = (searchParams.get("symbol") || "").trim().toUpperCase();
   const { data: cri } = useRegime(true);
   const { data: portfolio } = usePortfolio();
+  const { activeWatchlist } = useWatchlists();
   const { status } = useMarketHours();
   const { score: marketScore } = useMarketScore();
 
@@ -102,6 +106,10 @@ export default function ResearchPage() {
     ? (rawView ?? "screener")
     : (LEGACY_TAB_MAP[rawTab]?.view ?? "screener");
   const selectedSymbol = symbolParam || inferFocusedSymbol(portfolio?.positions?.[0]?.ticker);
+  const tickerPickerOptions = useMemo(
+    () => buildTickerPickerOptions(selectedSymbol, portfolio?.positions?.map((position) => position.ticker), activeWatchlist?.tickers),
+    [activeWatchlist?.tickers, portfolio?.positions, selectedSymbol],
+  );
   const chatPrompt = selectedSymbol
     ? `Walk me through the current thesis for ${selectedSymbol}. What would need to be true for this setup to deserve attention right now?`
     : undefined;
@@ -120,10 +128,14 @@ export default function ResearchPage() {
   };
 
   const setSelectedSymbol = (symbol: string) => {
+    const normalizedSymbol = inferFocusedSymbol(symbol);
+    if (!normalizedSymbol) return;
     const next = new URLSearchParams(searchParams);
     next.set("tab", "ticker");
-    next.set("view", "research");
-    next.set("symbol", symbol.toUpperCase());
+    if (!TICKER_TABS.some((tab) => tab.id === next.get("view"))) {
+      next.set("view", "research");
+    }
+    next.set("symbol", normalizedSymbol);
     setSearchParams(next, { replace: true });
   };
 
@@ -174,6 +186,7 @@ export default function ResearchPage() {
             <div style={{ marginBottom: 12 }}>
               <TickerWorkspaceHeader
                 symbol={selectedSymbol}
+                options={tickerPickerOptions}
                 onSelectSymbol={setSelectedSymbol}
                 onOpenComposite={() => navigate("/research?tab=composite")}
                 onOpenTrading={() => navigate(selectedSymbol ? `/trading?symbol=${selectedSymbol}` : "/trading")}
@@ -335,17 +348,17 @@ function SecondaryTabBar({ tabs }: { tabs: TabDef[] }) {
 
 function TickerWorkspaceHeader({
   symbol,
+  options,
   onSelectSymbol,
   onOpenComposite,
   onOpenTrading,
 }: {
   symbol: string;
+  options: TickerPickerOption[];
   onSelectSymbol: (symbol: string) => void;
   onOpenComposite: () => void;
   onOpenTrading: () => void;
 }) {
-  const quickSymbols = ["AAPL", "MSFT", "NVDA", "AMZN", "TSLA", "META"];
-
   return (
     <Panel title="Ticker Workspace">
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
@@ -366,14 +379,35 @@ function TickerWorkspaceHeader({
             <button type="button" onClick={onOpenTrading} style={primaryTabActionStyle}>OPEN TRADING REVIEW</button>
           </div>
         </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 12, alignItems: "start" }}>
+          <TickerPicker
+            value={symbol}
+            onSelect={onSelectSymbol}
+            options={options}
+            placeholder="AAPL, NVDA, Microsoft, SPY..."
+          />
+          <div style={selectionSummaryStyle}>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.06em" }}>
+              CURRENT SYMBOL
+            </div>
+            <div style={{ fontFamily: "var(--font-mono)", fontSize: 24, fontWeight: 700, color: symbol ? "var(--text-primary)" : "var(--text-muted)" }}>
+              {symbol || "---"}
+            </div>
+            <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+              {symbol
+                ? "The selected ticker stays in the URL, so the thesis, research, and fundamentals views stay aligned."
+                : "Pick a ticker once, then work the same symbol through the full research flow."}
+            </div>
+          </div>
+        </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-          {quickSymbols.map((candidate) => {
-            const active = candidate === symbol;
+          {options.slice(0, 10).map((candidate) => {
+            const active = candidate.symbol === symbol;
             return (
               <button
-                key={candidate}
+                key={`${candidate.symbol}-${candidate.hint ?? "picker"}`}
                 type="button"
-                onClick={() => onSelectSymbol(candidate)}
+                onClick={() => onSelectSymbol(candidate.symbol)}
                 style={{
                   ...secondaryTabActionStyle,
                   borderColor: active ? "var(--signal-core)" : "var(--border-dim)",
@@ -381,7 +415,8 @@ function TickerWorkspaceHeader({
                   background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
                 }}
               >
-                {candidate}
+                {candidate.symbol}
+                {candidate.hint ? ` • ${candidate.hint}` : ""}
               </button>
             );
           })}
@@ -413,6 +448,29 @@ function inferFocusedSymbol(symbol?: string | null): string {
   return symbol?.trim().toUpperCase() || "";
 }
 
+function buildTickerPickerOptions(
+  selectedSymbol: string,
+  portfolioSymbols?: Array<string | null | undefined>,
+  watchlistSymbols?: string[],
+): TickerPickerOption[] {
+  const options: TickerPickerOption[] = [];
+  const seen = new Set<string>();
+
+  const add = (symbol: string | null | undefined, hint: string) => {
+    const normalized = inferFocusedSymbol(symbol);
+    if (!normalized || seen.has(normalized)) return;
+    seen.add(normalized);
+    options.push({ symbol: normalized, hint });
+  };
+
+  add(selectedSymbol, "Current");
+  portfolioSymbols?.forEach((symbol) => add(symbol, "Portfolio"));
+  watchlistSymbols?.forEach((symbol) => add(symbol, "Watchlist"));
+  ["SPY", "QQQ", "AAPL", "MSFT", "NVDA", "AMZN", "META", "TSLA"].forEach((symbol) => add(symbol, "Quick pick"));
+
+  return options;
+}
+
 const contextStackStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
@@ -430,6 +488,16 @@ const workspaceHeroStyle: React.CSSProperties = {
   borderRadius: 8,
   border: "1px solid rgba(5, 173, 152, 0.25)",
   background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
+};
+
+const selectionSummaryStyle: React.CSSProperties = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 6,
+  padding: 12,
+  borderRadius: 8,
+  border: "1px solid var(--border-dim)",
+  background: "var(--bg-panel-raised)",
 };
 
 const primaryTabActionStyle: React.CSSProperties = {

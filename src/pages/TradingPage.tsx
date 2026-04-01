@@ -94,6 +94,27 @@ function getStageForTab(tab: TabId): StageId {
   return "reflect";
 }
 
+function getPrimaryStageActionLabel(stage: StageId, brokerReady: boolean): string {
+  if (stage === "setup") return brokerReady ? "OPEN PORTFOLIO" : "IMPORT HOLDINGS";
+  if (stage === "review") return "OPEN STRATEGY REVIEW";
+  if (stage === "execute") return "OPEN ORDERS";
+  return "OPEN JOURNAL";
+}
+
+function getSecondaryStageActionLabel(stage: StageId): string {
+  if (stage === "setup") return "OPEN RESEARCH";
+  if (stage === "review") return "OPEN BACKTEST";
+  if (stage === "execute") return "START REVIEW";
+  return "OPEN PROGRESS";
+}
+
+function getStageSupportNote(stage: StageId, symbol: string): string {
+  if (stage === "setup") return symbol ? `${symbol} is your current focus symbol.` : "Choose one symbol before moving deeper.";
+  if (stage === "review") return "Only move forward if the setup still survives review.";
+  if (stage === "execute") return "Execution is only a stage, not the finish line.";
+  return "The goal is a better next decision, not just a logged trade.";
+}
+
 export default function TradingPage() {
   const [searchParams] = useSearchParams();
   useMarketScore();
@@ -391,6 +412,55 @@ export default function TradingPage() {
           </div>
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.6, color: "var(--text-secondary)" }}>
             {STAGE_CONFIG[activeStage].blurb}
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+            <button
+              type="button"
+              onClick={() => {
+                if (activeStage === "setup") setTab(brokerReady ? "portfolio" : "import");
+                else if (activeStage === "review") setTab("strategies");
+                else if (activeStage === "execute") setTab("orders");
+                else setTab("journal");
+              }}
+              style={{
+                ...monoStyle,
+                fontSize: 12,
+                fontWeight: 700,
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid var(--signal-core)",
+                background: "rgba(5, 173, 152, 0.12)",
+                color: "var(--signal-core)",
+                cursor: "pointer",
+              }}
+            >
+              {getPrimaryStageActionLabel(activeStage, brokerReady)}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                if (activeStage === "setup") navigate(selectedSymbol ? `/research?tab=ticker&view=research&symbol=${selectedSymbol}` : "/research");
+                else if (activeStage === "review") navigate("/signals?tab=validation&view=backtest");
+                else if (activeStage === "execute") setTab("journal");
+                else navigate("/progress");
+              }}
+              style={{
+                ...monoStyle,
+                fontSize: 12,
+                fontWeight: 700,
+                padding: "8px 12px",
+                borderRadius: 6,
+                border: "1px solid var(--border-dim)",
+                background: "transparent",
+                color: "var(--text-secondary)",
+                cursor: "pointer",
+              }}
+            >
+              {getSecondaryStageActionLabel(activeStage)}
+            </button>
+            <span style={{ ...monoStyle, fontSize: 11, color: "var(--text-muted)", display: "inline-flex", alignItems: "center" }}>
+              {getStageSupportNote(activeStage, selectedSymbol)}
+            </span>
           </div>
         </div>
 

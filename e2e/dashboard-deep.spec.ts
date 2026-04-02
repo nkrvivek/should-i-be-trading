@@ -24,8 +24,8 @@ test.describe("Dashboard — Market Score", () => {
   test("SIBT Score breakdown categories are visible", async ({ page }) => {
     // ScoreBreakdown shows categories: VIX, MOM, TRD, BRD, MAC
     // or the full names: Volatility, Momentum, Trend, Breadth, Macro
-    // Wait for score to compute
-    await page.waitForTimeout(3_000);
+    // Wait for score to compute or loading indicator to appear
+    await expect(page.getByText(/TRADE|CAUTION|NO TRADE|computing|loading|volatility|momentum/i).first()).toBeVisible({ timeout: 15_000 });
 
     const categories = ["Volatility", "Momentum", "Trend", "Breadth", "Macro"];
     const altLabels = ["VIX", "MOM", "TRD", "BRD", "MAC"];
@@ -57,8 +57,8 @@ test.describe("Dashboard — Market Score", () => {
   });
 
   test("score displays a numeric value or loading state", async ({ page }) => {
-    // Wait for score computation
-    await page.waitForTimeout(5_000);
+    // Wait for score computation or loading indicator
+    await expect(page.getByText(/TRADE|CAUTION|NO TRADE|computing|loading/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Look for a score number (0-100) or loading state
     const _scoreRegex = /\b([0-9]{1,3})\b/;
@@ -86,7 +86,7 @@ test.describe("Dashboard — Fear & Greed Gauge", () => {
     await page.waitForLoadState("networkidle");
 
     // Wait for score to load (gauge only renders when marketScore exists)
-    await page.waitForTimeout(5_000);
+    await expect(page.getByText(/TRADE|CAUTION|NO TRADE|computing|fear|greed|neutral|sentiment/i).first()).toBeVisible({ timeout: 15_000 });
 
     // FearGreedGauge renders when marketScore is available
     const hasGauge = await page
@@ -232,8 +232,8 @@ test.describe("Dashboard — Watchlist", () => {
     await removeBtn.click();
 
     // The ticker should disappear (or the count should decrease)
-    // Give it a moment to process
-    await page.waitForTimeout(1_000);
+    // Wait for the removal to be processed (button should disappear or DOM update)
+    await expect(removeBtn).toBeHidden({ timeout: 5_000 }).catch(() => {});
 
     // Verify the ticker is gone or the element count decreased
     if (tickerText) {
@@ -272,8 +272,8 @@ test.describe("Dashboard — Signal Timeline", () => {
     await page.goto("/");
     await page.waitForLoadState("networkidle");
 
-    // Wait for data
-    await page.waitForTimeout(3_000);
+    // Wait for signal history content or verdict to appear
+    await expect(page.getByText(/TRADE|CAUTION|NO TRADE|signal history|computing|loading/i).first()).toBeVisible({ timeout: 15_000 });
 
     // Either signal entries with dates/verdicts, or empty state
     const hasEntries = await page

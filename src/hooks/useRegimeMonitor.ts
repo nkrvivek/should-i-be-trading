@@ -98,15 +98,15 @@ async function fetchFreshRegimeMonitor(): Promise<{ data: RegimeMonitorResult; t
   }
 
   const [spyQuote, rspQuote] = await Promise.all([
-    finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch(() => null),
-    finnhubFetch<FinnhubQuote>("quote", { symbol: "RSP" }, apiKey).catch(() => null),
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch((err) => { console.warn("[useRegimeMonitor] SPY quote fetch failed:", err); return null; }),
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "RSP" }, apiKey).catch((err) => { console.warn("[useRegimeMonitor] RSP quote fetch failed:", err); return null; }),
   ]);
 
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   const [hygQuote, tltQuote] = await Promise.all([
-    finnhubFetch<FinnhubQuote>("quote", { symbol: "HYG" }, apiKey).catch(() => null),
-    finnhubFetch<FinnhubQuote>("quote", { symbol: "TLT" }, apiKey).catch(() => null),
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "HYG" }, apiKey).catch((err) => { console.warn("[useRegimeMonitor] HYG quote fetch failed:", err); return null; }),
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "TLT" }, apiKey).catch((err) => { console.warn("[useRegimeMonitor] TLT quote fetch failed:", err); return null; }),
   ]);
 
   if (spyQuote?.c) spxPrice = spyQuote.c;
@@ -123,7 +123,8 @@ async function fetchFreshRegimeMonitor(): Promise<{ data: RegimeMonitorResult; t
         try {
           const quote = await finnhubFetch<FinnhubQuote>("quote", { symbol }, apiKey);
           return { symbol, change: quote.dp ?? 0 };
-        } catch {
+        } catch (err) {
+          console.warn(`[useRegimeMonitor] sector ${symbol} fetch failed:`, err);
           return null;
         }
       }),

@@ -874,6 +874,30 @@ export const GLOSSARY: GlossaryEntry[] = [
     difficulty: "advanced",
   },
 
+  // ─── Sentiment & Data ──────────────────────────────────────────────────────────
+  {
+    term: "Short Interest",
+    category: "Market",
+    definition:
+      "The total number of shares sold short but not yet covered, often expressed as a percentage of the float (shares available for trading). High short interest (>20% of float) signals strong bearish sentiment and increases the potential for a short squeeze — where rising prices force short sellers to buy back shares, accelerating the rally. Low short interest (<5%) indicates bullish consensus. Days to cover (short interest ÷ average daily volume) measures how long it would take all shorts to close — higher values mean more squeeze risk.",
+    example:
+      "Stock with 30% short interest and 8 days to cover → high squeeze potential if a positive catalyst hits",
+    relatedTerms: ["Short Selling", "Composite Trade Score", "Put/Call Ratio (P/C)"],
+    difficulty: "intermediate",
+  },
+
+  // ─── Credit & Spreads ─────────────────────────────────────────────────────────
+  {
+    term: "Credit Spread",
+    category: "Options",
+    definition:
+      "An options strategy where you simultaneously sell a higher-premium option and buy a lower-premium option at different strikes but the same expiration, receiving a net credit upfront. A bull put spread (sell higher-strike put, buy lower-strike put) profits when the stock stays above the short strike. A bear call spread (sell lower-strike call, buy higher-strike call) profits when the stock stays below the short strike. Maximum profit = credit received. Maximum loss = width of the spread minus the credit received. Credit spreads benefit from time decay (theta) and are popular in high-IV environments where premiums are rich.",
+    example:
+      "Sell $100 put for $4, buy $95 put for $1.50 → net credit $2.50, max loss $2.50, breakeven at $97.50",
+    relatedTerms: ["Spread", "Bull Put Spread", "Defined Risk", "Premium", "The Greeks"],
+    difficulty: "intermediate",
+  },
+
   // ─── Additional Terms ─────────────────────────────────────────────────────────
   {
     term: "Liquidity",

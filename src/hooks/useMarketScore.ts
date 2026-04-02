@@ -71,8 +71,8 @@ async function fetchFreshMarketScore(status: string): Promise<CachedMarketScoreS
     fredFetchSeries("VIXCLS", 5),
     fredFetchSeries("SP500", 250),
     fredFetchLatest("DGS10"),
-    fredFetchLatest("DTWEXBGS").catch(() => undefined),
-    finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch(() => null),
+    fredFetchLatest("DTWEXBGS").catch((err) => { console.warn("[useMarketScore] DXY fetch failed:", err); return undefined; }),
+    finnhubFetch<FinnhubQuote>("quote", { symbol: "SPY" }, apiKey).catch((err) => { console.warn("[useMarketScore] SPY quote fetch failed:", err); return null; }),
   ]);
 
   const vix = vixSeries.length > 0 ? vixSeries[0] : undefined;
@@ -103,7 +103,8 @@ async function fetchFreshMarketScore(status: string): Promise<CachedMarketScoreS
         try {
           const quote = await finnhubFetch<FinnhubQuote>("quote", { symbol }, apiKey);
           return { symbol, change: quote.dp ?? 0 };
-        } catch {
+        } catch (err) {
+          console.warn(`[useMarketScore] sector ${symbol} fetch failed:`, err);
           return null;
         }
       }),

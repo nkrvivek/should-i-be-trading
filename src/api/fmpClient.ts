@@ -309,7 +309,7 @@ export async function getFundamentalSnapshot(symbol: string): Promise<FmpFundame
     getProfile(symbol),
     getRatiosTTM(symbol),
     getKeyMetricsTTM(symbol),
-    getPriceTarget(symbol).catch(() => [] as FmpPriceTarget[]),
+    getPriceTarget(symbol).catch((err) => { console.warn("[fmpClient] getPriceTarget failed:", err); return [] as FmpPriceTarget[]; }),
   ]);
 
   return {

@@ -74,7 +74,7 @@ export function useMarketNews() {
       const apiKey = getCredential("finnhub");
       const [newsData, sentimentData] = await Promise.all([
         finnhubFetch<NewsItem[]>("company-news", { symbol: symbol.toUpperCase(), from, to: today }, apiKey || undefined),
-        finnhubFetch<SentimentData>("news-sentiment", { symbol: symbol.toUpperCase() }, apiKey || undefined).catch(() => null),
+        finnhubFetch<SentimentData>("news-sentiment", { symbol: symbol.toUpperCase() }, apiKey || undefined).catch((err) => { console.warn("[useMarketNews] sentiment fetch failed:", err); return null; }),
       ]);
 
       setNews(newsData.slice(0, 30));

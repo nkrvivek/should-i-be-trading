@@ -329,7 +329,6 @@ export function DashboardPage() {
                 onSecondaryClick={() => navigate("/trading")}
               />
             </div>
-          </div>
         </div>
 
         <DailyBriefing cri={null} verdict={verdict} marketScore={marketScore} />

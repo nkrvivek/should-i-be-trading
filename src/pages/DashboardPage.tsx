@@ -202,20 +202,34 @@ export function DashboardPage() {
           </Panel>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) minmax(280px, 0.7fr)", gap: 12, alignItems: "start" }}>
-          <Panel title="Today">
-            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <TrafficLight verdict={verdict} />
-              {marketScore && (
-                <div style={marketAccentCardStyle}>
-                  <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
-                    MARKET PULSE
-                  </div>
-                  <FearGreedGauge score={marketScore.total} />
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) minmax(280px, 0.7fr)", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <Panel title="Today">
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                <TrafficLight verdict={verdict} />
+              </div>
+            </Panel>
+            {marketScore?.categories && marketScore.categories.length > 0 && (
+              <div style={presetCardStyle}>
+                <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
+                  SCORE BREAKDOWN
                 </div>
-              )}
-            </div>
-          </Panel>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                  {marketScore.categories.map((cat) => (
+                    <div key={cat.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                      <span style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>{cat.name}</span>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 80 }}>
+                        <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(148, 163, 184, 0.15)", overflow: "hidden" }}>
+                          <div style={{ width: `${Math.min(cat.score, 100)}%`, height: "100%", borderRadius: 2, background: cat.score >= 60 ? "var(--signal-core)" : cat.score >= 40 ? "var(--warning)" : "var(--fault)" }} />
+                        </div>
+                        <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: cat.score >= 60 ? "var(--signal-core)" : cat.score >= 40 ? "var(--warning)" : "var(--fault)", minWidth: 24, textAlign: "right" }}>{cat.score}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
             <div style={heroCardStyle}>
@@ -254,6 +268,14 @@ export function DashboardPage() {
                 <MiniStat label="Score" value={marketScore ? `${marketScore.total}/100` : "---"} tone="var(--signal-core)" />
               </div>
             </div>
+            {marketScore && (
+              <div style={marketAccentCardStyle}>
+                <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
+                  MARKET PULSE
+                </div>
+                <FearGreedGauge score={marketScore.total} />
+              </div>
+            )}
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>

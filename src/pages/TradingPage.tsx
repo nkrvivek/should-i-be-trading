@@ -5,7 +5,6 @@ import { useBrokerStore } from "../stores/brokerStore";
 import { useMarketScore } from "../hooks/useMarketScore";
 import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import { TradeVerdictBadgeWithScore } from "../components/trading/TradeVerdictBadge";
-import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
 import { AccountSummary } from "../components/trading/AccountSummary";
 import { PositionsTable } from "../components/trading/PositionsTable";
 import { OrdersPanel } from "../components/trading/OrdersPanel";
@@ -46,6 +45,43 @@ const tabLoader = (
 
 const monoStyle: React.CSSProperties = {
   fontFamily: "'IBM Plex Mono', monospace",
+};
+
+const stageActionStripStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 12,
+  flexWrap: "wrap",
+  padding: "10px 12px",
+  marginBottom: 16,
+  borderRadius: 6,
+  border: "1px solid var(--border-dim)",
+  background: "var(--bg-panel-raised)",
+};
+
+const stripPrimaryButtonStyle: React.CSSProperties = {
+  ...monoStyle,
+  fontSize: 12,
+  fontWeight: 700,
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid var(--signal-core)",
+  background: "rgba(5, 173, 152, 0.12)",
+  color: "var(--signal-core)",
+  cursor: "pointer",
+};
+
+const stripSecondaryButtonStyle: React.CSSProperties = {
+  ...monoStyle,
+  fontSize: 12,
+  fontWeight: 700,
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid var(--border-dim)",
+  background: "transparent",
+  color: "var(--text-secondary)",
+  cursor: "pointer",
 };
 
 type TabId = "import" | "strategies" | "portfolio" | "orders" | "flow" | "journal";
@@ -114,6 +150,13 @@ function getStageSupportNote(stage: StageId, symbol: string): string {
   return "The goal is a better next decision, not just a logged trade.";
 }
 
+function getStageStripSummary(stage: StageId): string {
+  if (stage === "setup") return "Import or inspect positions, then move into validation or review only for names that still matter.";
+  if (stage === "review") return "Use strategy analysis and flow to sharpen the trade or reject it quickly.";
+  if (stage === "execute") return "Execution should only happen after the setup and review already make sense.";
+  return "Use journal and review notes to improve the next trade, not just to archive the last one.";
+}
+
 function deriveInitialTab(brokerReady: boolean): TabId {
   if (brokerReady) return "portfolio";
   return "import";
@@ -171,7 +214,7 @@ export default function TradingPage() {
   const handleViewOrdersAfterExecution = useCallback(() => {
     setExecutionModal(null);
     setTab("orders");
-  }, []);
+  }, [setTab]);
 
   const isAnyLoading = Object.values(loadingMap).some(Boolean);
   const firstError = Object.values(errorsMap).find((e) => e != null) ?? null;
@@ -490,46 +533,34 @@ export default function TradingPage() {
         </div>
       </div>
 
-      <div style={{ marginBottom: 16 }}>
-        <WorkflowHandoffCard
-          eyebrow="Next Step"
-          title={activeStage === "setup"
-            ? "Move into review before you commit."
-            : activeStage === "review"
-              ? "If the setup survives review, execute with discipline."
-              : activeStage === "execute"
-                ? "After execution, close the loop."
-                : "Use reflection to improve the next decision."}
-          body={activeStage === "setup"
-            ? "Importing and positions are just the starting point. Pressure-test the ticker with strategy review, flow, or order analysis before any live order."
-            : activeStage === "review"
-              ? "A clean review should hand you either a better order plan or a clear reason to skip the trade."
-              : activeStage === "execute"
-                ? "Execution is not the end of the process. Journal the trade and compare the result to the original setup."
-                : "Reflection should feed the next watchlist, next lesson, or next setup review instead of sitting in isolation."}
-          actions={[
-            {
-              label: activeStage === "setup"
-                ? "Open Signals"
-                : activeStage === "review"
-                  ? "Open Orders"
-                  : activeStage === "execute"
-                    ? "Open Journal"
-                    : "Open Progress",
-              onClick: () => {
-                if (activeStage === "setup") navigate("/signals");
-                else if (activeStage === "review") setTab("orders");
-                else if (activeStage === "execute") setTab("journal");
-                else navigate("/progress");
-              },
-            },
-            {
-              label: "Open Research",
-              onClick: () => navigate("/research"),
-              tone: "secondary",
-            },
-          ]}
-        />
+      <div style={stageActionStripStyle}>
+        <div style={{ ...monoStyle, fontSize: 11, color: "var(--text-muted)", letterSpacing: "0.06em" }}>
+          {activeStage.toUpperCase()}
+        </div>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>
+          {getStageStripSummary(activeStage)}
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (activeStage === "setup") navigate("/signals?tab=validation&view=regime");
+              else if (activeStage === "review") setTab("orders");
+              else if (activeStage === "execute") setTab("journal");
+              else navigate("/progress");
+            }}
+            style={stripPrimaryButtonStyle}
+          >
+            {activeStage === "setup" ? "OPEN SIGNALS" : activeStage === "review" ? "OPEN ORDERS" : activeStage === "execute" ? "OPEN JOURNAL" : "OPEN PROGRESS"}
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate(selectedSymbol ? `/research?tab=ticker&view=research&symbol=${selectedSymbol}` : "/research")}
+            style={stripSecondaryButtonStyle}
+          >
+            OPEN RESEARCH
+          </button>
+        </div>
       </div>
 
       {/* Tab content */}

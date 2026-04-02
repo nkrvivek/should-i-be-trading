@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { TabBar, type TabDef } from "../components/layout/TabBar";
 import { useRegime } from "../hooks/useRegime";
-import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
 
 const RegimeContent = lazy(() => import("./partials/RegimeContent"));
 const MacroContent = lazy(() => import("./partials/MacroContent"));
@@ -156,7 +155,7 @@ export default function SignalsPage() {
     : primaryTab === "practice"
       ? PRACTICE_TABS
       : ADVANCED_TABS;
-  const handoff = getSignalsHandoff(activeView);
+  const quickActions = getSignalsQuickActions(activeView);
 
   return (
     <TerminalShell cri={cri}>
@@ -183,35 +182,27 @@ export default function SignalsPage() {
             />
           </div>
 
-          <div style={{ marginBottom: 12 }}>
-            <WorkflowHandoffCard
-              eyebrow={handoff.eyebrow}
-              title={handoff.title}
-              body={handoff.body}
-              actions={[
-                {
-                  label: handoff.primaryAction.label,
-                  onClick: () => {
-                    if (handoff.primaryAction.kind === "route") {
-                      navigate(handoff.primaryAction.to);
+          <div style={signalsActionStripStyle}>
+            <div style={{ ...signalsStripLabelStyle, minWidth: 90 }}>{VIEW_COPY[activeView as SignalsView].label}</div>
+            <div style={signalsStripTextStyle}>{VIEW_COPY[activeView as SignalsView].useWhen}</div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {quickActions.map((action) => (
+                <button
+                  key={action.label}
+                  type="button"
+                  onClick={() => {
+                    if (action.kind === "route") {
+                      navigate(action.to);
                       return;
                     }
-                    openSignalsView(handoff.primaryAction.tab, handoff.primaryAction.view);
-                  },
-                },
-                {
-                  label: handoff.secondaryAction.label,
-                  onClick: () => {
-                    if (handoff.secondaryAction.kind === "route") {
-                      navigate(handoff.secondaryAction.to);
-                      return;
-                    }
-                    openSignalsView(handoff.secondaryAction.tab, handoff.secondaryAction.view);
-                  },
-                  tone: "secondary",
-                },
-              ]}
-            />
+                    openSignalsView(action.tab, action.view);
+                  }}
+                  style={action.tone === "secondary" ? signalsSecondaryButtonStyle : signalsPrimaryButtonStyle}
+                >
+                  {action.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {activeView === "regime" && (
@@ -256,23 +247,6 @@ function SignalsOverview({
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{
-        padding: 16,
-        borderRadius: 8,
-        border: "1px solid rgba(5, 173, 152, 0.25)",
-        background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
-      }}>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
-          SIGNALS FLOW
-        </div>
-        <div style={{ fontFamily: "var(--font-mono)", fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 8 }}>
-          Validate first. Practice second. Add context last.
-        </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.65, color: "var(--text-secondary)", maxWidth: 900 }}>
-          Signals works best as a sequence, not a scavenger hunt. Use the first stage to decide whether the setup deserves attention, the second to rehearse it, and the third only when extra context truly changes the trade.
-        </div>
-      </div>
-
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12 }}>
         {stageCards.map((card) => (
           <button
@@ -320,74 +294,47 @@ function SignalsOverview({
   );
 }
 
-type SignalsHandoffAction =
-  | { label: string; kind: "route"; to: string }
-  | { label: string; kind: "signals"; tab: SignalsPrimaryTab; view: SignalsView };
+type SignalsQuickAction =
+  | { label: string; kind: "route"; to: string; tone?: "secondary" }
+  | { label: string; kind: "signals"; tab: SignalsPrimaryTab; view: SignalsView; tone?: "secondary" };
 
-function getSignalsHandoff(activeView: string): {
-  eyebrow: string;
-  title: string;
-  body: string;
-  primaryAction: SignalsHandoffAction;
-  secondaryAction: SignalsHandoffAction;
-} {
+function getSignalsQuickActions(activeView: string): SignalsQuickAction[] {
   switch (activeView) {
     case "regime":
-      return {
-        eyebrow: "NEXT STEP",
-        title: "If market conditions still support the idea, rehearse it next.",
-        body: "Regime should help you reject weak setups quickly. If the thesis survives, use simulator to test structure and execution before Trading review.",
-        primaryAction: { label: "Open Simulator", kind: "signals", tab: "practice", view: "simulator" },
-        secondaryAction: { label: "Open Research", kind: "route", to: "/research" },
-      };
+      return [
+        { label: "OPEN SIMULATOR", kind: "signals", tab: "practice", view: "simulator" },
+        { label: "OPEN RESEARCH", kind: "route", to: "/research", tone: "secondary" },
+      ];
     case "backtest":
-      return {
-        eyebrow: "NEXT STEP",
-        title: "History should calibrate you, not trap you in analysis.",
-        body: "Once the past gives you enough context, stop digging for certainty. Move into simulator to pressure-test payoff, timing, and order quality.",
-        primaryAction: { label: "Open Simulator", kind: "signals", tab: "practice", view: "simulator" },
-        secondaryAction: { label: "Back to Regime", kind: "signals", tab: "validation", view: "regime" },
-      };
+      return [
+        { label: "OPEN SIMULATOR", kind: "signals", tab: "practice", view: "simulator" },
+        { label: "BACK TO REGIME", kind: "signals", tab: "validation", view: "regime", tone: "secondary" },
+      ];
     case "simulator":
-      return {
-        eyebrow: "NEXT STEP",
-        title: "Use rehearsal to make Trading review cleaner.",
-        body: "This is where broken assumptions should show up before money is involved. Once the structure is clear, take the idea into Trading review or log the work in Progress.",
-        primaryAction: { label: "Open Trading Review", kind: "route", to: "/trading" },
-        secondaryAction: { label: "Open Progress", kind: "route", to: "/progress" },
-      };
+      return [
+        { label: "OPEN TRADING", kind: "route", to: "/trading" },
+        { label: "OPEN PROGRESS", kind: "route", to: "/progress", tone: "secondary" },
+      ];
     case "activity":
-      return {
-        eyebrow: "NEXT STEP",
-        title: "Use live activity as confirmation, not as a reason to force the trade.",
-        body: "If volume, insider flow, or short-interest context improves timing, carry that into Trading review. If it adds confusion, stop here and keep the setup on hold.",
-        primaryAction: { label: "Open Trading Review", kind: "route", to: "/trading" },
-        secondaryAction: { label: "Open Progress", kind: "route", to: "/progress" },
-      };
+      return [
+        { label: "OPEN TRADING", kind: "route", to: "/trading" },
+        { label: "OPEN PROGRESS", kind: "route", to: "/progress", tone: "secondary" },
+      ];
     case "macro":
-      return {
-        eyebrow: "TIE-BREAKER",
-        title: "Macro should sharpen risk framing, not replace the main process.",
-        body: "Use macro when the setup is sensitive to rates, growth, or scheduled events. If it changes the plan, revisit validation. If not, stop here and move on.",
-        primaryAction: { label: "Back to Regime", kind: "signals", tab: "validation", view: "regime" },
-        secondaryAction: { label: "Open Research", kind: "route", to: "/research" },
-      };
+      return [
+        { label: "BACK TO REGIME", kind: "signals", tab: "validation", view: "regime" },
+        { label: "OPEN RESEARCH", kind: "route", to: "/research", tone: "secondary" },
+      ];
     case "cot":
-      return {
-        eyebrow: "TIE-BREAKER",
-        title: "Positioning context matters only if it changes conviction.",
-        body: "Crowded futures positioning can explain pressure, but it should not become a detour. If it changes the thesis, revisit validation or simulator. If not, keep the workflow moving.",
-        primaryAction: { label: "Back to Regime", kind: "signals", tab: "validation", view: "regime" },
-        secondaryAction: { label: "Open Simulator", kind: "signals", tab: "practice", view: "simulator" },
-      };
+      return [
+        { label: "BACK TO REGIME", kind: "signals", tab: "validation", view: "regime" },
+        { label: "OPEN SIMULATOR", kind: "signals", tab: "practice", view: "simulator", tone: "secondary" },
+      ];
     default:
-      return {
-        eyebrow: "NEXT STEP",
-        title: "Keep the workflow moving.",
-        body: "Use Signals to decide, rehearse, and then move into the next part of the workflow without overthinking the page structure.",
-        primaryAction: { label: "Open Research", kind: "route", to: "/research" },
-        secondaryAction: { label: "Open Progress", kind: "route", to: "/progress" },
-      };
+      return [
+        { label: "OPEN RESEARCH", kind: "route", to: "/research" },
+        { label: "OPEN PROGRESS", kind: "route", to: "/progress", tone: "secondary" },
+      ];
   }
 }
 
@@ -396,6 +343,60 @@ const signalsInfoCardStyle: React.CSSProperties = {
   borderRadius: 8,
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
+};
+
+const signalsActionStripStyle: React.CSSProperties = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  gap: 12,
+  flexWrap: "wrap",
+  padding: "10px 12px",
+  marginBottom: 12,
+  borderRadius: 6,
+  border: "1px solid var(--border-dim)",
+  background: "var(--bg-panel-raised)",
+};
+
+const signalsStripLabelStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 11,
+  fontWeight: 700,
+  color: "var(--text-muted)",
+  letterSpacing: "0.06em",
+};
+
+const signalsStripTextStyle: React.CSSProperties = {
+  fontFamily: "var(--font-sans)",
+  fontSize: 13,
+  lineHeight: 1.55,
+  color: "var(--text-secondary)",
+  flex: 1,
+  minWidth: 240,
+};
+
+const signalsPrimaryButtonStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 12,
+  fontWeight: 700,
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid var(--signal-core)",
+  background: "rgba(5, 173, 152, 0.12)",
+  color: "var(--signal-core)",
+  cursor: "pointer",
+};
+
+const signalsSecondaryButtonStyle: React.CSSProperties = {
+  fontFamily: "var(--font-mono)",
+  fontSize: 12,
+  fontWeight: 700,
+  padding: "8px 12px",
+  borderRadius: 6,
+  border: "1px solid var(--border-dim)",
+  background: "transparent",
+  color: "var(--text-secondary)",
+  cursor: "pointer",
 };
 
 const signalsInfoLabelStyle: React.CSSProperties = {

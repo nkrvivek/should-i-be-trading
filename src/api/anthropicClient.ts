@@ -4,7 +4,7 @@
  * In prod, goes through Supabase Edge Function with rate limiting.
  */
 
-import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
 import { getAiRequestLimit } from "../lib/aiLimits";
 

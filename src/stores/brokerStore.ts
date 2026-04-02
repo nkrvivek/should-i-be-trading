@@ -388,22 +388,64 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
       const stored = await loadConnections();
       if (stored.length === 0) return;
 
-      // Deduplicate stored connections — keep first entry per slug+account key
+      // ── Migrate legacy SnapTrade entries ──
+      // Old entries lack accountId. Collapse ALL legacy snaptrade entries into
+      // one, connect it to discover accounts, then expand into per-account entries.
+      const legacySnap = stored.filter((e) => e.slug === "snaptrade" && !e.credentials?.accountId);
+      const nonLegacySnap = stored.filter((e) => !(e.slug === "snaptrade" && !e.credentials?.accountId));
+
+      let migrated = [...nonLegacySnap];
+      if (legacySnap.length > 0) {
+        // Use creds from first legacy entry (all share the same snapUserId/userSecret)
+        const baseCreds = legacySnap[0].credentials;
+        try {
+          const instance = createBrokerInstance("snaptrade") as import("../lib/brokers/snaptrade").SnapTradeBroker | null;
+          if (instance) {
+            await instance.connect(baseCreds);
+            const linked = await instance.listLinkedAccounts();
+            if (linked.length > 0) {
+              for (const acct of linked) {
+                const id = `snaptrade-${acct.accountId}`;
+                migrated.push({
+                  id,
+                  slug: "snaptrade",
+                  credentials: {
+                    ...baseCreds,
+                    accountId: acct.accountId,
+                    institutionName: acct.institutionName,
+                  },
+                  displayName: `${acct.institutionName} (via SnapTrade)`,
+                });
+              }
+            } else {
+              // No accounts discovered — keep one legacy entry for portal access
+              migrated.push(legacySnap[0]);
+            }
+          }
+        } catch {
+          // Migration failed — keep one legacy entry so user can retry
+          migrated.push(legacySnap[0]);
+        }
+      }
+
+      // Deduplicate — keep first entry per slug+accountId (or by id for non-snaptrade)
       const seen = new Set<string>();
-      const deduped: typeof stored = [];
-      for (const entry of stored) {
+      const deduped: typeof migrated = [];
+      for (const entry of migrated) {
         const key = entry.slug === "snaptrade" && entry.credentials?.accountId
-          ? `${entry.slug}:${entry.credentials.accountId}`
+          ? `snaptrade:${entry.credentials.accountId}`
           : entry.id;
         if (seen.has(key)) continue;
         seen.add(key);
         deduped.push(entry);
       }
-      // Persist cleaned list if duplicates were removed
-      if (deduped.length < stored.length) {
+
+      // Persist cleaned/migrated list
+      if (deduped.length !== stored.length || legacySnap.length > 0) {
         await saveConnections(deduped);
       }
 
+      // ── Reconnect each entry ──
       await Promise.allSettled(
         deduped.map(async (entry) => {
           // Skip if already connected

@@ -232,17 +232,16 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
     /* ---- Actions ---- */
 
     addConnection: async (slug, credentials, displayName) => {
-      // Dedup: if a connection with the same slug already exists and uses
-      // the same underlying account (e.g. same SnapTrade userId), refresh it
-      // instead of creating a duplicate.
+      // Dedup: if a connection with the same slug + account already exists, refresh it.
+      // For SnapTrade, key on accountId (each brokerage account gets its own connection).
       const { connections } = get();
       const allStored = await loadConnections();
       let existing: BrokerConnection | undefined;
       for (const c of connections) {
         if (c.slug !== slug) continue;
-        if (slug === "snaptrade" && credentials.snapUserId) {
+        if (slug === "snaptrade" && credentials.accountId) {
           const stored = allStored.find((s) => s.id === c.id);
-          if (stored?.credentials?.snapUserId === credentials.snapUserId) {
+          if (stored?.credentials?.accountId === credentials.accountId) {
             existing = c;
             break;
           }
@@ -393,8 +392,8 @@ export const useBrokerStore = create<BrokerState>((set, get) => {
       const seen = new Set<string>();
       const deduped: typeof stored = [];
       for (const entry of stored) {
-        const key = entry.slug === "snaptrade" && entry.credentials?.snapUserId
-          ? `${entry.slug}:${entry.credentials.snapUserId}`
+        const key = entry.slug === "snaptrade" && entry.credentials?.accountId
+          ? `${entry.slug}:${entry.credentials.accountId}`
           : entry.id;
         if (seen.has(key)) continue;
         seen.add(key);

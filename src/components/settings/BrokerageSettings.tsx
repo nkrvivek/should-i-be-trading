@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { BROKER_REGISTRY } from "../../lib/brokers/registry";
 import { createBrokerInstance } from "../../lib/brokers/registry";
@@ -20,11 +20,19 @@ export default function BrokerageSettings() {
     addConnection,
     removeConnection,
     refresh,
+    reconnectAll,
   } = useBrokerStore();
 
   const { effectiveTier } = useAuthStore();
   const navigate = useNavigate();
   const userTier = effectiveTier();
+
+  // Reconnect stored connections on mount if store is empty
+  useEffect(() => {
+    if (connections.length === 0) {
+      void reconnectAll();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const canUseSnapTrade = hasFeature(userTier, "snaptrade");
   const [expandedBroker, setExpandedBroker] = useState<string | null>(null);
   const [credentials, setCredentials] = useState<Record<string, string>>({});
@@ -73,13 +81,30 @@ export default function BrokerageSettings() {
         "width=800,height=700,scrollbars=yes,resizable=yes",
       );
 
-      // Finalize connection after portal flow completes
+      // Finalize connection after portal flow completes —
+      // create one connection per linked brokerage account
       const finalizeConnection = async () => {
         try {
           await instance.connect(snapCreds);
-          const updatedCreds = instance.getCredentials();
-          const displayName = instance.getDisplayName?.() ?? "SnapTrade";
-          await addConnection("snaptrade", updatedCreds, displayName);
+          const linkedAccounts = await instance.listLinkedAccounts();
+          const baseCreds = instance.getCredentials();
+
+          if (linkedAccounts.length === 0) {
+            // Fallback: single connection if no accounts discovered
+            const displayName = instance.getDisplayName?.() ?? "SnapTrade";
+            await addConnection("snaptrade", baseCreds, displayName);
+          } else {
+            // Create/refresh one connection per brokerage account
+            for (const acct of linkedAccounts) {
+              const perAccountCreds = {
+                ...baseCreds,
+                accountId: acct.accountId,
+                institutionName: acct.institutionName,
+              };
+              const displayName = `${acct.institutionName} (via SnapTrade)`;
+              await addConnection("snaptrade", perAccountCreds, displayName);
+            }
+          }
         } catch {
           // User may not have completed the flow
         }

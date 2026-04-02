@@ -68,6 +68,9 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
       creds.snapUserId = this.snapUserId;
       creds.snapUserSecret = this.snapUserSecret;
     }
+    if (this.accountId) {
+      creds.accountId = this.accountId;
+    }
     if (this.institutionName) {
       creds.institutionName = this.institutionName;
     }
@@ -80,6 +83,15 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
       return `${this.institutionName} (via SnapTrade)`;
     }
     return "SnapTrade";
+  }
+
+  /** After connecting via portal, returns all linked accounts for multi-connection creation */
+  async listLinkedAccounts(): Promise<Array<{ accountId: string; institutionName: string }>> {
+    const accounts = await this.fetchAccounts();
+    return accounts.map((a) => ({
+      accountId: a.id,
+      institutionName: a.institution_name ?? "Unknown",
+    }));
   }
 
   async connect(credentials: Record<string, string>): Promise<void> {
@@ -109,32 +121,16 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
     // Always persist to localStorage as backup
     saveSnapCreds({ userId: this.snapUserId, userSecret: this.snapUserSecret });
 
-    // Fetch connected accounts — wrap in try/catch so expired sessions
-    // don't prevent the connection from being tracked for portal re-auth
-    let accounts: Array<{ id: string; number: string; name: string; institution_name?: string }> = [];
-    try {
-      accounts = await this.edgeCall("listAccounts") as typeof accounts;
-    } catch (err) {
-      // If it's an auth error, the user may need to re-register
-      const msg = err instanceof Error ? err.message : "";
-      if (msg.includes("401") || msg.includes("authentication") || msg.includes("expired")) {
-        // Clear stale credentials and re-register
-        const data = await this.edgeCall("register") as { userId: string; userSecret: string };
-        this.snapUserId = data.userId;
-        this.snapUserSecret = data.userSecret;
-        saveSnapCreds({ userId: data.userId, userSecret: data.userSecret });
-        // Retry list accounts with fresh creds
-        try {
-          accounts = await this.edgeCall("listAccounts") as typeof accounts;
-        } catch {
-          // Still failing — mark connected so user can access portal
-          this.isConnected = true;
-          return;
-        }
-      } else {
-        throw err;
-      }
+    // If a specific accountId was stored, use it directly (multi-account support)
+    if (credentials.accountId) {
+      this.accountId = credentials.accountId;
+      this.accountIds = [credentials.accountId];
+      this.isConnected = true;
+      return;
     }
+
+    // Otherwise fetch all accounts to discover what's linked
+    const accounts = await this.fetchAccounts();
 
     if (!accounts || accounts.length === 0) {
       // No accounts connected yet — user needs the Connection Portal
@@ -152,6 +148,28 @@ export class SnapTradeBroker implements BrokerConnectionInterface {
     this.accountIds = accounts.map((a) => a.id);
     this.accountId = this.accountIds[0];
     this.isConnected = true;
+  }
+
+  /** Fetch linked accounts with retry on auth failure */
+  private async fetchAccounts(): Promise<Array<{ id: string; number: string; name: string; institution_name?: string }>> {
+    try {
+      return await this.edgeCall("listAccounts") as Array<{ id: string; number: string; name: string; institution_name?: string }>;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("401") || msg.includes("authentication") || msg.includes("expired")) {
+        // Clear stale credentials and re-register
+        const data = await this.edgeCall("register") as { userId: string; userSecret: string };
+        this.snapUserId = data.userId;
+        this.snapUserSecret = data.userSecret;
+        saveSnapCreds({ userId: data.userId, userSecret: data.userSecret });
+        try {
+          return await this.edgeCall("listAccounts") as Array<{ id: string; number: string; name: string; institution_name?: string }>;
+        } catch {
+          return [];
+        }
+      }
+      throw err;
+    }
   }
 
   disconnect(): void {

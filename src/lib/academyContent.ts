@@ -37,7 +37,7 @@ There are two types of options:
 **2. Hedging** -- if you own shares and worry about a drop, buying a put acts like insurance. It caps your downside at the strike price minus the premium you paid.
 
 For example, owning 100 shares of SPY at $450 and buying a $440 put for $4.00 means your worst-case loss is $10/share (from $450 to $440) plus the $4 premium = **$14/share**, no matter how far SPY falls.`,
-        videoUrl: "https://www.youtube.com/embed/7PM4rNDr4oI",
+
       },
       {
         title: "Calls vs Puts: A Quick Comparison",
@@ -94,7 +94,6 @@ When you **Sell to Open**, you are *short* the option:
 - Your risk can be much larger than the premium you received
 
 This is the critical difference: *buying* gives you rights, *selling* creates obligations.`,
-        videoUrl: "https://www.youtube.com/embed/SD7sw0bf1ms",
       },
       {
         title: "Common Broker Ticket Mistakes",
@@ -151,7 +150,6 @@ Examples of undefined-risk trades:
 
 Undefined risk does not mean you will lose that much. It means you *could* lose that much. The question is whether your account can survive the worst case.`,
         tip: "Use risk level as the FIRST filter before picking a strategy. If you cannot afford the max loss, the strategy is wrong -- no matter how good the setup looks.",
-        videoUrl: "https://www.youtube.com/embed/4M4XNnauCkE",
       },
       {
         title: "A Quick Risk Map",
@@ -203,7 +201,6 @@ Notice that even "defined risk" can be large. A covered call on a $200 stock sti
 **If XYZ stays below $55 by expiration:** The call expires worthless. You keep the $150 and your 100 shares. You can sell another call next month.
 
 **If XYZ rises above $55:** Your shares get called away (sold) at $55. You keep the $150 premium plus the $5/share gain from $50 to $55. Total profit: $650. But you miss any upside above $55.`,
-        videoUrl: "https://www.youtube.com/embed/jnTsQBJHMSk",
       },
       {
         title: "The Tradeoff: Premium vs Capped Upside",
@@ -279,7 +276,6 @@ Your maximum loss is the strike price minus premium (if the stock goes to zero):
 That sounds scary, but it is the same risk as buying the stock at $96.50. The difference is you got paid $350 to wait, and if the stock never drops to $100, you keep that premium risk-free.
 
 **Buying power requirement:** Your broker holds $10,000 in cash (strike x 100) minus the $350 premium = **$9,650** in buying power.`,
-        videoUrl: "https://www.youtube.com/embed/JjcORfMHJmk",
       },
       {
         title: "When NOT to Sell Puts",
@@ -325,7 +321,6 @@ Without the put, you lose $50/share = $5,000.
 With the put, your shares lose $50/share but the put gains ($440 - $400) = $40/share. Net loss = $10/share (stock drop to strike) + $5/share (premium) = **$1,500**.
 
 The put saved you $3,500 in this scenario. The tradeoff is the $500 premium -- you pay that whether or not you need the insurance.`,
-        videoUrl: "https://www.youtube.com/embed/6tRHz2TnxEk",
       },
       {
         title: "What Is a Collar?",
@@ -398,7 +393,6 @@ There are two main kinds:
 - Profits when the stock goes DOWN
 
 Both spreads have **defined risk**: your max loss is the debit paid, and your max profit is the width of the strikes minus the debit.`,
-        videoUrl: "https://www.youtube.com/embed/TDwXBMmmd3o",
       },
       {
         title: "Bull Call Spread Example",
@@ -475,7 +469,6 @@ The math is symmetrical to the bull call spread. Width minus debit = max profit.
 - Profits when the stock stays BELOW the short call strike
 
 The key insight: a credit spread makes money when the stock does NOT move against you. You are selling probability, not buying direction.`,
-        videoUrl: "https://www.youtube.com/embed/XsCBDGMXRB8",
       },
       {
         title: "Understanding Your Real Risk",
@@ -548,7 +541,6 @@ Most brokers support **multi-leg order entry** where you submit the entire sprea
 
 Always use **limit orders** for spreads. Market orders on multi-leg trades can fill at terrible prices.`,
         tip: "Start your limit price at the mid-point between the bid and ask of the spread. If it doesn't fill after a few minutes, move it 5-10 cents toward the natural side (pay slightly more for debits, accept slightly less for credits).",
-        videoUrl: "https://www.youtube.com/embed/YxQQMqP97x4",
       },
       {
         title: "Common Broker Mistakes With Spreads",
@@ -626,7 +618,6 @@ If the regime is risk-off and you are trying to buy calls on a tech stock, you a
 3. **Look for alignment** -- a high composite score in a risk-on regime is a strong signal. A high score in a risk-off regime deserves skepticism.
 
 Your goal is a **short list of 3-5 names** where the market direction and the ticker score point the same way. Quality over quantity.`,
-        videoUrl: "https://www.youtube.com/embed/wY3FiNnMEME",
       },
       {
         title: "From Screening to Execution",
@@ -672,7 +663,6 @@ The process should take 10-15 minutes. If you are spending hours, you are probab
 - **Verdict** -- a plain-English summary: BULLISH, BEARISH, NEUTRAL, or CAUTION
 
 The screener is a *triage tool*. It tells you where to focus attention, not what to buy.`,
-        videoUrl: "https://www.youtube.com/embed/gvZCslCozT4",
       },
       {
         title: "How to Read the Rankings",
@@ -757,7 +747,6 @@ Rules for trading around earnings:
 - CPI / jobs reports (macro data can shift regime overnight)
 - FDA decisions (biotech-specific but massive moves)
 - Ex-dividend dates (can trigger early assignment on short calls)`,
-        videoUrl: "https://www.youtube.com/embed/0tJFnDMPn7g",
       },
       {
         title: "When CAUTION Is the Right Answer",
@@ -825,7 +814,6 @@ For a micro lot (1,000 units), 1 pip = ~$0.10.
 
 This means a 50-pip move on a standard lot = $500. That can happen in minutes during volatile sessions.`,
         tip: "Start with micro lots when learning forex. A 50-pip loss on a micro lot is $5 -- enough to learn from without damaging your account.",
-        videoUrl: "https://www.youtube.com/embed/EIB4oL2U0RU",
       },
       {
         title: "Why Leverage Changes Everything",
@@ -880,7 +868,6 @@ If you are coming from stocks or options, respect the differences. Forex require
 - **Currencies:** Euro FX (/6E), Japanese Yen (/6J)
 
 Each contract has a **multiplier** that determines how much each point of movement is worth in dollars.`,
-        videoUrl: "https://www.youtube.com/embed/nwR5b6E0Xo4",
       },
       {
         title: "Contract Multipliers and Notional Exposure",

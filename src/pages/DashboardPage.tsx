@@ -156,7 +156,7 @@ export function DashboardPage() {
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, maxWidth: 1400, margin: "0 auto" }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, maxWidth: 1400, margin: "0 auto" }}>
         {showWorkflowPrompt && (
           <Panel title="Choose Your Default Workflow">
             <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
@@ -202,101 +202,94 @@ export function DashboardPage() {
           </Panel>
         )}
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.55fr) minmax(340px, 0.85fr)", gap: 16, alignItems: "stretch" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(0, 1fr) minmax(280px, 0.7fr)", gap: 12, alignItems: "start" }}>
           <Panel title="Today">
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-              <div style={{ display: "grid", gridTemplateColumns: "minmax(320px, 0.95fr) minmax(0, 1.35fr)", gap: 14, alignItems: "start" }}>
-                <div style={{ display: "flex", flexDirection: "column", gap: 12, justifyContent: "center" }}>
-                  <TrafficLight verdict={verdict} />
-                  {marketScore && (
-                    <div style={marketAccentCardStyle}>
-                      <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
-                        MARKET PULSE
-                      </div>
-                      <FearGreedGauge score={marketScore.total} />
-                    </div>
-                  )}
-                </div>
-                <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.2fr) minmax(250px, 0.95fr)", gap: 12, alignItems: "start" }}>
-                  <div style={heroCardStyle}>
-                    <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
-                      TODAY&apos;S STANCE
-                    </div>
-                    <div style={{ ...mono, fontSize: 24, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
-                      {stance}
-                    </div>
-                    <div style={{ ...mono, fontSize: 12, color: "var(--text-muted)", marginBottom: 10 }}>
-                      {regimeLabel}
-                    </div>
-                    <p style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.65, color: "var(--text-secondary)" }}>
-                      {workflowPreset.stanceCopy}
-                    </p>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
-                      <CompactStanceRow label="Bias" value={getBiasLabel(stance)} />
-                      <CompactStanceRow label="Best Fit" value={getBestFitLabel(workflowProfile, stance)} />
-                      <CompactStanceRow label="Risk Note" value={getRiskNote(status, marketScore?.total ?? null)} />
-                    </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+              <TrafficLight verdict={verdict} />
+              {marketScore && (
+                <div style={marketAccentCardStyle}>
+                  <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
+                    MARKET PULSE
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: 12, alignSelf: "start" }}>
-                    <div style={presetCardStyle}>
-                      <div style={{ ...mono, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 8 }}>
-                        WORKFLOW PROFILE
-                      </div>
-                      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-                        {WORKFLOW_OPTIONS.map((option) => {
-                          const active = option.id === workflowProfile;
-                          return (
-                            <button
-                              key={option.id}
-                              type="button"
-                              onClick={() => setWorkflowProfile(option.id)}
-                              style={{
-                                ...mono,
-                                fontSize: 12,
-                                fontWeight: 700,
-                                padding: "6px 10px",
-                                borderRadius: 999,
-                                border: `1px solid ${active ? "var(--signal-core)" : "var(--border-dim)"}`,
-                                background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
-                                color: active ? "var(--signal-core)" : "var(--text-secondary)",
-                                cursor: "pointer",
-                              }}
-                            >
-                              {option.label}
-                            </button>
-                          );
-                        })}
-                      </div>
-                      <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-                        {workflowPreset.summary}
-                      </div>
-                    </div>
-                    <div style={actionCardStyle}>
-                      <div>
-                        <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
-                          WHAT TO DO TODAY
-                        </div>
-                        <div style={{ ...mono, fontSize: 14, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
-                          {getTodayActionTitle(workflowProfile, status, stance)}
-                        </div>
-                        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.55, color: "var(--text-secondary)" }}>
-                          {getTodayActionBody(workflowProfile, status, stance)}
-                        </div>
-                      </div>
-                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
-                        <MiniStat label="Window" value={marketScore ? `${marketScore.executionWindow}%` : "---"} tone="var(--warning)" />
-                        <MiniStat label="Score" value={marketScore ? `${marketScore.total}/100` : "---"} tone="var(--signal-core)" />
-                      </div>
-                    </div>
-                  </div>
+                  <FearGreedGauge score={marketScore.total} />
                 </div>
-              </div>
-              <DailyBriefing cri={null} verdict={verdict} marketScore={marketScore} />
+              )}
             </div>
           </Panel>
 
-          <Panel title="Continue">
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div style={heroCardStyle}>
+              <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
+                TODAY&apos;S STANCE
+              </div>
+              <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+                {stance}
+              </div>
+              <div style={{ ...mono, fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
+                {regimeLabel}
+              </div>
+              <p style={{ margin: 0, fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
+                {workflowPreset.stanceCopy}
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 10 }}>
+                <CompactStanceRow label="Bias" value={getBiasLabel(stance)} />
+                <CompactStanceRow label="Best Fit" value={getBestFitLabel(workflowProfile, stance)} />
+                <CompactStanceRow label="Risk Note" value={getRiskNote(status, marketScore?.total ?? null)} />
+              </div>
+            </div>
+            <div style={actionCardStyle}>
+              <div>
+                <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 4 }}>
+                  WHAT TO DO TODAY
+                </div>
+                <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+                  {getTodayActionTitle(workflowProfile, status, stance)}
+                </div>
+                <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.5, color: "var(--text-secondary)" }}>
+                  {getTodayActionBody(workflowProfile, status, stance)}
+                </div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+                <MiniStat label="Window" value={marketScore ? `${marketScore.executionWindow}%` : "---"} tone="var(--warning)" />
+                <MiniStat label="Score" value={marketScore ? `${marketScore.total}/100` : "---"} tone="var(--signal-core)" />
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+            <div style={presetCardStyle}>
+              <div style={{ ...mono, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>
+                WORKFLOW PROFILE
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 6 }}>
+                {WORKFLOW_OPTIONS.map((option) => {
+                  const active = option.id === workflowProfile;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => setWorkflowProfile(option.id)}
+                      style={{
+                        ...mono,
+                        fontSize: 11,
+                        fontWeight: 700,
+                        padding: "5px 9px",
+                        borderRadius: 999,
+                        border: `1px solid ${active ? "var(--signal-core)" : "var(--border-dim)"}`,
+                        background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
+                        color: active ? "var(--signal-core)" : "var(--text-secondary)",
+                        cursor: "pointer",
+                      }}
+                    >
+                      {option.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.45 }}>
+                {workflowPreset.summary}
+              </div>
+            </div>
               <ActionCard
                 eyebrow="Learn"
                 title={workflowPreset.learnTitle(nextLesson?.title)}
@@ -336,10 +329,12 @@ export function DashboardPage() {
                 onSecondaryClick={() => navigate("/trading")}
               />
             </div>
-          </Panel>
+          </div>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.1fr) minmax(320px, 0.9fr)", gap: 16 }}>
+        <DailyBriefing cri={null} verdict={verdict} marketScore={marketScore} />
+
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.1fr) minmax(320px, 0.9fr)", gap: 12 }}>
           <Panel title="Top Opportunities">
             {metricsLoading && topOpportunities.length === 0 ? (
               <EmptyState text={`Loading fundamentals universe... ${metricsProgress.done}/${metricsProgress.total}`} />
@@ -402,7 +397,7 @@ export function DashboardPage() {
           </Panel>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)", gap: 16 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(320px, 0.9fr)", gap: 12 }}>
           <Panel title="Focus List">
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
               {watchlistFocus.length === 0 ? (
@@ -691,15 +686,15 @@ const heroCardStyle: React.CSSProperties = {
 const actionCardStyle: React.CSSProperties = {
   display: "flex",
   flexDirection: "column",
-  gap: 12,
-  padding: 14,
+  gap: 10,
+  padding: 12,
   borderRadius: 8,
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
 };
 
 const miniStatStyle: React.CSSProperties = {
-  padding: 12,
+  padding: 10,
   borderRadius: 8,
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",

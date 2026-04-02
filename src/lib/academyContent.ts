@@ -37,7 +37,7 @@ There are two types of options:
 **2. Hedging** -- if you own shares and worry about a drop, buying a put acts like insurance. It caps your downside at the strike price minus the premium you paid.
 
 For example, owning 100 shares of SPY at $450 and buying a $440 put for $4.00 means your worst-case loss is $10/share (from $450 to $440) plus the $4 premium = **$14/share**, no matter how far SPY falls.`,
-
+        videoUrl: "https://www.youtube.com/embed/7PM4rNDr4oI",
       },
       {
         title: "Calls vs Puts: A Quick Comparison",
@@ -79,6 +79,7 @@ The buyer of an option has **limited risk** (they can only lose the premium). Th
 **Sell to Open (STO)** -- opens a new *short* position. You are *selling* an option you don't own. You receive premium but take on an obligation.
 
 **Buy to Close (BTC)** -- closes an existing short position. You buy back an option you previously sold.`,
+        videoUrl: "https://www.youtube.com/embed/cFsPdpqJEkc",
         tip: "Think of it this way: 'Open' creates a new position, 'Close' removes one. 'Buy' means you pay; 'Sell' means you receive.",
       },
       {
@@ -139,6 +140,7 @@ Examples of undefined-risk trades:
 - Selling a naked call (stock could go to infinity)
 - Selling a naked put (stock could go to zero -- large but technically finite)
 - A short straddle without protective wings`,
+        videoUrl: "https://www.youtube.com/embed/4XUwTpwofjM",
       },
       {
         title: "Why This Distinction Matters for Beginners",
@@ -201,6 +203,7 @@ Notice that even "defined risk" can be large. A covered call on a $200 stock sti
 **If XYZ stays below $55 by expiration:** The call expires worthless. You keep the $150 and your 100 shares. You can sell another call next month.
 
 **If XYZ rises above $55:** Your shares get called away (sold) at $55. You keep the $150 premium plus the $5/share gain from $50 to $55. Total profit: $650. But you miss any upside above $55.`,
+        videoUrl: "https://www.youtube.com/embed/jnTsQBJHMSk",
       },
       {
         title: "The Tradeoff: Premium vs Capped Upside",
@@ -260,6 +263,7 @@ Many covered-call sellers aim for 1-3% of the stock price per month. On a $100 s
 **If XYZ stays above $48:** The put expires worthless. You keep $120 and can sell another put.
 
 **If XYZ drops below $48:** You are assigned 100 shares at $48. But you collected $1.20, so your effective entry price is **$46.80**. You got the stock at a discount to where it was when you sold the put.`,
+        videoUrl: "https://www.youtube.com/embed/_giZ3aFRXD4",
         tip: "Only sell puts on stocks you genuinely want to own. If you wouldn't buy 100 shares at that strike, don't sell the put. Treat it as an entry strategy, not free income.",
       },
       {
@@ -321,6 +325,7 @@ Without the put, you lose $50/share = $5,000.
 With the put, your shares lose $50/share but the put gains ($440 - $400) = $40/share. Net loss = $10/share (stock drop to strike) + $5/share (premium) = **$1,500**.
 
 The put saved you $3,500 in this scenario. The tradeoff is the $500 premium -- you pay that whether or not you need the insurance.`,
+        videoUrl: "https://www.youtube.com/embed/2TmIYUT80ws",
       },
       {
         title: "What Is a Collar?",
@@ -393,6 +398,7 @@ There are two main kinds:
 - Profits when the stock goes DOWN
 
 Both spreads have **defined risk**: your max loss is the debit paid, and your max profit is the width of the strikes minus the debit.`,
+        videoUrl: "https://www.youtube.com/embed/r3Y93qNqpws",
       },
       {
         title: "Bull Call Spread Example",
@@ -469,6 +475,7 @@ The math is symmetrical to the bull call spread. Width minus debit = max profit.
 - Profits when the stock stays BELOW the short call strike
 
 The key insight: a credit spread makes money when the stock does NOT move against you. You are selling probability, not buying direction.`,
+        videoUrl: "https://www.youtube.com/embed/GeNelEqIg8k",
       },
       {
         title: "Understanding Your Real Risk",
@@ -526,6 +533,7 @@ The risk-to-reward here is $350 risk for $150 reward. That sounds bad, but the t
 - **Wider cost:** You often pay more total when filling legs separately
 
 Most brokers support **multi-leg order entry** where you submit the entire spread as a single ticket. The broker handles both legs simultaneously.`,
+        videoUrl: "https://www.youtube.com/embed/NzdifcMzeqs",
       },
       {
         title: "Net Debit vs Net Credit Pricing",
@@ -607,6 +615,7 @@ SIBT's market regime tells you the broad environment:
 - **Neutral/choppy** -- no clear direction. Tighter position sizing and shorter duration trades make sense.
 
 If the regime is risk-off and you are trying to buy calls on a tech stock, you are swimming upstream. Check the regime first, then look for tickers that *agree* with that environment.`,
+        videoUrl: "https://www.youtube.com/embed/o9fJ9AERwEc",
         tip: "Treat the market regime like a traffic light. Green (risk-on) means go. Yellow (neutral) means proceed with caution. Red (risk-off) means wait or play defense.",
       },
       {
@@ -663,6 +672,7 @@ The process should take 10-15 minutes. If you are spending hours, you are probab
 - **Verdict** -- a plain-English summary: BULLISH, BEARISH, NEUTRAL, or CAUTION
 
 The screener is a *triage tool*. It tells you where to focus attention, not what to buy.`,
+        videoUrl: "https://www.youtube.com/embed/0nB1m7ky2F4",
       },
       {
         title: "How to Read the Rankings",
@@ -731,6 +741,7 @@ From here, click into each name to see the full signal breakdown before deciding
 **5. Order Review** -- Does the risk/reward on the order screen match your expectations? Double-check max loss, max profit, and breakeven.
 
 If any of these items raises a flag, pause. It is always better to miss a trade than to take a bad one.`,
+        videoUrl: "https://www.youtube.com/embed/n0KahIyjGGw",
         tip: "Print this checklist or keep it on a sticky note next to your screen. After a few weeks it becomes automatic, but early on you need the physical reminder.",
       },
       {
@@ -800,6 +811,7 @@ If you "buy EUR/USD," you are buying euros and selling dollars. If the rate goes
 
 **Cross pairs** (no USD):
 - EUR/GBP, EUR/JPY, GBP/JPY`,
+        videoUrl: "https://www.youtube.com/embed/8LRQIDAzyv8",
       },
       {
         title: "Pips and Position Sizing",
@@ -868,6 +880,7 @@ If you are coming from stocks or options, respect the differences. Forex require
 - **Currencies:** Euro FX (/6E), Japanese Yen (/6J)
 
 Each contract has a **multiplier** that determines how much each point of movement is worth in dollars.`,
+        videoUrl: "https://www.youtube.com/embed/vp96OJVk808",
       },
       {
         title: "Contract Multipliers and Notional Exposure",

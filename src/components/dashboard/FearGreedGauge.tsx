@@ -50,7 +50,7 @@ export function FearGreedGauge({ score }: Props) {
 
   return (
     <div style={{ textAlign: "center" }}>
-      <svg viewBox="0 0 240 140" width="100%" style={{ maxWidth: 280 }}>
+      <svg viewBox="0 0 240 140" width="100%" style={{ maxWidth: 280, display: "block", margin: "0 auto" }}>
         {/* Zone arcs */}
         {arcSegments.map((seg) => (
           <path

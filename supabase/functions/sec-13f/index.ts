@@ -80,17 +80,17 @@ Deno.serve(async (req) => {
     switch (endpoint) {
       case "filers": {
         // Return the curated list of top hedge fund filers
-        return jsonResponse({ data: TOP_FILERS });
+        return jsonResponse({ data: TOP_FILERS }, 200, req);
       }
 
       case "search-filer": {
-        if (!query) return errorResponse("'search-filer' requires a 'query'", 400);
+        if (!query) return errorResponse("'search-filer' requires a 'query'", 400, req);
         const url = `${EDGAR_BASE}/search-index?q=${encodeURIComponent(query)}&dateRange=custom&startdt=2024-01-01&forms=13F-HR&from=0&size=10`;
-        return await fetchAndCache(url, endpoint);
+        return await fetchAndCache(url, endpoint, req);
       }
 
       case "holdings": {
-        if (!cik) return errorResponse("'holdings' requires a 'cik' (Central Index Key)", 400);
+        if (!cik) return errorResponse("'holdings' requires a 'cik' (Central Index Key)", 400, req);
         // Fetch the latest 13F-HR filing index for this CIK
         const padded = cik.padStart(10, "0");
 
@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
         const filingResult = await fetchEdgar(filingUrl);
 
         if (!filingResult?.hits?.hits?.length) {
-          return errorResponse(`No 13F filings found for CIK ${cik}`, 404);
+          return errorResponse(`No 13F filings found for CIK ${cik}`, 404, req);
         }
 
         const latestFiling = filingResult.hits.hits[0]._source;
@@ -112,13 +112,13 @@ Deno.serve(async (req) => {
         const holdingsCacheKey = holdingsUrl;
         const cached = cache.get(holdingsCacheKey);
         if (cached && cached.expires > Date.now()) {
-          return jsonResponse({ data: cached.data, cached: true });
+          return jsonResponse({ data: cached.data, cached: true }, 200, req);
         }
 
         const holdingsData = await fetchEdgar(holdingsUrl);
 
         if (!holdingsData) {
-          return errorResponse("Failed to fetch holdings data", 502);
+          return errorResponse("Failed to fetch holdings data", 502, req);
         }
 
         // Extract recent filings to find the 13F-HR
@@ -151,22 +151,22 @@ Deno.serve(async (req) => {
         };
 
         cache.set(holdingsCacheKey, { data: result, expires: Date.now() + getCacheTTL("holdings") });
-        return jsonResponse({ data: result, cached: false });
+        return jsonResponse({ data: result, cached: false }, 200, req);
       }
 
       case "holders": {
-        if (!ticker) return errorResponse("'holders' requires a 'ticker'", 400);
+        if (!ticker) return errorResponse("'holders' requires a 'ticker'", 400, req);
         // Search for recent 13F filings mentioning this ticker
         const url = `${EDGAR_BASE}/search-index?q=${encodeURIComponent(ticker)}&forms=13F-HR&dateRange=custom&startdt=2024-01-01&from=0&size=20`;
-        return await fetchAndCache(url, endpoint);
+        return await fetchAndCache(url, endpoint, req);
       }
 
       default:
-        return errorResponse(`Unknown endpoint: ${endpoint}. Valid: filers, search-filer, holdings, holders`, 400);
+        return errorResponse(`Unknown endpoint: ${endpoint}. Valid: filers, search-filer, holdings, holders`, 400, req);
     }
   } catch (err) {
     console.error("SEC 13F proxy error:", err);
-    return errorResponse(err instanceof Error ? err.message : "Internal error", 500);
+    return errorResponse(err instanceof Error ? err.message : "Internal error", 500, req);
   }
 });
 
@@ -193,15 +193,15 @@ async function fetchEdgar(url: string): Promise<Record<string, unknown> | null> 
   }
 }
 
-async function fetchAndCache(url: string, endpoint: string): Promise<Response> {
+async function fetchAndCache(url: string, endpoint: string, req: Request): Promise<Response> {
   const cached = cache.get(url);
   if (cached && cached.expires > Date.now()) {
-    return jsonResponse({ data: cached.data, cached: true });
+    return jsonResponse({ data: cached.data, cached: true }, 200, req);
   }
 
   const data = await fetchEdgar(url);
   if (!data) {
-    return errorResponse("Failed to fetch from SEC EDGAR", 502);
+    return errorResponse("Failed to fetch from SEC EDGAR", 502, req);
   }
 
   cache.set(url, { data, expires: Date.now() + getCacheTTL(endpoint) });
@@ -214,5 +214,5 @@ async function fetchAndCache(url: string, endpoint: string): Promise<Response> {
     }
   }
 
-  return jsonResponse({ data, cached: false });
+  return jsonResponse({ data, cached: false }, 200, req);
 }

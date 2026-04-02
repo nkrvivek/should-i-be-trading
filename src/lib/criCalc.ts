@@ -3,9 +3,7 @@
  * Ported from Radon's web/lib/criCalc.ts.
  */
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max);
-}
+import { clamp } from "./scoring/normalize";
 
 /* ─── Component Scoring (each 0-25) ────────────────── */
 

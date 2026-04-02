@@ -7,6 +7,7 @@
 
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
+import { parseEdgeError } from "./parseEdgeError";
 
 async function sec13fCall<T>(params: Record<string, unknown>): Promise<T> {
   if (!isSupabaseConfigured()) {
@@ -26,8 +27,7 @@ async function sec13fCall<T>(params: Record<string, unknown>): Promise<T> {
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `SEC 13F request failed: ${response.status}`);
+    await parseEdgeError(response, "SEC 13F");
   }
 
   const result = await response.json();

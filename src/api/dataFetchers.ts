@@ -39,24 +39,15 @@ export async function finnhubFetch<T>(
 }
 
 /**
- * Fetch a FRED series via edge function. Returns values most-recent first.
+ * Fetch a FRED series via edge function. Returns numeric values most-recent first.
+ * Delegates to freeDataClient for the actual fetch, then extracts numbers.
  */
 export async function fredFetchSeries(seriesId: string, limit = 5): Promise<number[]> {
   if (!isSupabaseConfigured()) return [];
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const headers = await getEdgeHeaders();
-
   try {
-    const url = `${supabaseUrl}/functions/v1/fred?series_id=${seriesId}&limit=${limit}&sort_order=desc`;
-    const res = await dedupFetch(url, { headers }, 5 * 60_000); // FRED data: 5min dedup
-    if (!res.ok) return [];
-    const data = await res.json();
-    const obs = data?.observations;
-    if (!obs) return [];
-    return obs
-      .filter((o: { value: string }) => o.value !== ".")
-      .map((o: { value: string }) => parseFloat(o.value));
+    const { fetchFredSeries } = await import("./freeDataClient");
+    const obs = await fetchFredSeries(seriesId, limit);
+    return obs.map((o) => parseFloat(o.value));
   } catch {
     return [];
   }

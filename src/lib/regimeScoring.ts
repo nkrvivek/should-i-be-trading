@@ -13,6 +13,8 @@
  * All data from free FRED + Finnhub APIs. No Radon dependency.
  */
 
+import { scoreVIXFromBrackets, REGIME_VIX_BRACKETS } from "./scoring/vixUtils";
+
 // ── Types ──────────────────────────────────────────────────────────────
 
 export type SignalBadge = "POSITIVE" | "NEUTRAL" | "CAUTION" | "ELEVATED";
@@ -454,41 +456,18 @@ function scoreVIXLevel(vix?: number): RegimeSignalResult {
     };
   }
 
-  let score: number;
-  let interpretation: string;
-
-  if (vix < 13) {
-    score = 92;
-    interpretation = `VIX at ${vix.toFixed(1)}; extreme calm, complacency risk but favorable for positioning`;
-  } else if (vix < 16) {
-    score = 82;
-    interpretation = `VIX at ${vix.toFixed(1)}; low volatility, healthy risk appetite, standard position sizing`;
-  } else if (vix < 20) {
-    score = 68;
-    interpretation = `VIX in mid-range; elevated relative to early-cycle norms but not yet at distress levels; cyclical uptick evident`;
-  } else if (vix < 25) {
-    score = 48;
-    interpretation = `VIX at ${vix.toFixed(1)}; elevated uncertainty, reduce position sizes, favor defined-risk structures`;
-  } else if (vix < 30) {
-    score = 30;
-    interpretation = `VIX at ${vix.toFixed(1)}; high volatility, significant hedging activity, defensive posture warranted`;
-  } else if (vix < 40) {
-    score = 15;
-    interpretation = `VIX at ${vix.toFixed(1)}; fear territory, capital preservation mode, only trade mean-reversion setups`;
-  } else {
-    score = 5;
-    interpretation = `VIX at ${vix.toFixed(1)}; extreme fear/panic, potential capitulation event, watch for washout signals`;
-  }
+  const result = scoreVIXFromBrackets(vix, REGIME_VIX_BRACKETS);
+  const interpretation = `VIX at ${vix.toFixed(1)}; ${result.label}`;
 
   return {
     id: "vix_level",
     category: "TRIGGER",
-    badge: toBadge(score),
+    badge: toBadge(result.score),
     metricName: "VIX",
     description: "Implied volatility",
     currentValue: `${vix.toFixed(1)}`,
     interpretation,
-    score,
+    score: result.score,
   };
 }
 

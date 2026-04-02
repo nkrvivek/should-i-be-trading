@@ -1,5 +1,7 @@
 import type { OpenOrder } from "../../api/types";
 import { fmtUsdExact } from "../../lib/format";
+import { Th } from "../shared/TableHeader";
+import { SkeletonRows } from "../shared/SkeletonRows";
 
 type Props = {
   orders: OpenOrder[];
@@ -8,17 +10,7 @@ type Props = {
 
 export function OrdersPanel({ orders, loading }: Props) {
   if (loading && orders.length === 0) {
-    return (
-      <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        {Array.from({ length: 3 }).map((_, i) => (
-          <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <div className="skeleton-pulse" style={{ width: 40, height: 14, borderRadius: 3, background: "var(--border-dim)" }} />
-            <div className="skeleton-pulse" style={{ width: 60, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80}ms` }} />
-            <div className="skeleton-pulse" style={{ flex: 1, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80 + 40}ms` }} />
-          </div>
-        ))}
-      </div>
-    );
+    return <SkeletonRows rows={3} columns={[{ width: 40 }, { width: 60 }, { width: "flex" }]} />;
   }
 
   if (orders.length === 0) {
@@ -64,13 +56,5 @@ export function OrdersPanel({ orders, loading }: Props) {
         </tbody>
       </table>
     </div>
-  );
-}
-
-function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
-  return (
-    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-      {children}
-    </th>
   );
 }

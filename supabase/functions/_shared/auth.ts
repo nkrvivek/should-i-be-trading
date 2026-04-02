@@ -85,7 +85,7 @@ const ALLOWED_ORIGINS = [
 ];
 
 /** Build CORS headers with origin check. Falls back to first allowed origin. */
-export function getCorsHeaders(req?: Request): Record<string, string> {
+export function getCorsHeaders(req: Request): Record<string, string> {
   const origin = req?.headers.get("Origin") ?? "";
   const isLocalhost = origin.startsWith("http://localhost:") || origin.startsWith("http://127.0.0.1:");
   const allowed = ALLOWED_ORIGINS.includes(origin) || isLocalhost;
@@ -111,21 +111,9 @@ export function getValidatedOrigin(req: Request): string {
   return ALLOWED_ORIGINS[0]; // default to "https://sibt.ai"
 }
 
-/** Standard CORS headers (legacy — use getCorsHeaders(req) for origin-checked headers) */
-export const corsHeaders = {
-  "Access-Control-Allow-Origin": "https://sibt.ai",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-token",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-  "Access-Control-Expose-Headers": "x-ai-used, x-ai-limit",
-  "X-Content-Type-Options": "nosniff",
-  "X-Frame-Options": "DENY",
-  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "Referrer-Policy": "strict-origin-when-cross-origin",
-};
-
 /** Create a JSON response with CORS headers */
-export function jsonResponse(data: unknown, status = 200, req?: Request): Response {
-  const cors = req ? getCorsHeaders(req) : corsHeaders;
+export function jsonResponse(data: unknown, status = 200, req: Request): Response {
+  const cors = getCorsHeaders(req);
   return new Response(JSON.stringify(data), {
     status,
     headers: { ...cors, "Content-Type": "application/json" },
@@ -133,6 +121,6 @@ export function jsonResponse(data: unknown, status = 200, req?: Request): Respon
 }
 
 /** Create an error response */
-export function errorResponse(message: string, status = 400, req?: Request): Response {
+export function errorResponse(message: string, status = 400, req: Request): Response {
   return jsonResponse({ error: message }, status, req);
 }

@@ -1,29 +1,28 @@
 /**
  * Unusual Whales API client for SIBT.
  * Used as premium data source when user has UW_TOKEN configured.
+ * Routes all requests through proxy-uw edge function to keep API keys server-side.
  */
+import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "./edgeHeaders";
 import { getCredential } from "../lib/credentials";
 
-const UW_BASE = "https://api.unusualwhales.com/api";
-
-function getToken(): string | null {
-  return getCredential("unusual_whales");
-}
-
 export function hasUWToken(): boolean {
-  return !!getToken();
+  return !!getCredential("unusual_whales");
 }
 
 async function uwFetch<T>(path: string): Promise<T> {
-  const token = getToken();
-  if (!token) throw new Error("UW token not configured");
+  if (!hasUWToken()) throw new Error("UW token not configured");
+  if (!isSupabaseConfigured()) throw new Error("Sign in to use Unusual Whales data");
 
-  const res = await fetch(`${UW_BASE}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const headers = await getEdgeHeaders();
+  const url = `${supabaseUrl}/functions/v1/proxy-uw?path=${encodeURIComponent(path)}`;
+
+  const res = await fetch(url, { headers });
 
   if (!res.ok) {
-    if (res.status === 401) throw new Error("Invalid UW token");
+    if (res.status === 401 || res.status === 403) throw new Error("Invalid UW token");
     if (res.status === 429) throw new Error("UW rate limit — try again shortly");
     throw new Error(`UW API error: ${res.status}`);
   }

@@ -1,4 +1,5 @@
 import { getSectorEtfForSymbol } from "./sectorMapping";
+import { clamp, lerp } from "./scoring/normalize";
 
 export interface CompositeScoreInputs {
   marketQuality?: number;
@@ -62,15 +63,7 @@ export const WEIGHTS = {
   shortInterest: 0.05,
 } as const;
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
-function lerp(value: number, inMin: number, inMax: number, outMin: number, outMax: number): number {
-  if (inMax === inMin) return outMin;
-  const ratio = (value - inMin) / (inMax - inMin);
-  return outMin + (outMax - outMin) * ratio;
-}
+// clamp and lerp imported from ./scoring/normalize
 
 function normalizeZeroToHundred(value: number): number {
   return Math.round(clamp(value, 0, 100));

@@ -7,6 +7,7 @@
 
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
+import { parseEdgeError } from "./parseEdgeError";
 
 async function tradierCall<T>(params: Record<string, unknown>): Promise<T> {
   if (!isSupabaseConfigured()) {
@@ -27,8 +28,7 @@ async function tradierCall<T>(params: Record<string, unknown>): Promise<T> {
   });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `Tradier request failed: ${response.status}`);
+    await parseEdgeError(response, "Tradier");
   }
 
   const result = await response.json();

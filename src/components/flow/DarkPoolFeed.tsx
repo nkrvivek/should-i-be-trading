@@ -1,4 +1,6 @@
 import type { ScannerSignal } from "../../api/types";
+import { Th } from "../shared/TableHeader";
+import { SkeletonRows } from "../shared/SkeletonRows";
 
 type Props = {
   signals: ScannerSignal[];
@@ -13,17 +15,7 @@ function directionColor(dir: string): string {
 
 export function DarkPoolFeed({ signals, loading }: Props) {
   if (loading && signals.length === 0) {
-    return (
-      <div style={{ padding: "8px 16px", display: "flex", flexDirection: "column", gap: 10 }}>
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <div className="skeleton-pulse" style={{ width: 48, height: 14, borderRadius: 3, background: "var(--border-dim)" }} />
-            <div className="skeleton-pulse" style={{ width: 36, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80}ms` }} />
-            <div className="skeleton-pulse" style={{ flex: 1, height: 14, borderRadius: 3, background: "var(--border-dim)", animationDelay: `${i * 80 + 40}ms` }} />
-          </div>
-        ))}
-      </div>
-    );
+    return <SkeletonRows />;
   }
 
   if (signals.length === 0) {
@@ -65,13 +57,5 @@ export function DarkPoolFeed({ signals, loading }: Props) {
         </tbody>
       </table>
     </div>
-  );
-}
-
-function Th({ children, align = "left" }: { children: React.ReactNode; align?: "left" | "right" }) {
-  return (
-    <th style={{ padding: "4px 8px", textAlign: align, fontWeight: 500, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-      {children}
-    </th>
   );
 }

@@ -11,6 +11,12 @@
  *   Macro (10%)      — 10Y yield trend, DXY
  */
 
+import {
+  scoreVIXFromBrackets,
+  applyVIXTrendAdjustment,
+  MARKET_VIX_BRACKETS,
+} from "./scoring/vixUtils";
+
 export type CategoryScore = {
   name: string;
   score: number; // 0-100
@@ -49,48 +55,12 @@ export type MarketInputs = {
  * Lower VIX = higher score (better for trading).
  */
 function scoreVolatility(vix: number, vixPrev?: number): CategoryScore {
-  let score: number;
-  let detail: string;
+  const base = scoreVIXFromBrackets(vix, MARKET_VIX_BRACKETS);
+  let detail = `VIX ${vix.toFixed(1)} — ${base.label}`;
 
-  if (vix <= 12) {
-    score = 95;
-    detail = `VIX ${vix.toFixed(1)} — extreme calm, watch for complacency`;
-  } else if (vix <= 15) {
-    score = 90;
-    detail = `VIX ${vix.toFixed(1)} — very low volatility, favorable`;
-  } else if (vix <= 18) {
-    score = 80;
-    detail = `VIX ${vix.toFixed(1)} — normal, healthy environment`;
-  } else if (vix <= 22) {
-    score = 65;
-    detail = `VIX ${vix.toFixed(1)} — slightly elevated, manageable`;
-  } else if (vix <= 25) {
-    score = 50;
-    detail = `VIX ${vix.toFixed(1)} — elevated, reduce position sizes`;
-  } else if (vix <= 30) {
-    score = 35;
-    detail = `VIX ${vix.toFixed(1)} — high volatility, caution`;
-  } else if (vix <= 35) {
-    score = 20;
-    detail = `VIX ${vix.toFixed(1)} — very high, defensive posture`;
-  } else {
-    score = 10;
-    detail = `VIX ${vix.toFixed(1)} — extreme fear, capital preservation`;
-  }
-
-  // VIX trend penalty/bonus (rising VIX = worse)
-  if (vixPrev && vixPrev > 0) {
-    const vixChg = ((vix - vixPrev) / vixPrev) * 100;
-    if (vixChg > 10) {
-      score = Math.max(0, score - 15);
-      detail += ` | Spiking +${vixChg.toFixed(1)}%`;
-    } else if (vixChg > 5) {
-      score = Math.max(0, score - 8);
-      detail += ` | Rising +${vixChg.toFixed(1)}%`;
-    } else if (vixChg < -5) {
-      score = Math.min(100, score + 5);
-      detail += ` | Falling ${vixChg.toFixed(1)}%`;
-    }
+  const { score, trendDetail } = applyVIXTrendAdjustment(base.score, vix, vixPrev);
+  if (trendDetail) {
+    detail += ` | ${trendDetail}`;
   }
 
   return { name: "Volatility", score, weight: 0.25, detail };

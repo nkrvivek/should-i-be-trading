@@ -1,13 +1,13 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { getStripe, getPriceMapping } from "../_shared/stripe.ts";
-import { corsHeaders } from "../_shared/auth.ts";
+import { getCorsHeaders } from "../_shared/auth.ts";
 
 // This function does NOT require JWT (Stripe sends raw webhook, no auth header)
 // Set verify_jwt = false in supabase/config.toml for this function
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: getCorsHeaders(req) });
   }
 
   const stripe = getStripe();

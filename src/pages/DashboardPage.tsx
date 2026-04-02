@@ -15,6 +15,7 @@ import { ALL_LEARNING_LESSONS, LEARNING_TRACKS } from "../lib/academy";
 import { isLessonUnlocked } from "../lib/academyUnlock";
 import { estimateStockScoreFromMetrics } from "../lib/estimatedStockScore";
 import { getCompositeTradeScore } from "../hooks/useCompositeTradeScore";
+import { WORKFLOW_PRESETS, WORKFLOW_OPTIONS } from "../lib/workflowPresets";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { TrafficLight } from "../components/regime/TrafficLight";
 import { ScoreBreakdown } from "../components/regime/ScoreBreakdown";
@@ -25,6 +26,13 @@ import { TickerChart } from "../components/market/TickerChart";
 import { WatchlistManager } from "../components/watchlist/WatchlistManager";
 import { Panel } from "../components/layout/Panel";
 import { FearGreedGauge } from "../components/dashboard/FearGreedGauge";
+import { ActionCard } from "../components/dashboard/ActionCard";
+import { MiniStat } from "../components/dashboard/MiniStat";
+import { ProgressNote } from "../components/dashboard/ProgressNote";
+import { ChecklistRow } from "../components/dashboard/ChecklistRow";
+import { EmptyState } from "../components/dashboard/EmptyState";
+import { ExpandableWorkspaceCard } from "../components/dashboard/ExpandableWorkspaceCard";
+import { CompactStanceRow } from "../components/dashboard/CompactStanceRow";
 import { TradeVerdictBadgeWithScore } from "../components/trading/TradeVerdictBadge";
 import { TickerWithCompanyName } from "../components/shared/TickerWithCompanyName";
 import { useAppStore, type WorkflowProfile } from "../stores/appStore";
@@ -490,7 +498,7 @@ export function DashboardPage() {
               />
               <ExpandableWorkspaceCard
                 title="Watchlist Workspace"
-                body="Keep the watchlist manager available, but don’t let it compete with the first-screen decision flow."
+                body="Keep the watchlist manager available, but don't let it compete with the first-screen decision flow."
                 cta={showWatchlistWorkspace ? "Hide Watchlists" : "Open Watchlists"}
                 onClick={() => setShowWatchlistWorkspace((value) => !value)}
               />
@@ -531,122 +539,6 @@ export function DashboardPage() {
         </Panel>
       </div>
     </TerminalShell>
-  );
-}
-
-function ActionCard({
-  eyebrow,
-  title,
-  body,
-  cta,
-  secondary,
-  onClick,
-  onSecondaryClick,
-}: {
-  eyebrow: string;
-  title: string;
-  body: string;
-  cta: string;
-  secondary?: string;
-  onClick: () => void;
-  onSecondaryClick?: () => void;
-}) {
-  return (
-    <div style={actionCardStyle}>
-      <div>
-        <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
-          {eyebrow}
-        </div>
-        <div style={{ ...mono, fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
-          {title}
-        </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
-          {body}
-        </div>
-      </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" onClick={onClick} style={primaryBtnStyle}>{cta}</button>
-        {secondary && onSecondaryClick && (
-          <button type="button" onClick={onSecondaryClick} style={secondaryBtnStyle}>{secondary}</button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function MiniStat({ label, value, tone }: { label: string; value: string; tone: string }) {
-  return (
-    <div style={miniStatStyle}>
-      <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 6 }}>{label}</div>
-      <div style={{ ...mono, fontSize: 20, fontWeight: 700, color: tone }}>{value}</div>
-    </div>
-  );
-}
-
-function ProgressNote({ label, value, detail }: { label: string; value: string; detail: string }) {
-  return (
-    <div style={progressNoteStyle}>
-      <div style={{ ...mono, fontSize: 11, color: "var(--text-muted)", marginBottom: 4 }}>{label}</div>
-      <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>{value}</div>
-      <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>{detail}</div>
-    </div>
-  );
-}
-
-function CompactStanceRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div style={compactStanceRowStyle}>
-      <span style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>{label}</span>
-      <span style={{ ...mono, fontSize: 12, fontWeight: 700, color: "var(--text-primary)", textAlign: "right" }}>{value}</span>
-    </div>
-  );
-}
-
-function ChecklistRow({ title, body, cta, onClick }: { title: string; body: string; cta: string; onClick: () => void }) {
-  return (
-    <div style={checklistRowStyle}>
-      <div>
-        <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>{title}</div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.55 }}>{body}</div>
-      </div>
-      <button type="button" onClick={onClick} style={secondaryBtnStyle}>{cta}</button>
-    </div>
-  );
-}
-
-function EmptyState({ text }: { text: string }) {
-  return (
-    <div style={{ padding: 24, textAlign: "center", ...mono, fontSize: 13, color: "var(--text-muted)" }}>
-      {text}
-    </div>
-  );
-}
-
-function ExpandableWorkspaceCard({
-  title,
-  body,
-  cta,
-  onClick,
-}: {
-  title: string;
-  body: string;
-  cta: string;
-  onClick: () => void;
-}) {
-  return (
-    <div style={actionCardStyle}>
-      <div>
-        <div style={{ ...mono, fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
-          {title}
-        </div>
-        <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
-          {body}
-        </div>
-      </div>
-      <div>
-        <button type="button" onClick={onClick} style={secondaryBtnStyle}>{cta}</button>
-      </div>
-    </div>
   );
 }
 
@@ -714,40 +606,6 @@ const actionCardStyle: React.CSSProperties = {
   background: "var(--bg-panel-raised)",
 };
 
-const miniStatStyle: React.CSSProperties = {
-  padding: 10,
-  borderRadius: 8,
-  border: "1px solid var(--border-dim)",
-  background: "var(--bg-panel-raised)",
-};
-
-const progressNoteStyle: React.CSSProperties = {
-  padding: 12,
-  borderRadius: 8,
-  border: "1px solid var(--border-dim)",
-  background: "var(--bg-panel-raised)",
-};
-
-const compactStanceRowStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 12,
-  alignItems: "center",
-  paddingTop: 8,
-  borderTop: "1px solid rgba(5, 173, 152, 0.12)",
-};
-
-const checklistRowStyle: React.CSSProperties = {
-  display: "flex",
-  justifyContent: "space-between",
-  gap: 16,
-  alignItems: "center",
-  padding: 12,
-  borderRadius: 8,
-  border: "1px solid var(--border-dim)",
-  background: "var(--bg-panel-raised)",
-};
-
 const focusRowStyle: React.CSSProperties = {
   display: "flex",
   justifyContent: "space-between",
@@ -809,88 +667,4 @@ const marketAccentCardStyle: React.CSSProperties = {
   borderRadius: 8,
   border: "1px solid rgba(5, 173, 152, 0.2)",
   background: "linear-gradient(180deg, rgba(5, 173, 152, 0.06), rgba(5, 173, 152, 0.01))",
-};
-
-const WORKFLOW_OPTIONS: Array<{ id: WorkflowProfile; label: string }> = [
-  { id: "beginner", label: "Beginner" },
-  { id: "active_trader", label: "Active Trader" },
-  { id: "options_trader", label: "Options Trader" },
-];
-
-const WORKFLOW_PRESETS: Record<WorkflowProfile, {
-  summary: string;
-  stanceCopy: string;
-  learnTitle: (lessonTitle?: string) => string;
-  learnBody: string;
-  learnFallback: string;
-  learnCta: string;
-  learnSecondaryLabel: (lesson?: { simulatorRoute?: string; followUpRoute?: string }) => string | undefined;
-  learnSecondaryRoute: (lesson?: { simulatorRoute?: string; followUpRoute?: string }) => string | undefined;
-  researchTitle: string;
-  researchBody: string;
-  researchFallback: string;
-  researchCta: string;
-  researchSecondary: string;
-  tradeTitle: string;
-  tradeBody: string;
-  tradeCta: string;
-  tradeSecondary: string;
-}> = {
-  beginner: {
-    summary: "Start with education and simulator reps before pushing into live execution. The app should slow you down and make the next step obvious.",
-    stanceCopy: "Start with the tape, keep the process simple, and only move into review when the ticker and regime align. Learn first, simulate second, trade last.",
-    learnTitle: (lessonTitle) => lessonTitle ?? "Start the academy",
-    learnBody: "Stay on the guided lesson path until the order ticket and risk framing feel obvious.",
-    learnFallback: "Pick up the next lesson, then move into simulator practice instead of skipping straight to live trading.",
-    learnCta: "Resume Lesson",
-    learnSecondaryLabel: (lesson) => lesson?.simulatorRoute ? "Open Simulator" : lesson?.followUpRoute ? "Open Follow-Up" : undefined,
-    learnSecondaryRoute: (lesson) => lesson?.simulatorRoute ?? lesson?.followUpRoute,
-    researchTitle: "Focus on the clearest setups",
-    researchBody: "Review the highest-ranked ideas first and ignore lower-conviction noise.",
-    researchFallback: "Open the composite screener to triage what deserves attention first.",
-    researchCta: "Open Composite",
-    researchSecondary: "Review Watchlist",
-    tradeTitle: "Review before you execute",
-    tradeBody: "Use order review and the trade checklist before sending anything to a broker.",
-    tradeCta: "Open Trading",
-    tradeSecondary: "Order Review",
-  },
-  active_trader: {
-    summary: "Bias toward fast triage, tighter validation, and cleaner review loops. The app should help you narrow faster without skipping discipline.",
-    stanceCopy: "Start with the tape, narrow quickly to the highest-conviction names, and use review to reject weak setups before they reach execution.",
-    learnTitle: (lessonTitle) => lessonTitle ? `Sharpen with ${lessonTitle}` : "Refresh the playbook",
-    learnBody: "Use shorter refreshers to reinforce discipline and stop drift in your process.",
-    learnFallback: "Use the academy as a fast refresher, then move into research or trading review.",
-    learnCta: "Open Learn",
-    learnSecondaryLabel: () => "Open Progress",
-    learnSecondaryRoute: () => "/progress",
-    researchTitle: "Work the ranked list fast",
-    researchBody: "Take the best names into validation quickly, but keep the bar high.",
-    researchFallback: "Open the composite screener and move straight into validation on the top names.",
-    researchCta: "Open Composite",
-    researchSecondary: "Open Research",
-    tradeTitle: "Keep the review loop tight",
-    tradeBody: "Execution should be fast only after the structure, risk, and thesis are already clear.",
-    tradeCta: "Open Trading",
-    tradeSecondary: "Order Review",
-  },
-  options_trader: {
-    summary: "Bias toward structure, risk definition, and simulator/order-review repetition. The app should route you into spreads, order entry, and trade review discipline.",
-    stanceCopy: "Start with the tape, but do not let a strong opinion skip structure. For options, review, simulator context, and order quality matter as much as direction.",
-    learnTitle: (lessonTitle) => lessonTitle ? `Practice ${lessonTitle}` : "Refresh options workflows",
-    learnBody: "Use lessons to reinforce structure, defined risk, and order-entry discipline before execution.",
-    learnFallback: "Revisit the options tracks, then move into simulator reps or trade review flows.",
-    learnCta: "Open Learn",
-    learnSecondaryLabel: () => "Open Simulator",
-    learnSecondaryRoute: () => "/signals?tab=practice&view=simulator",
-    researchTitle: "Find setups worth structuring",
-    researchBody: "Look for names where the regime and ticker score justify an options structure, not just a directional opinion.",
-    researchFallback: "Use composite and ticker research to narrow to names worth structuring into spreads or defined-risk setups.",
-    researchCta: "Open Composite",
-    researchSecondary: "Open Research",
-    tradeTitle: "Structure before execution",
-    tradeBody: "Use review and order quality checks before sending a multi-leg trade or options order.",
-    tradeCta: "Open Trading",
-    tradeSecondary: "Order Review",
-  },
 };

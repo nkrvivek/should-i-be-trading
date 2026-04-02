@@ -7,6 +7,7 @@
 
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
+import { parseEdgeError } from "./parseEdgeError";
 
 interface FmpRequestCacheEntry<T> {
   promise: Promise<T>;
@@ -71,8 +72,7 @@ async function fmpCall<T>(params: Record<string, unknown>): Promise<T> {
     });
 
     if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      throw new Error(body.error || `FMP request failed: ${response.status}`);
+      await parseEdgeError(response, "FMP");
     }
 
     const result = await response.json();

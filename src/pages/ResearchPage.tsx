@@ -11,9 +11,9 @@ import { TabBar, type TabDef } from "../components/layout/TabBar";
 import { Panel } from "../components/layout/Panel";
 import { WorkflowHandoffCard } from "../components/shared/WorkflowHandoffCard";
 import { TickerPicker, type TickerPickerOption } from "../components/shared/TickerPicker";
-import { ChatPanel } from "../components/ai/ChatPanel";
-import { ResearchPanel } from "../components/ai/ResearchPanel";
-import { ScreenerPanel } from "../components/ai/ScreenerPanel";
+const ChatPanel = lazy(() => import("../components/ai/ChatPanel").then(m => ({ default: m.ChatPanel })));
+const ResearchPanel = lazy(() => import("../components/ai/ResearchPanel").then(m => ({ default: m.ResearchPanel })));
+const ScreenerPanel = lazy(() => import("../components/ai/ScreenerPanel").then(m => ({ default: m.ScreenerPanel })));
 
 const EarningsContent = lazy(() => import("./partials/EarningsContent"));
 const InsiderContent = lazy(() => import("./partials/InsiderContent"));
@@ -213,6 +213,7 @@ export default function ResearchPage() {
           )}
 
           {primaryTab === "ticker" && tickerView === "chat" && (
+            <Suspense fallback={loading}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr minmax(320px, 0.9fr)", gap: 12, minHeight: 500 }}>
               <Panel title="Ticker Conversation">
                 <ChatPanel cri={cri} portfolio={portfolio} verdict={verdict} initialPrompt={chatPrompt} />
@@ -234,12 +235,15 @@ export default function ResearchPage() {
                 </div>
               </Panel>
             </div>
+            </Suspense>
           )}
 
           {primaryTab === "ticker" && tickerView === "research" && (
-            <Panel title="Ticker Research">
-              <ResearchPanel initialQuery={selectedSymbol} />
-            </Panel>
+            <Suspense fallback={loading}>
+              <Panel title="Ticker Research">
+                <ResearchPanel initialQuery={selectedSymbol} />
+              </Panel>
+            </Suspense>
           )}
 
           {primaryTab === "ticker" && tickerView === "fundamentals" && (
@@ -249,9 +253,11 @@ export default function ResearchPage() {
           )}
 
           {primaryTab === "more" && moreView === "screener" && (
-            <Panel title="AI Stock Screener">
-              <ScreenerPanel />
-            </Panel>
+            <Suspense fallback={loading}>
+              <Panel title="AI Stock Screener">
+                <ScreenerPanel />
+              </Panel>
+            </Suspense>
           )}
 
           {primaryTab === "more" && moreView === "technical" && (

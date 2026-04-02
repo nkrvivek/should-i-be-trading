@@ -25,20 +25,17 @@ interface StoredConnection {
   displayName: string;
 }
 
+/** Module-scoped encryption passphrase (no global window leak) */
+let _authUid: string | null = null;
+
 /** Get encryption passphrase from the current user session */
 function getPassphrase(): string | null {
-  // Dynamic import to avoid circular dependency
-  const authState = (window as unknown as Record<string, unknown>).__sibt_auth_uid as string | undefined;
-  return authState || null;
+  return _authUid;
 }
 
 /** Set the auth UID for encryption (called from AuthProvider) */
 export function setBrokerEncryptionKey(uid: string | null) {
-  if (uid) {
-    (window as unknown as Record<string, unknown>).__sibt_auth_uid = uid;
-  } else {
-    delete (window as unknown as Record<string, unknown>).__sibt_auth_uid;
-  }
+  _authUid = uid;
 }
 
 /** Check if encrypted data exists but can't be read (no passphrase yet) */

@@ -3,7 +3,8 @@
  * Uses the Supabase Edge Function proxy (proxy-exa) with authenticated user context.
  */
 
-import { supabase, isSupabaseConfigured } from "../lib/supabase";
+import { isSupabaseConfigured } from "../lib/supabase";
+import { getEdgeHeaders } from "./edgeHeaders";
 
 export type ExaResult = {
   title: string;
@@ -34,10 +35,9 @@ export async function exaSearch(
 
   if (isSupabaseConfigured() && supabaseUrl && supabaseAnonKey) {
     // Production: Supabase Edge Function proxy (uses stored credential)
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userToken = sessionData.session?.access_token;
+    const edgeHeaders = await getEdgeHeaders();
 
-    if (!userToken) {
+    if (!edgeHeaders["x-user-token"]) {
       throw new Error("Sign in to use research features, or add your Exa API key in Settings.");
     }
 
@@ -45,9 +45,7 @@ export async function exaSearch(
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "apikey": supabaseAnonKey,
-        "Authorization": `Bearer ${supabaseAnonKey}`,
-        "x-user-token": userToken,
+        ...edgeHeaders,
       },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(30_000),

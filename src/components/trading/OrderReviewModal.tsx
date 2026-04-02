@@ -1,13 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
-import { useBrokerStore } from "../../stores/brokerStore";
 import type { StrategySuggestion } from "../../lib/portfolio/strategyAnalyzer";
-import { computeKeyMetrics } from "../../lib/strategy/payoff";
-import { mapLegsToExecutionLegs } from "../../lib/execution/orderMapper";
-import { runPreExecutionChecks } from "../../lib/execution/riskChecks";
-import { executeStrategy } from "../../lib/execution/executionEngine";
-import type { ExecutionPlan, ExecutionLeg, ExecutionResult } from "../../lib/execution/types";
 import { useRiskPrefsStore } from "../../stores/riskPrefsStore";
 import { TradeVerdictBadgeWithScore } from "./TradeVerdictBadge";
+import { useOrderExecution, formatMetric, formatDollar, statusIcon } from "../../hooks/useOrderExecution";
 
 interface Props {
   symbol: string;
@@ -110,147 +104,31 @@ export default function OrderReviewModal({
   onComplete,
   onViewOrders,
 }: Props) {
-  const { connections, accounts, placeOrder } = useBrokerStore();
+  const {
+    connections,
+    accounts,
+    selectedConnectionId,
+    setSelectedConnectionId,
+    riskAcknowledged,
+    setRiskAcknowledged,
+    countdown,
+    executing,
+    executionResult,
+    legStatuses,
+    executionLegs,
+    metrics,
+    selectedAccount,
+    isPaper,
+    estimatedCost,
+    preChecks,
+    hasUndefinedRisk,
+    hasOptions,
+    canExecute,
+    handleExecuteClick,
+    handleCancelCountdown,
+  } = useOrderExecution({ symbol, currentPrice, suggestion, onComplete });
 
   const executableConnections = connections;
-
-  const [selectedConnectionId, setSelectedConnectionId] = useState(
-    executableConnections[0]?.id ?? "",
-  );
-  const [riskAcknowledged, setRiskAcknowledged] = useState(false);
-  const [countdown, setCountdown] = useState<number | null>(null);
-  const [executing, setExecuting] = useState(false);
-  const [executionResult, setExecutionResult] = useState<ExecutionResult | null>(null);
-  const [legStatuses, setLegStatuses] = useState<ExecutionLeg[]>([]);
-
-  // Compute execution legs and metrics
-  const executionLegs = mapLegsToExecutionLegs(suggestion.legs, currentPrice);
-  const metrics = computeKeyMetrics(suggestion.legs, currentPrice);
-
-  const selectedAccount = selectedConnectionId ? accounts[selectedConnectionId] ?? null : null;
-  const isPaper = selectedAccount?.isPaperTrading ?? false;
-
-  // Compute estimated cost
-  const estimatedCost = executionLegs.reduce((sum, leg) => {
-    const multiplier = leg.type === "stock" ? 1 : 100;
-    const legCost = leg.estimatedPrice * leg.qty * multiplier;
-    return sum + (leg.action === "buy" ? legCost : -legCost);
-  }, 0);
-
-  // Run pre-execution checks
-  const preChecks = runPreExecutionChecks(selectedAccount, executionLegs, estimatedCost);
-
-  // Detect undefined risk
-  const hasUndefinedRisk = executionLegs.some(
-    (l) => l.action === "sell" && (l.type === "call" || l.type === "put"),
-  ) && !executionLegs.some(
-    (l) => l.action === "buy" && l.type === "stock",
-  ) && !executionLegs.some(
-    (l) => l.action === "buy" && l.type === "call",
-  );
-
-  const hasOptions = executionLegs.some((l) => l.type === "call" || l.type === "put");
-  const canExecute = riskAcknowledged && preChecks.passed && selectedConnectionId && !executing && !executionResult;
-
-  const formatMetric = (n: number): string => {
-    if (!isFinite(n) || Math.abs(n) > 1e8) return "Unlimited";
-    const abs = Math.abs(n);
-    if (abs >= 1000) return `$${(abs / 1000).toFixed(1)}K`;
-    return `$${abs.toFixed(0)}`;
-  };
-
-  const formatDollar = (n: number): string =>
-    n.toLocaleString("en-US", { style: "currency", currency: "USD" });
-
-  const statusIcon = (status: ExecutionLeg["status"]): string => {
-    switch (status) {
-      case "pending": return "\u23F3";
-      case "placing": return "\uD83D\uDD04";
-      case "filled": return "\u2705";
-      case "failed": return "\u274C";
-      case "cancelled": return "\u26D4";
-      default: return "\u23F3";
-    }
-  };
-
-  async function doExecute() {
-    setExecuting(true);
-    const selectedConn = connections.find((c) => c.id === selectedConnectionId);
-
-    const plan: ExecutionPlan = {
-      strategyName: suggestion.strategyName,
-      symbol,
-      currentPrice,
-      connectionId: selectedConnectionId,
-      brokerName: selectedConn?.displayName ?? "",
-      legs: executionLegs,
-      estimatedCost,
-      maxProfit: formatMetric(metrics.maxProfit),
-      maxLoss: formatMetric(Math.abs(metrics.maxLoss)),
-      breakeven: metrics.breakevens.length > 0
-        ? metrics.breakevens.map((b) => `$${b.toFixed(2)}`).join(", ")
-        : "N/A",
-    };
-
-    const result = await executeStrategy(
-      plan,
-      placeOrder,
-      (legIndex, status, orderId, error) => {
-        setLegStatuses((prev) => {
-          const updated = [...prev];
-          if (updated[legIndex]) {
-            updated[legIndex] = {
-              ...updated[legIndex],
-              status: status as ExecutionLeg["status"],
-              orderId,
-              error,
-            };
-          }
-          return updated;
-        });
-      },
-    );
-
-    setExecutionResult(result);
-    setExecuting(false);
-    if (result.success) {
-      onComplete();
-    }
-  }
-
-  // Initialize legStatuses when executionLegs change
-  useEffect(() => {
-    if (!executing && !executionResult) {
-      setLegStatuses(executionLegs); // eslint-disable-line react-hooks/set-state-in-effect
-    }
-  }, [suggestion]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Countdown timer for live accounts
-  useEffect(() => {
-    if (countdown === null || countdown <= 0) return;
-    const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [countdown]);
-
-  // Execute when countdown reaches 0
-  useEffect(() => {
-    if (countdown === 0) {
-      doExecute(); // eslint-disable-line react-hooks/set-state-in-effect
-      setCountdown(null);
-    }
-  }, [countdown]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleExecuteClick = useCallback(() => { // eslint-disable-line react-hooks/preserve-manual-memoization
-    if (isPaper) {
-      doExecute();
-    } else {
-      setCountdown(3);
-    }
-  }, [isPaper, selectedConnectionId]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleCancelCountdown = useCallback(() => {
-    setCountdown(null);
-  }, []);
 
   return (
     <div data-testid="order-review-overlay" style={overlayStyle} onClick={onClose}>

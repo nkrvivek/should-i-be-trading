@@ -7,6 +7,7 @@
 
 import { isSupabaseConfigured } from "../lib/supabase";
 import { getEdgeHeaders } from "./edgeHeaders";
+import { parseEdgeError } from "./parseEdgeError";
 
 /* ─── Types ─────────────────────────────────────────── */
 
@@ -53,8 +54,7 @@ export async function getCotData(weeks = 12): Promise<CftcResponse> {
   const response = await fetch(url, { headers });
 
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    throw new Error(body.error || `CFTC request failed: ${response.status}`);
+    await parseEdgeError(response, "CFTC");
   }
 
   return response.json();

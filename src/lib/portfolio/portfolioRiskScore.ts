@@ -8,6 +8,7 @@
 
 import type { BrokerPosition } from "../brokers/types";
 import type { RiskPreferences } from "../../stores/riskPrefsStore";
+import { getSectorForSymbol } from "../sectorMapping";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -31,25 +32,6 @@ export interface RiskPillar {
 /* ------------------------------------------------------------------ */
 /*  Constants                                                          */
 /* ------------------------------------------------------------------ */
-
-const SECTOR_MAP: Record<string, string> = {
-  AAPL: "Technology", MSFT: "Technology", NVDA: "Technology", GOOG: "Technology",
-  AMZN: "Consumer", META: "Technology", TSLA: "Consumer", AMD: "Technology", NFLX: "Communication",
-  AVGO: "Technology", CRM: "Technology", ORCL: "Technology", ADBE: "Technology", INTC: "Technology",
-  CSCO: "Technology", QCOM: "Technology", MU: "Technology", SNOW: "Technology", PLTR: "Technology",
-  DELL: "Technology", APP: "Technology", SHOP: "Technology", NOW: "Technology", PANW: "Technology",
-  JPM: "Financials", BAC: "Financials", GS: "Financials", MS: "Financials", WFC: "Financials",
-  C: "Financials", BX: "Financials", KKR: "Financials", SCHW: "Financials", AXP: "Financials",
-  V: "Financials", MA: "Financials", COF: "Financials",
-  UNH: "Healthcare", JNJ: "Healthcare", LLY: "Healthcare", PFE: "Healthcare", ABBV: "Healthcare",
-  MRK: "Healthcare", TMO: "Healthcare", ABT: "Healthcare", BMY: "Healthcare", AMGN: "Healthcare",
-  XOM: "Energy", CVX: "Energy", COP: "Energy", SLB: "Energy", EOG: "Energy",
-  DIS: "Communication", HD: "Consumer", MCD: "Consumer", NKE: "Consumer", SBUX: "Consumer",
-  WMT: "Consumer", COST: "Consumer", TGT: "Consumer", LOW: "Consumer",
-  CAT: "Industrials", BA: "Industrials", HON: "Industrials", UPS: "Industrials", RTX: "Industrials",
-  NEE: "Utilities", SO: "Utilities", DUK: "Utilities",
-  PG: "Consumer Staples", KO: "Consumer Staples", PEP: "Consumer Staples", PM: "Consumer Staples",
-};
 
 const INVERSE_ETFS = ["SH", "SDS", "SQQQ", "SPXU", "PSQ", "DOG", "VXX", "UVXY"];
 const CASH_LIKE = ["SGOV", "SHY", "BIL", "VMFXX", "SPAXX"];
@@ -76,7 +58,7 @@ function stdDev(values: number[]): number {
 function getSector(symbol: string): string {
   // Strip option suffixes — take the root ticker
   const root = symbol.replace(/\d.*$/, "").toUpperCase();
-  return SECTOR_MAP[root] ?? "Other";
+  return getSectorForSymbol(root) ?? "Other";
 }
 
 /* ------------------------------------------------------------------ */

@@ -17,8 +17,8 @@ Deno.serve(async (req) => {
 
     const { tier, interval } = await req.json();
 
-    if (!["starter", "pro", "enterprise"].includes(tier)) {
-      return errorResponse("Invalid tier. Must be 'starter', 'pro', or 'enterprise'.", 400, req);
+    if (!["starter", "pro", "enterprise", "copilot"].includes(tier)) {
+      return errorResponse("Invalid tier. Must be 'starter', 'pro', 'enterprise', or 'copilot'.", 400, req);
     }
     if (!["month", "year"].includes(interval)) {
       return errorResponse("Invalid interval. Must be 'month' or 'year'.", 400, req);

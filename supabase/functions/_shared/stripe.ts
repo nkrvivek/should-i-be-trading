@@ -17,6 +17,8 @@ export function getPriceMapping(): Record<string, { tier: string; interval: stri
   const proYearly = Deno.env.get("STRIPE_PRO_YEARLY_PRICE_ID");
   const entMonthly = Deno.env.get("STRIPE_ENT_MONTHLY_PRICE_ID");
   const entYearly = Deno.env.get("STRIPE_ENT_YEARLY_PRICE_ID");
+  const copilotMonthly = Deno.env.get("STRIPE_COPILOT_MONTHLY_PRICE_ID");
+  const copilotYearly = Deno.env.get("STRIPE_COPILOT_YEARLY_PRICE_ID");
 
   if (starterMonthly) map[starterMonthly] = { tier: "starter", interval: "month" };
   if (starterYearly) map[starterYearly] = { tier: "starter", interval: "year" };
@@ -24,13 +26,15 @@ export function getPriceMapping(): Record<string, { tier: string; interval: stri
   if (proYearly) map[proYearly] = { tier: "pro", interval: "year" };
   if (entMonthly) map[entMonthly] = { tier: "enterprise", interval: "month" };
   if (entYearly) map[entYearly] = { tier: "enterprise", interval: "year" };
+  if (copilotMonthly) map[copilotMonthly] = { tier: "copilot", interval: "month" };
+  if (copilotYearly) map[copilotYearly] = { tier: "copilot", interval: "year" };
 
   return map;
 }
 
 /** Get the Stripe Price ID for a tier + interval */
 export function getPriceId(tier: string, interval: string): string {
-  const tierKey = tier === "enterprise" ? "ENT" : tier === "starter" ? "STARTER" : "PRO";
+  const tierKey = tier === "enterprise" ? "ENT" : tier === "starter" ? "STARTER" : tier === "copilot" ? "COPILOT" : "PRO";
   const key = `STRIPE_${tierKey}_${interval === "year" ? "YEARLY" : "MONTHLY"}_PRICE_ID`;
   const priceId = Deno.env.get(key);
   if (!priceId) throw new Error(`Missing env var: ${key}`);

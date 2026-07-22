@@ -113,6 +113,10 @@ npm run dev     # http://localhost:5173
 npm run build   # Production build
 ```
 
+Restoring the Supabase project from pause or backup: see
+[docs/deploy-checklist.md](docs/deploy-checklist.md) first — broker
+connections fail closed until the credential encryption key is verified.
+
 ## Supported Brokerages
 
 Connect in 30 seconds via SnapTrade — no API keys needed:

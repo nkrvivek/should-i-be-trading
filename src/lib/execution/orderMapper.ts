@@ -5,10 +5,17 @@
 import type { SimulatorLeg } from "../strategy/payoff";
 import type { OrderRequest } from "../brokers/types";
 import type { ExecutionLeg } from "./types";
+import { buildOccSymbol as buildCanonicalOccSymbol } from "../proposalActions";
 
 /**
  * Build OCC option symbol: {UNDERLYING padded 6}{YYMMDD}{C|P}{strike*1000 padded 8}
  * Example: AAPL  260417C00185000
+ *
+ * Delegates to src/lib/proposalActions.ts's buildOccSymbol — the canonical,
+ * tested OCC builder — via a param-shape adapter (this module's callers use
+ * YYYYMMDD + "call"/"put"; the canonical builder takes YYYY-MM-DD + "C"/"P").
+ * Consolidating on one implementation means the dot-stripping fix (BRK.B)
+ * lives in exactly one place instead of two.
  */
 function buildOccSymbol(
   underlying: string,
@@ -16,15 +23,16 @@ function buildOccSymbol(
   optionType: "call" | "put",
   strike: number,
 ): string {
-  const sym = underlying.toUpperCase().padEnd(6, " ");
-  // YYYYMMDD -> YYMMDD
-  const yymmdd = expiration.length === 8
-    ? expiration.slice(2)
-    : expiration;
-  const cp = optionType === "call" ? "C" : "P";
-  const strikeInt = Math.round(strike * 1000);
-  const strikePad = String(strikeInt).padStart(8, "0");
-  return `${sym}${yymmdd}${cp}${strikePad}`;
+  const expiry =
+    expiration.length === 8
+      ? `${expiration.slice(0, 4)}-${expiration.slice(4, 6)}-${expiration.slice(6, 8)}`
+      : expiration;
+  return buildCanonicalOccSymbol({
+    ticker: underlying,
+    expiry,
+    right: optionType === "call" ? "C" : "P",
+    strike,
+  });
 }
 
 /**

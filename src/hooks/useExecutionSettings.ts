@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseConfigured } from "../lib/supabase";
 import { useAuthStore } from "../stores/authStore";
+import { buildDefaultExecutionSettingsRow } from "../lib/executionSettingsDefaults";
 
 export type ExecutionSettings = {
   user_id: string;
@@ -23,9 +24,11 @@ export function useExecutionSettings() {
   const { user } = useAuthStore();
   const [settings, setSettings] = useState<ExecutionSettings | null>(null);
   const [loading, setLoading] = useState(false);
-  // Migration 014 gives users select+update on execution_settings but NOT
-  // insert — the row is only created by service_role on first Copilot
-  // opt-in. A user who has never opted in has no row yet at all.
+  // Migration 014 gave users select+update on execution_settings but NOT
+  // insert; migration 016 closes that gap with a user-facing insert policy
+  // (safe defaults only — see executionSettingsDefaults.ts). A user who has
+  // never provisioned has no row yet, and now calls `provision()` below to
+  // create one themselves instead of waiting on a service_role path.
   const [provisioned, setProvisioned] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -85,5 +88,25 @@ export function useExecutionSettings() {
     [user, settings],
   );
 
-  return { settings, loading, provisioned, saving, error, update, refetch: fetchSettings };
+  const provision = useCallback(async () => {
+    if (!user || !isSupabaseConfigured()) return;
+
+    setSaving(true);
+    const { data, error: insertError } = await supabase
+      .from("execution_settings")
+      .insert(buildDefaultExecutionSettingsRow(user.id))
+      .select()
+      .single();
+    setSaving(false);
+
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+    setError(null);
+    setSettings(data);
+    setProvisioned(true);
+  }, [user]);
+
+  return { settings, loading, provisioned, saving, error, update, provision, refetch: fetchSettings };
 }

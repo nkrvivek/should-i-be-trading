@@ -27,10 +27,12 @@
  * execution_settings.broker_connection_id implies one is coming), swap this
  * for a lookup instead of trusting the request body.
  *
- * Strike selection and the earnings-window gate are stubbed behind injected
- * functions in src/lib/proposalEngine.ts (stubStrikeSelector /
- * stubEarningsChecker) — both carry TODOs for the real chain-data
- * workstream.
+ * Strike selection and the earnings-window gate are injected functions in
+ * src/lib/proposalEngine.ts (StrikeSelector / EarningsChecker) — this
+ * function wires the real, chain-backed implementations
+ * (_shared/tradierClient.ts / _shared/finnhubClient.ts) rather than the
+ * always-clear/always-OTM stubs, which remain in proposalEngine.ts only as
+ * the default parameter and as test fakes.
  */
 
 import { authenticateRequest, getCorsHeaders, jsonResponse, errorResponse } from "../_shared/auth.ts";
@@ -38,7 +40,6 @@ import { sanitizeError } from "../_shared/sanitize.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
   buildCoveredCallCandidates,
-  stubEarningsChecker,
   type EquityHolding,
   type OpenProposal,
   type CandidateRejection,
@@ -49,6 +50,8 @@ import {
   getSnapTradeBalances,
   type SnapTradePositionRaw,
 } from "../_shared/snaptradeClient.ts";
+import { tradierStrikeSelector } from "../_shared/tradierClient.ts";
+import { finnhubEarningsChecker } from "../_shared/finnhubClient.ts";
 
 // ── Feature gate ─────────────────────────────────────────────────────────
 // Tiers allowed to use the proposal engine. src/lib/featureGates.ts is the
@@ -139,9 +142,11 @@ function candidateToInsertRow(userId: string, c: CoveredCallCandidate, expiresAt
     legs: [{ action: "SELL_TO_OPEN", right: "C", strike: c.strike }],
     qty: c.contracts,
     expiry: c.expiry,
-    // net_credit_usd is unknown until real option-chain pricing lands
-    // (strike selection is a stub — see proposalEngine.ts TODOs).
-    net_credit_usd: null,
+    // Net credit = quoted bid * 100 * contracts. A conservative estimate —
+    // the real fill price at execution time is re-verified live (R20 in the
+    // vault's execution-playbook), this is the credit the proposal was
+    // built against.
+    net_credit_usd: c.bid * 100 * c.contracts,
     // A covered call's downside isn't a defined max-loss dollar figure
     // (assignment is opportunity cost, not capital loss) — left null.
     max_loss_usd: null,
@@ -150,7 +155,15 @@ function candidateToInsertRow(userId: string, c: CoveredCallCandidate, expiresAt
     // openNameRiskUsd doc comment).
     collateral_usd: c.strike * 100 * c.contracts,
     rationale: c.rationale,
-    proposal_signals: {}, // TODO: chain/greeks data once real strike selection lands
+    // Chain/greeks provenance + earnings-gate disclosure, so a proposal's
+    // strike selection and earnings coverage are auditable after the fact.
+    proposal_signals: {
+      strike_source: c.strikeSource,
+      strike_method: c.strikeMethod,
+      delta: c.delta,
+      bid: c.bid,
+      earnings_status: c.earningsStatus,
+    },
     council_verdict: null,
     status: "pending",
     approved_at: null,
@@ -309,32 +322,19 @@ Deno.serve(async (req) => {
         detail: { reason: "max_pending_proposals_reached", currentPendingCount: pendingCount, maxPending: MAX_PENDING },
       });
     } else {
-      // ── 6. Earnings-window gate (stubbed — TODO real calendar) ────
-      // v1: stubEarningsChecker always clears. Wired here (rather than
-      // omitted) so a later workstream can drop in a real checker without
-      // touching this call site — mirrors the strike-selector injection.
-      const earningsClearByTicker = new Map<string, boolean>();
-      for (const h of holdings) {
-        earningsClearByTicker.set(h.ticker.toUpperCase(), await stubEarningsChecker(h.ticker, today));
-      }
-      const holdingsPastEarningsGate = holdings.filter((h) => {
-        const clear = earningsClearByTicker.get(h.ticker.toUpperCase()) ?? true;
-        if (!clear) {
-          rejectionsToRecord.push({
-            ticker: h.ticker.toUpperCase(),
-            reason: "earnings_window_blocked",
-            detail: { reason: "earnings_window_blocked" },
-          });
-        }
-        return clear;
-      });
-
-      // ── 7. Candidate builder + per-name gates ──────────────────────
-      const result = buildCoveredCallCandidates({
-        holdings: holdingsPastEarningsGate,
+      // ── 6/7. Candidate builder (strike selection + earnings gate + all
+      // per-name gates run inside, in that order — see proposalEngine.ts's
+      // buildCoveredCallCandidates doc comment for the exact gate sequence).
+      // The earnings gate needs the real, selected expiry, so it can't run
+      // as a pre-filter ahead of strike selection the way the stub-era code
+      // did — it's folded into the per-holding pipeline instead.
+      const result = await buildCoveredCallCandidates({
+        holdings,
         openProposals,
         accountEquityUsd,
         today,
+        strikeSelector: tradierStrikeSelector,
+        earningsChecker: finnhubEarningsChecker,
       });
       candidates = result.candidates;
       rejectionsToRecord.push(...result.rejections);
@@ -361,6 +361,18 @@ Deno.serve(async (req) => {
         event: "proposal_created",
         detail: { ticker: c.ticker, structure: c.structure, strike: c.strike, expiry: c.expiry, contracts: c.contracts },
       });
+      // Fail-open disclosure: the earnings calendar was unavailable for this
+      // ticker/window. The proposal is NOT blocked (see proposalEngine.ts's
+      // buildCoveredCallCandidates), but the ambiguity is logged so a human
+      // reviewer sees it before approving.
+      if (c.earningsStatus === "unknown") {
+        await svc.from("proposal_events").insert({
+          proposal_id: proposalId,
+          user_id: auth.userId,
+          event: "earnings_unknown",
+          detail: { ticker: c.ticker, expiry: c.expiry },
+        });
+      }
       invokeCouncilVerdict(svc, auth.userId, proposalId);
     }
 

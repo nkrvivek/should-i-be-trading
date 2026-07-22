@@ -195,4 +195,10 @@ describe("buildOccSymbol", () => {
     const symbol = buildOccSymbol({ ticker: "SOFI", expiry: "2026-09-18", right: "C", strike: 8.5 });
     expect(symbol.endsWith("C00008500")).toBe(true);
   });
+
+  it("strips dots from a dotted ticker before padding the root (BRK.B)", () => {
+    const symbol = buildOccSymbol({ ticker: "BRK.B", expiry: "2026-08-21", right: "C", strike: 450 });
+    expect(symbol.slice(0, 6)).toBe("BRKB  ");
+    expect(symbol).toBe("BRKB  260821C00450000");
+  });
 });

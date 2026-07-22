@@ -253,7 +253,7 @@ export function OptionsChainLoader({ ticker, onPriceUpdate, onAddLeg }: Props) {
                       style={{
                         borderBottom: "1px solid var(--border-dim)",
                         height: 28,
-                        background: isATM ? "rgba(0, 214, 79, 0.06)" : itm ? "rgba(255,255,255,0.02)" : "transparent",
+                        background: isATM ? "rgba(0, 200, 5, 0.06)" : itm ? "rgba(255,255,255,0.02)" : "transparent",
                       }}
                     >
                       <td style={{ padding: "0 8px", fontWeight: isATM ? 700 : 600, color: isATM ? "var(--signal-core)" : "var(--text-primary)" }}>

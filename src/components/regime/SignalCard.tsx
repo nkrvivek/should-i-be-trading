@@ -6,7 +6,7 @@ import type { RegimeSignalResult, SignalBadge } from "../../lib/regimeScoring";
 
 function badgeStyle(badge: SignalBadge): { bg: string; fg: string; border: string } {
   switch (badge) {
-    case "POSITIVE": return { bg: "color-mix(in srgb, #00D64F 12%, transparent)", fg: "#00D64F", border: "#00D64F" };
+    case "POSITIVE": return { bg: "color-mix(in srgb, #00c805 12%, transparent)", fg: "#00c805", border: "#00c805" };
     case "NEUTRAL": return { bg: "color-mix(in srgb, var(--text-muted) 12%, transparent)", fg: "var(--text-secondary)", border: "var(--text-muted)" };
     case "CAUTION": return { bg: "color-mix(in srgb, #F5A623 12%, transparent)", fg: "#F5A623", border: "#F5A623" };
     case "ELEVATED": return { bg: "color-mix(in srgb, #E85D6C 12%, transparent)", fg: "#E85D6C", border: "#E85D6C" };
@@ -14,7 +14,7 @@ function badgeStyle(badge: SignalBadge): { bg: string; fg: string; border: strin
 }
 
 function barColor(score: number): string {
-  if (score >= 75) return "#00D64F";
+  if (score >= 75) return "#00c805";
   if (score >= 50) return "#F5A623";
   if (score >= 25) return "#E85D6C";
   return "#dc2626";

@@ -257,8 +257,8 @@ function SignalsOverview({
               textAlign: "left",
               padding: 14,
               borderRadius: 8,
-              border: `1px solid ${card.active ? "rgba(0, 214, 79, 0.35)" : "var(--border-dim)"}`,
-              background: card.active ? "rgba(0, 214, 79, 0.08)" : "var(--bg-panel-raised)",
+              border: `1px solid ${card.active ? "rgba(0, 200, 5, 0.35)" : "var(--border-dim)"}`,
+              background: card.active ? "rgba(0, 200, 5, 0.08)" : "var(--bg-panel-raised)",
               cursor: "pointer",
             }}
           >
@@ -382,7 +382,7 @@ const signalsPrimaryButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: 6,
   border: "1px solid var(--signal-core)",
-  background: "rgba(0, 214, 79, 0.12)",
+  background: "rgba(0, 200, 5, 0.12)",
   color: "var(--signal-core)",
   cursor: "pointer",
 };

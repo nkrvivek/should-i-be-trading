@@ -239,7 +239,7 @@ export function TickerPicker({
             padding: "0 14px",
             borderRadius: 6,
             border: "1px solid var(--signal-core)",
-            background: "rgba(0, 214, 79, 0.12)",
+            background: "rgba(0, 200, 5, 0.12)",
             color: "var(--signal-core)",
             cursor: normalizeSymbolInput(query) ? "pointer" : "not-allowed",
             opacity: normalizeSymbolInput(query) ? 1 : 0.5,
@@ -291,7 +291,7 @@ export function TickerPicker({
                   padding: "9px 10px",
                   borderRadius: 6,
                   border: "none",
-                  background: active ? "rgba(0, 214, 79, 0.10)" : "transparent",
+                  background: active ? "rgba(0, 200, 5, 0.10)" : "transparent",
                   cursor: "pointer",
                 }}
               >

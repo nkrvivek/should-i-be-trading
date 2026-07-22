@@ -418,7 +418,7 @@ function TickerWorkspaceHeader({
                   ...secondaryTabActionStyle,
                   borderColor: active ? "var(--signal-core)" : "var(--border-dim)",
                   color: active ? "var(--signal-core)" : "var(--text-secondary)",
-                  background: active ? "rgba(0, 214, 79, 0.12)" : "transparent",
+                  background: active ? "rgba(0, 200, 5, 0.12)" : "transparent",
                 }}
               >
                 {candidate.symbol}
@@ -492,8 +492,8 @@ const workspaceHeroStyle: React.CSSProperties = {
   flexWrap: "wrap",
   padding: 14,
   borderRadius: 8,
-  border: "1px solid rgba(0, 214, 79, 0.25)",
-  background: "linear-gradient(180deg, rgba(0, 214, 79, 0.08), rgba(0, 214, 79, 0.02))",
+  border: "1px solid rgba(0, 200, 5, 0.25)",
+  background: "linear-gradient(180deg, rgba(0, 200, 5, 0.08), rgba(0, 200, 5, 0.02))",
 };
 
 const selectionSummaryStyle: React.CSSProperties = {
@@ -513,7 +513,7 @@ const primaryTabActionStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: 6,
   border: "1px solid var(--signal-core)",
-  background: "rgba(0, 214, 79, 0.12)",
+  background: "rgba(0, 200, 5, 0.12)",
   color: "var(--signal-core)",
   cursor: "pointer",
 };

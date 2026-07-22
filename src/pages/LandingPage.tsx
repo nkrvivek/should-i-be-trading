@@ -35,12 +35,12 @@ export function LandingPage() {
       }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <img src="/logo-icon.svg" alt="SIBT" style={{ height: 32 }} />
-          <span style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: "#00D64F" }}>SIBT</span>
+          <span style={{ fontFamily: "var(--font-mono)", fontSize: 20, fontWeight: 700, color: "#00c805" }}>SIBT</span>
           <span className="landing-nav-tagline" style={{ fontFamily: "var(--font-sans)", fontSize: 14, color: "#94a3b8" }}>Should I Be Trading?</span>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <button onClick={() => navigate("/login")} style={navBtn}>SIGN IN</button>
-          <button onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })} style={{ ...navBtn, background: "#00D64F", color: "#0a0f14", border: "1px solid #00D64F" }}>
+          <button onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })} style={{ ...navBtn, background: "#00c805", color: "#0a0f14", border: "1px solid #00c805" }}>
             GET STARTED
           </button>
         </div>
@@ -80,7 +80,7 @@ export function LandingPage() {
           }}>
             <Light color="#E85D6C" label="NO TRADE" />
             <Light color="#F5A623" label="CAUTION" />
-            <Light color="#00D64F" label="TRADE" active />
+            <Light color="#00c805" label="TRADE" active />
           </div>
         </div>
 
@@ -91,7 +91,7 @@ export function LandingPage() {
           fontSize: 12,
           fontWeight: 700,
           letterSpacing: "0.14em",
-          color: "#00D64F",
+          color: "#00c805",
         }}>
           AGENTIC TRADING — EVERY ORDER HUMAN-APPROVED
         </div>
@@ -107,7 +107,7 @@ export function LandingPage() {
         }}>
           Your AI finds the trade.
           <br />
-          <span style={{ color: "#00D64F" }}>You approve it.</span>
+          <span style={{ color: "#00c805" }}>You approve it.</span>
         </h1>
 
         <p className="landing-hero-desc" style={{
@@ -187,7 +187,7 @@ export function LandingPage() {
         {["FRED", "Finnhub", "FMP", "SEC EDGAR", "Anthropic Claude", "Tradier", "Exa", "Interactive Brokers", "SnapTrade"].map((name) => (
           <span key={name} style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#94a3b8" }}>{name}</span>
         ))}
-        <a href="https://github.com/nkrvivek/should-i-be-trading" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#00D64F", textDecoration: "none" }}>
+        <a href="https://github.com/nkrvivek/should-i-be-trading" target="_blank" rel="noopener noreferrer" style={{ fontFamily: "var(--font-mono)", fontSize: 13, color: "#00c805", textDecoration: "none" }}>
           GitHub
         </a>
       </section>
@@ -452,7 +452,7 @@ export function LandingPage() {
           </span>
         </div>
         <div className="landing-footer-links" style={{ display: "flex", alignItems: "center", gap: 16 }}>
-          <a href="mailto:hello@sibt.ai" style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#00D64F", textDecoration: "none" }}>
+          <a href="mailto:hello@sibt.ai" style={{ fontFamily: "var(--font-mono)", fontSize: 12, color: "#00c805", textDecoration: "none" }}>
             hello@sibt.ai
           </a>
           {[
@@ -506,7 +506,7 @@ function Light({ color, label, active }: { color: string; label: string; active?
 }
 
 function FeatureCard({ title, description, tag }: { title: string; description: string; tag?: string }) {
-  const tagColor = tag === "FREE" ? "#00D64F" : tag === "STARTER" ? "#60a5fa" : tag === "PRO" ? "#F5A623" : "#8B5CF6";
+  const tagColor = tag === "FREE" ? "#00c805" : tag === "STARTER" ? "#60a5fa" : tag === "PRO" ? "#F5A623" : "#8B5CF6";
   return (
     <div style={{
       padding: 24,
@@ -542,7 +542,7 @@ function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
         width: 40,
         height: 40,
         borderRadius: "50%",
-        border: "2px solid #00D64F",
+        border: "2px solid #00c805",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -550,7 +550,7 @@ function Step({ n, title, desc }: { n: number; title: string; desc: string }) {
         fontFamily: "var(--font-mono)",
         fontSize: 16,
         fontWeight: 600,
-        color: "#00D64F",
+        color: "#00c805",
       }}>
         {n}
       </div>
@@ -579,7 +579,7 @@ const ctaBtn: React.CSSProperties = {
   fontFamily: "var(--font-sans)",
   fontSize: 13,
   fontWeight: 600,
-  background: "#00D64F",
+  background: "#00c805",
   color: "#0a0f14",
   border: "none",
   borderRadius: "var(--radius-pill)",

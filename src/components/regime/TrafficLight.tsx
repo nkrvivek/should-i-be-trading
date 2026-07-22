@@ -5,7 +5,7 @@ type Props = {
 };
 
 const signalConfig: Record<TrafficSignal, { color: string; label: string; glow: string }> = {
-  TRADE: { color: "var(--positive)", label: "TRADE", glow: "0 0 24px rgba(0, 214, 79, 0.28)" },
+  TRADE: { color: "var(--positive)", label: "TRADE", glow: "0 0 24px rgba(0, 200, 5, 0.28)" },
   CAUTION: { color: "var(--warning)", label: "CAUTION", glow: "0 0 24px rgba(245, 166, 35, 0.28)" },
   NO_TRADE: { color: "var(--negative)", label: "NO TRADE", glow: "0 0 24px rgba(232, 93, 108, 0.28)" },
 };

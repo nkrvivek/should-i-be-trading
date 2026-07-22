@@ -5,7 +5,7 @@
 import type { RegimePillar } from "../../lib/regimeScoring";
 
 function barColor(score: number): string {
-  if (score >= 75) return "#00D64F";
+  if (score >= 75) return "#00c805";
   if (score >= 50) return "#F5A623";
   if (score >= 25) return "#E85D6C";
   return "#dc2626";

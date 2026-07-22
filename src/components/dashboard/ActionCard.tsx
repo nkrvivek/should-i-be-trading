@@ -1,39 +1,3 @@
-const mono: React.CSSProperties = { fontFamily: "var(--font-mono)" };
-
-const actionCardStyle: React.CSSProperties = {
-  display: "flex",
-  flexDirection: "column",
-  gap: 10,
-  padding: 12,
-  borderRadius: 8,
-  border: "1px solid var(--border-dim)",
-  background: "var(--bg-panel-raised)",
-};
-
-const primaryBtnStyle: React.CSSProperties = {
-  ...mono,
-  fontSize: 12,
-  fontWeight: 700,
-  padding: "8px 12px",
-  borderRadius: 6,
-  border: "1px solid var(--signal-core)",
-  background: "rgba(0, 214, 79, 0.12)",
-  color: "var(--signal-core)",
-  cursor: "pointer",
-};
-
-const secondaryBtnStyle: React.CSSProperties = {
-  ...mono,
-  fontSize: 12,
-  fontWeight: 700,
-  padding: "8px 12px",
-  borderRadius: 6,
-  border: "1px solid var(--border-dim)",
-  background: "transparent",
-  color: "var(--text-secondary)",
-  cursor: "pointer",
-};
-
 export function ActionCard({
   eyebrow,
   title,
@@ -52,12 +16,12 @@ export function ActionCard({
   onSecondaryClick?: () => void;
 }) {
   return (
-    <div style={actionCardStyle}>
+    <div className="list-row" style={{ flexDirection: "column", alignItems: "stretch", gap: 10 }}>
       <div>
-        <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 11, fontWeight: 700, color: "var(--positive)", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 6 }}>
           {eyebrow}
         </div>
-        <div style={{ ...mono, fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
+        <div style={{ fontFamily: "var(--font-sans)", fontSize: 15, fontWeight: 700, color: "var(--text-primary)", marginBottom: 6 }}>
           {title}
         </div>
         <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, lineHeight: 1.6, color: "var(--text-secondary)" }}>
@@ -65,9 +29,9 @@ export function ActionCard({
         </div>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-        <button type="button" onClick={onClick} style={primaryBtnStyle}>{cta}</button>
+        <button type="button" onClick={onClick} className="btn btn-primary btn-sm">{cta}</button>
         {secondary && onSecondaryClick && (
-          <button type="button" onClick={onSecondaryClick} style={secondaryBtnStyle}>{secondary}</button>
+          <button type="button" onClick={onSecondaryClick} className="btn btn-secondary btn-sm">{secondary}</button>
         )}
       </div>
     </div>

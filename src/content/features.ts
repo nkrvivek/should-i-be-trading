@@ -908,7 +908,7 @@ export const FEATURES: FeatureSection[] = [
 ];
 
 export const TIER_COLORS: Record<string, string> = {
-  FREE: "#00D64F",
+  FREE: "#00c805",
   STARTER: "#60a5fa",
   PRO: "#F5A623",
   ENTERPRISE: "#8B5CF6",

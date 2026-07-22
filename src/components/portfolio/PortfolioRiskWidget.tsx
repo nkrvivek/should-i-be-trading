@@ -11,7 +11,7 @@ import { computePortfolioRiskScore } from "../../lib/portfolio/portfolioRiskScor
 import type { BrokerPosition } from "../../lib/brokers/types";
 
 const GRADE_COLORS: Record<string, string> = {
-  A: "#00D64F",
+  A: "#00c805",
   B: "#3BE87A",
   C: "#F5A623",
   D: "#E88B3E",
@@ -135,7 +135,7 @@ export function PortfolioRiskWidget() {
                   height: "100%",
                   width: `${pillar.score}%`,
                   borderRadius: 2,
-                  background: pillar.score >= 75 ? "#00D64F" : pillar.score >= 50 ? "#F5A623" : "#dc2626",
+                  background: pillar.score >= 75 ? "#00c805" : pillar.score >= 50 ? "#F5A623" : "#dc2626",
                   transition: "width 0.3s ease",
                 }}
               />

@@ -20,9 +20,9 @@ test.describe("Landing Page", () => {
     await expect(page.getByText("TRADE", { exact: true }).first()).toBeVisible();
   });
 
-  test('"Know When to Trade. Know When to Wait." heading is visible', async ({ page }) => {
+  test('"Your AI finds the trade. You approve it." heading is visible', async ({ page }) => {
     const heading = page.locator("h1");
-    await expect(heading).toContainText("Know When to Trade.");
+    await expect(heading).toContainText("Your AI finds the trade.");
     await expect(heading).toContainText("Know When to Wait.");
   });
 

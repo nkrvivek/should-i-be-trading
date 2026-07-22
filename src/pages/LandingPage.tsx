@@ -93,7 +93,7 @@ export function LandingPage() {
           letterSpacing: "0.14em",
           color: "#05AD98",
         }}>
-          EXPLAINABLE TRADE DECISION ENGINE
+          AGENTIC TRADING — EVERY ORDER HUMAN-APPROVED
         </div>
 
         <h1 className="landing-hero-heading" style={{
@@ -105,9 +105,9 @@ export function LandingPage() {
           maxWidth: 700,
           marginBottom: 16,
         }}>
-          Know When to Trade.
+          Your AI finds the trade.
           <br />
-          <span style={{ color: "#05AD98" }}>Know When to Wait.</span>
+          <span style={{ color: "#05AD98" }}>You approve it.</span>
         </h1>
 
         <p className="landing-hero-desc" style={{
@@ -118,9 +118,9 @@ export function LandingPage() {
           lineHeight: 1.7,
           marginBottom: 32,
         }}>
-          SIBT turns market regime, ticker quality, earnings context, insider activity, and
-          social sentiment into a fast <span style={{ color: "#e2e8f0", fontWeight: 600 }}>TRADE / CAUTION / AVOID</span> verdict.
-          Built for active stock traders who need a better decision before they place the order.
+          SIBT watches market regime, options flow, earnings, and your live positions, then stages
+          real trades on your connected broker as <span style={{ color: "#e2e8f0", fontWeight: 600 }}>proposals with the reasoning attached</span> —
+          the signals, the risk gates it passed, and the AI council's votes. Nothing executes until you tap approve.
         </p>
 
         <div className="landing-cta-row" style={{ position: "relative", display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
@@ -146,9 +146,9 @@ export function LandingPage() {
           maxWidth: 820,
         }}>
           {[
-            "Market + ticker signals in one score",
-            "Explainable verdicts, not black-box picks",
-            "Built for active stock traders",
+            "Every proposal shows why — signals, gates, council votes",
+            "Every order needs your tap",
+            "Connects to 25+ brokers via SnapTrade",
           ].map((item) => (
             <span
               key={item}
@@ -168,7 +168,7 @@ export function LandingPage() {
         </div>
 
         <p style={{ position: "relative", fontFamily: "var(--font-mono)", fontSize: 12, color: "#64748b", marginTop: 18 }}>
-          Not investment advice. Analytical tool only.
+          Not investment advice. Trades execute only with your approval.
         </p>
       </section>
 

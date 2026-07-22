@@ -6,6 +6,9 @@ import {
   checkProposalTransition,
   mapBrokerStatusToExecutionStatus,
   buildOccSymbol,
+  transitionProposal,
+  writeStatusIfCurrently,
+  type ConditionalStatusUpdate,
 } from "../../src/lib/proposalActions";
 
 const SECRET = "test-magic-link-secret";
@@ -139,6 +142,137 @@ describe("checkProposalTransition (state guard)", () => {
     const result = checkProposalTransition({ status: "executed", expiresAt: PAST_EXPIRY, action: "approve", nowMs: NOW_MS });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.reason).toBe("not_pending");
+  });
+});
+
+/** In-memory fake of the real Supabase-backed ConditionalStatusUpdate
+ * (proposal-action/index.ts's makeConditionalStatusUpdate) — a single row
+ * keyed by proposal id, with "first caller wins" semantics: an UPDATE only
+ * takes effect (and only returns true) if the row's current status still
+ * matches `expectedPriorStatus` at the moment it runs, exactly like the real
+ * `.eq("status", expectedPriorStatus)` conditional UPDATE. This is what lets
+ * these tests prove the double-tap/retry race is closed without a database. */
+function makeFakeConditionalStatusUpdate(initialStatus: string): { updateStatus: ConditionalStatusUpdate; getStatus: () => string } {
+  let status = initialStatus;
+  const updateStatus: ConditionalStatusUpdate = async (_proposalId, expectedPriorStatus, patch) => {
+    if (status !== expectedPriorStatus) return false;
+    status = (patch.status as string) ?? status;
+    return true;
+  };
+  return { updateStatus, getStatus: () => status };
+}
+
+describe("transitionProposal (atomic pending -> approved/rejected authority)", () => {
+  it("approves once and reports the new status", async () => {
+    const { updateStatus, getStatus } = makeFakeConditionalStatusUpdate("pending");
+    const result = await transitionProposal({
+      proposalId: PID,
+      status: "pending",
+      expiresAt: FUTURE_EXPIRY,
+      action: "approve",
+      patch: { status: "approved" },
+      updateStatus,
+      nowMs: NOW_MS,
+    });
+    expect(result).toEqual({ ok: true, nextStatus: "approved" });
+    expect(getStatus()).toBe("approved");
+  });
+
+  it("double-approve: the second call gets a conflict, not a second execution", async () => {
+    const { updateStatus, getStatus } = makeFakeConditionalStatusUpdate("pending");
+    // Both callers read the same 'pending' status before either writes —
+    // the race this fix closes (double-tap, client retry, magic-link race).
+    const first = await transitionProposal({
+      proposalId: PID,
+      status: "pending",
+      expiresAt: FUTURE_EXPIRY,
+      action: "approve",
+      patch: { status: "approved" },
+      updateStatus,
+      nowMs: NOW_MS,
+    });
+    const second = await transitionProposal({
+      proposalId: PID,
+      status: "pending", // same stale read both callers started from
+      expiresAt: FUTURE_EXPIRY,
+      action: "approve",
+      patch: { status: "approved" },
+      updateStatus,
+      nowMs: NOW_MS,
+    });
+    expect(first).toEqual({ ok: true, nextStatus: "approved" });
+    expect(second).toEqual({ ok: false, reason: "conflict" });
+    expect(getStatus()).toBe("approved"); // only ever transitioned once
+  });
+
+  it("concurrent approve + reject on the same pending proposal: only one wins", async () => {
+    const { updateStatus, getStatus } = makeFakeConditionalStatusUpdate("pending");
+    const approve = await transitionProposal({
+      proposalId: PID,
+      status: "pending",
+      expiresAt: FUTURE_EXPIRY,
+      action: "approve",
+      patch: { status: "approved" },
+      updateStatus,
+      nowMs: NOW_MS,
+    });
+    const reject = await transitionProposal({
+      proposalId: PID,
+      status: "pending",
+      expiresAt: FUTURE_EXPIRY,
+      action: "reject",
+      patch: { status: "rejected" },
+      updateStatus,
+      nowMs: NOW_MS,
+    });
+    expect(approve.ok).toBe(true);
+    expect(reject).toEqual({ ok: false, reason: "conflict" });
+    expect(getStatus()).toBe("approved");
+  });
+
+  it("never calls updateStatus at all when the cheap pre-check already rejects (expired)", async () => {
+    let called = false;
+    const updateStatus: ConditionalStatusUpdate = async () => {
+      called = true;
+      return true;
+    };
+    const result = await transitionProposal({
+      proposalId: PID,
+      status: "pending",
+      expiresAt: PAST_EXPIRY,
+      action: "approve",
+      patch: { status: "approved" },
+      updateStatus,
+      nowMs: NOW_MS,
+    });
+    expect(result).toEqual({ ok: false, reason: "expired" });
+    expect(called).toBe(false);
+  });
+});
+
+describe("writeStatusIfCurrently (guarded write for post-approval status steps)", () => {
+  it("writes when the expected prior status still matches", async () => {
+    const { updateStatus, getStatus } = makeFakeConditionalStatusUpdate("approved");
+    const result = await writeStatusIfCurrently({
+      proposalId: PID,
+      expectedPriorStatus: "approved",
+      patch: { status: "executing" },
+      updateStatus,
+    });
+    expect(result).toEqual({ ok: true });
+    expect(getStatus()).toBe("executing");
+  });
+
+  it("reports conflict and does not write when the status has already moved on", async () => {
+    const { updateStatus, getStatus } = makeFakeConditionalStatusUpdate("executed");
+    const result = await writeStatusIfCurrently({
+      proposalId: PID,
+      expectedPriorStatus: "executing",
+      patch: { status: "failed" },
+      updateStatus,
+    });
+    expect(result).toEqual({ ok: false, reason: "conflict" });
+    expect(getStatus()).toBe("executed"); // untouched
   });
 });
 

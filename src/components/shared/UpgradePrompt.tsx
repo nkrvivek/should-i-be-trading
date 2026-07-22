@@ -21,6 +21,9 @@ const featureLabels: Partial<Record<Feature, string>> = {
   social_sentiment: "Social Sentiment",
   automation: "Automated Trading",
   charts_advanced: "Advanced Charts",
+  proposals: "Trade Proposals",
+  copilot_execution: "Copilot Execution",
+  auto_execute: "Auto-Execute",
 };
 
 export function UpgradePrompt({ feature, children, inline }: Props) {

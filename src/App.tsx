@@ -24,6 +24,7 @@ const loadResearchPage = () => import("./pages/ResearchPage");
 const loadSignalsPage = () => import("./pages/SignalsPage");
 const loadTradingPage = () => import("./pages/TradingPage");
 const loadProgressPage = () => import("./pages/ProgressPage").then(m => ({ default: m.ProgressPage }));
+const loadProposalsPage = () => import("./pages/ProposalsPage").then(m => ({ default: m.ProposalsPage }));
 
 // Lazy-load all pages — keeps initial bundle small
 const DashboardPage = lazy(loadDashboardPage);
@@ -40,6 +41,7 @@ const ResearchPage = lazy(loadResearchPage);
 const SignalsPage = lazy(loadSignalsPage);
 const TradingPage = lazy(loadTradingPage);
 const ProgressPage = lazy(loadProgressPage);
+const ProposalsPage = lazy(loadProposalsPage);
 
 const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/": loadDashboardPage,
@@ -48,6 +50,7 @@ const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/trading": loadTradingPage,
   "/progress": loadProgressPage,
   "/settings": loadSettingsPage,
+  "/proposals": loadProposalsPage,
 };
 
 const PageLoader = () => (
@@ -89,6 +92,7 @@ export default function App() {
 
           {/* Gated utility */}
           <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
+          <Route path="/proposals" element={<GatedPage feature="proposals"><ProposalsPage /></GatedPage>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
 
           {/* ── Redirects from old routes ─────────────────────── */}
@@ -143,17 +147,18 @@ export function AppNav() {
   const navigate = useNavigate();
   const { toggleTheme, theme } = useAppStore();
 
-  const links: { to: string; label: string; pro?: boolean }[] = [
+  const links: { to: string; label: string; pro?: boolean; feature?: Feature }[] = [
     { to: "/", label: "HOME" },
     { to: "/research", label: "RESEARCH" },
     { to: "/signals", label: "SIGNALS" },
     { to: "/trading", label: "TRADING", pro: true },
+    { to: "/proposals", label: "PROPOSALS", pro: true, feature: "proposals" },
     { to: "/progress", label: "PROGRESS" },
   ];
 
   return (
     <div className="app-nav-bar" style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "nowrap", overflow: "auto", maxWidth: "100%", WebkitOverflowScrolling: "touch", scrollbarWidth: "none" }}>
-      {links.map(({ to, label, pro }) => (
+      {links.map(({ to, label, pro, feature }) => (
         <NavLink
           key={to}
           to={to}
@@ -180,7 +185,7 @@ export function AppNav() {
           })}
         >
           {label}
-          {pro && !hasFeature(effectiveTier(), "terminal") && (
+          {pro && !hasFeature(effectiveTier(), feature ?? "terminal") && (
             <span style={{ fontSize: 8, color: "var(--warning)", marginLeft: 3, verticalAlign: "super" }}>PRO</span>
           )}
         </NavLink>

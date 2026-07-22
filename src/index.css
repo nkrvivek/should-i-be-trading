@@ -239,6 +239,22 @@ body {
   animation: pulse 1.4s ease-in-out infinite;
 }
 
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Small inline spinner for in-flight states (proposal executing, action pending). */
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--border-dim);
+  border-top-color: var(--accent-bg);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
 /* Make sector heatmap panel fill its grid cell height */
 .sector-heatmap-panel {
   height: 100% !important;

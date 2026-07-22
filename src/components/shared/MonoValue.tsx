@@ -24,6 +24,7 @@ export function MonoValue({ value, size = "md", tone = "default", className = ""
       className={className}
       style={{
         fontFamily: "var(--font-mono)",
+        fontVariantNumeric: "tabular-nums",
         fontSize: sizeMap[size],
         fontWeight: 500,
         color,

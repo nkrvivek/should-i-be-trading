@@ -1,10 +1,42 @@
 @import "tailwindcss";
-/* Fonts loaded via <link> in index.html for non-blocking preload */
+
+/* Self-hosted Inter Variable — no external font CDN. Two subset files (latin + latin-ext)
+   cover the app's UI text; IBM Plex Mono is self-hosted via @fontsource import in main.tsx. */
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/inter-var-latin-ext.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+@font-face {
+  font-family: "Inter Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  src: url("/fonts/inter-var-latin.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 
 :root {
-  --font-sans: "Inter", -apple-system, sans-serif;
+  --font-sans: "Inter Variable", "Inter", -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "IBM Plex Mono", monospace;
   --ease-out: cubic-bezier(0.25, 1, 0.5, 1);
+
+  /* Motion — 150-200ms, respects prefers-reduced-motion below */
+  --transition-fast: 150ms var(--ease-out);
+  --transition-base: 200ms var(--ease-out);
+
+  /* Radii — consistent scale for the surfaces in this design pass.
+     NOTE: most existing panels/chips elsewhere in the app still use their prior
+     one-off radii (4/6/8px) — left untouched outside the core-surface scope of
+     this pass (see PR notes). */
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
 }
 
 [data-theme="dark"] {
@@ -13,21 +45,23 @@
   --bg-panel-raised: #151c22;
   --bg-hover: #151c22;
   --border-dim: #1e293b;
-  --border-focus: #05AD98;
+  --border-focus: #00D64F;
   --text-primary: #e2e8f0;
   --text-secondary: #94a3b8;
   --text-muted: #475569;
-  --accent-bg: #05AD98;
+  /* Accent green — Robinhood-family, tuned for AA: dark near-black text on this
+     fill contrasts ~9.8:1; as standalone text on --bg-base it contrasts ~9.8:1. */
+  --accent-bg: #00D64F;
   --accent-text: #0a0f14;
   --scrollbar-track: #0a0f14;
   --scrollbar-thumb: #1e293b;
-  --positive: #05AD98;
+  --positive: #00D64F;
   --negative: #E85D6C;
   --warning: #F5A623;
   --info: #8B5CF6;
-  --signal-core: #05AD98;
-  --signal-strong: #0FCFB5;
-  --signal-deep: #048A7A;
+  --signal-core: #00D64F;
+  --signal-strong: #3BE87A;
+  --signal-deep: #009A3D;
   --dislocation: #D946A8;
   --extreme: #8B5CF6;
   --fault: #E85D6C;
@@ -36,6 +70,8 @@
   --chart-axis: #1e293b;
   --chart-tooltip-bg: #0f1519;
   --chart-tooltip-border: #1e293b;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 [data-theme="light"] {
@@ -44,21 +80,27 @@
   --bg-panel-raised: #F1F5F9;
   --bg-hover: #f1f5f9;
   --border-dim: #BBBFBF;
-  --border-focus: #05AD98;
+  --border-focus: #00D64F;
   --text-primary: #000000;
   --text-secondary: #636363;
   --text-muted: #878787;
-  --accent-bg: #05AD98;
-  --accent-text: #FFFFFF;
+  /* Same accent value as dark mode (one accent green, not per-theme).
+     --accent-text was white here before, which only contrasts ~2.5:1 against
+     this green (fails AA) — switched to the same near-black used on dark
+     mode's fill, which contrasts ~9.8:1 regardless of theme. */
+  --accent-bg: #00D64F;
+  --accent-text: #0a0f14;
   --scrollbar-track: #FFFFFF;
   --scrollbar-thumb: #BBBFBF;
-  --positive: #048A7A;
+  /* --positive is darkened relative to --accent-bg because it's read as text
+     directly on white (contrast ~5.4:1 vs ~2.3:1 for the brighter accent). */
+  --positive: #067A3D;
   --negative: #D4183D;
   --warning: #D4910A;
   --info: #7C3AED;
-  --signal-core: #05AD98;
-  --signal-strong: #048A7A;
-  --signal-deep: #037066;
+  --signal-core: #00D64F;
+  --signal-strong: #059669;
+  --signal-deep: #04703A;
   --dislocation: #C026A0;
   --extreme: #7C3AED;
   --fault: #D4183D;
@@ -67,6 +109,8 @@
   --chart-axis: #BBBFBF;
   --chart-tooltip-bg: #FFFFFF;
   --chart-tooltip-border: #BBBFBF;
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 1px rgba(15, 23, 42, 0.04);
+  --shadow-elevated: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
 *,
@@ -97,6 +141,18 @@ body {
 
 .font-mono {
   font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Apply to any headline/account-value/score number rendered in the sans face,
+   so digits keep a fixed width as they update (Inter is proportional). */
+.num-tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Tighter tracking for large display headings (~-0.02em per the design pass). */
+.heading-tight {
+  letter-spacing: -0.02em;
 }
 
 .text-positive { color: var(--positive); }
@@ -105,6 +161,69 @@ body {
 .text-neutral { color: var(--neutral); }
 .text-secondary { color: var(--text-secondary); }
 .text-muted { color: var(--text-muted); }
+
+/* ── Shared button + card primitives ─────────────────────
+   Used by the core surfaces touched in the design-system pass (nav, landing,
+   pricing, dashboard score, verdict badges). Not retrofitted onto every
+   existing inline-styled button/panel in the app — see PR notes. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 20px;
+  border-radius: var(--radius-pill);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  border: 1px solid transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  text-decoration: none;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast),
+    color var(--transition-fast), transform var(--transition-fast), filter var(--transition-fast);
+}
+.btn:disabled { opacity: 0.5; cursor: default; }
+.btn-sm { height: 32px; padding: 0 14px; font-size: 13px; }
+
+.btn-primary {
+  background: var(--accent-bg);
+  color: var(--accent-text);
+}
+.btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.btn-primary:active:not(:disabled) { filter: brightness(0.96); }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text-primary);
+  border-color: var(--border-dim);
+}
+.btn-secondary:hover:not(:disabled) { background: var(--bg-hover); border-color: var(--text-secondary); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) { color: var(--text-primary); background: var(--bg-hover); }
+
+.card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-dim);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
 
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--scrollbar-track); }

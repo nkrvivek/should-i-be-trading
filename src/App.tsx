@@ -168,14 +168,15 @@ export function AppNav() {
             fontWeight: 600,
             letterSpacing: "0.04em",
             color: isActive ? "var(--accent-bg)" : "var(--text-muted)",
-            background: isActive ? "rgba(5, 173, 152, 0.1)" : "transparent",
+            background: isActive ? "rgba(0, 214, 79, 0.1)" : "transparent",
             border: `1px solid ${isActive ? "var(--accent-bg)" : "var(--border-dim)"}`,
-            borderRadius: 4,
+            borderRadius: "var(--radius-pill)",
             textDecoration: "none",
             cursor: "pointer",
             position: "relative" as const,
             whiteSpace: "nowrap" as const,
             flexShrink: 0,
+            transition: "color var(--transition-fast), background-color var(--transition-fast), border-color var(--transition-fast)",
           })}
         >
           {label}
@@ -193,7 +194,7 @@ export function AppNav() {
           fontSize: 10,
           fontWeight: 600,
           color: trialDaysLeft() <= 3 ? "var(--warning)" : "var(--signal-core)",
-          background: trialDaysLeft() <= 3 ? "rgba(239, 175, 68, 0.1)" : "rgba(5, 173, 152, 0.1)",
+          background: trialDaysLeft() <= 3 ? "rgba(239, 175, 68, 0.1)" : "rgba(0, 214, 79, 0.1)",
           border: `1px solid ${trialDaysLeft() <= 3 ? "var(--warning)" : "var(--signal-core)"}`,
           borderRadius: 999,
           letterSpacing: "0.03em",
@@ -210,13 +211,14 @@ export function AppNav() {
         style={{
           background: "none",
           border: "1px solid var(--border-dim)",
-          borderRadius: 4,
+          borderRadius: "var(--radius-pill)",
           padding: "4px 10px",
           fontFamily: "var(--font-mono)",
           fontSize: 11,
           color: "var(--text-muted)",
           cursor: "pointer",
           flexShrink: 0,
+          transition: "color var(--transition-fast), border-color var(--transition-fast)",
         }}
       >
         {theme === "dark" ? "LIGHT" : "DARK"}
@@ -268,12 +270,13 @@ export function AppNav() {
             fontSize: 12,
             fontWeight: 600,
             color: "var(--signal-core)",
-            background: "rgba(5, 173, 152, 0.1)",
+            background: "rgba(0, 214, 79, 0.1)",
             border: "1px solid var(--signal-core)",
-            borderRadius: 4,
+            borderRadius: "var(--radius-pill)",
             textDecoration: "none",
             whiteSpace: "nowrap",
             flexShrink: 0,
+            transition: "background-color var(--transition-fast), border-color var(--transition-fast)",
           }}
         >
           SIGN IN

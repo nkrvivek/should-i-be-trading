@@ -50,7 +50,7 @@ export function SettingsPage() {
                   fontWeight: 500,
                   letterSpacing: "0.03em",
                   color: activeTab === tab.id ? "var(--signal-core)" : "var(--text-muted)",
-                  background: activeTab === tab.id ? "rgba(5,173,152,0.1)" : "transparent",
+                  background: activeTab === tab.id ? "rgba(0,214,79,0.1)" : "transparent",
                   border: "none",
                   borderRadius: 4,
                   cursor: "pointer",

@@ -45,7 +45,7 @@ export function WorkflowProfileForm() {
               style={{
                 ...optionStyle,
                 borderColor: active ? "var(--signal-core)" : "var(--border-dim)",
-                background: active ? "rgba(5, 173, 152, 0.08)" : "var(--bg-panel)",
+                background: active ? "rgba(0, 214, 79, 0.08)" : "var(--bg-panel)",
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: 12, marginBottom: 6 }}>

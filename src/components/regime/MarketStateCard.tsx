@@ -7,8 +7,8 @@ import type { RegimeMonitorResult, MarketState, ActionStance } from "../../lib/r
 
 function stateColor(state: MarketState): string {
   switch (state) {
-    case "Strong / Risk-On": return "#05AD98";
-    case "Stable / Normal": return "#0FCFB5";
+    case "Strong / Risk-On": return "#00D64F";
+    case "Stable / Normal": return "#3BE87A";
     case "Fragile / Hedged": return "#F5A623";
     case "Stressed / Defensive": return "#E85D6C";
     case "Crisis / Risk-Off": return "#dc2626";
@@ -17,8 +17,8 @@ function stateColor(state: MarketState): string {
 
 function stanceColor(stance: ActionStance): string {
   switch (stance) {
-    case "Aggressive": return "#05AD98";
-    case "Normal": return "#0FCFB5";
+    case "Aggressive": return "#00D64F";
+    case "Normal": return "#3BE87A";
     case "Hedged": return "#F5A623";
     case "Defensive": return "#E85D6C";
     case "Cash": return "#dc2626";

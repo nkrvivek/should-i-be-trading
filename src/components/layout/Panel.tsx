@@ -18,7 +18,8 @@ export function Panel({ title, children, onRefresh, loading, stale, className = 
         flexDirection: "column",
         background: "var(--bg-panel)",
         border: "1px solid var(--border-dim)",
-        borderRadius: 4,
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-card)",
         overflow: "hidden",
         minHeight: 0,
       }}
@@ -71,6 +72,8 @@ export function Panel({ title, children, onRefresh, loading, stale, className = 
               color: "var(--text-muted)",
               cursor: loading ? "default" : "pointer",
               padding: "2px 4px",
+              borderRadius: "var(--radius-sm)",
+              transition: "color var(--transition-fast)",
             }}
           >
             REFRESH

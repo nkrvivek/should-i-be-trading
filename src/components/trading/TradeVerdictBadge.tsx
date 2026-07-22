@@ -9,7 +9,7 @@ import type {
 } from "../../lib/compositeTradeScore";
 
 const verdictColors: Record<CompositeTradeVerdict, { bg: string; color: string }> = {
-  TRADE: { bg: "rgba(5, 173, 152, 0.15)", color: "var(--positive)" },
+  TRADE: { bg: "rgba(0, 214, 79, 0.15)", color: "var(--positive)" },
   CAUTION: { bg: "rgba(245, 166, 35, 0.15)", color: "var(--warning)" },
   AVOID: { bg: "rgba(232, 93, 108, 0.15)", color: "var(--negative)" },
 };
@@ -42,14 +42,16 @@ export function TradeVerdictBadge({
         display: "inline-flex",
         alignItems: "center",
         justifyContent: "center",
-        borderRadius: 999,
+        borderRadius: "var(--radius-pill)",
         fontFamily: "var(--font-mono)",
+        fontVariantNumeric: "tabular-nums",
         fontWeight: 600,
         letterSpacing: "0.03em",
         whiteSpace: "nowrap",
         background: colors.bg,
         color: colors.color,
         cursor: onClick ? "pointer" : "default",
+        transition: onClick ? "opacity var(--transition-fast)" : undefined,
         ...dims,
       }}
     >
@@ -123,8 +125,8 @@ function CompositeScoreInfo({ score, size = "sm" }: { score: CompositeTradeScore
             padding: 16,
             background: "var(--bg-panel)",
             border: "1px solid var(--border-dim)",
-            borderRadius: 6,
-            boxShadow: "0 10px 36px rgba(0,0,0,0.28)",
+            borderRadius: "var(--radius-md)",
+            boxShadow: "var(--shadow-elevated)",
           }}
         >
           <div style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
@@ -133,7 +135,7 @@ function CompositeScoreInfo({ score, size = "sm" }: { score: CompositeTradeScore
           <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-secondary)", lineHeight: 1.5, marginBottom: 10 }}>
             Weighted 0-100 score. Market block is 40% of the total and ticker block is 60%. Missing inputs default to neutral 50 and reduce confidence.
           </div>
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>
+          <div style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: 11, color: "var(--text-muted)", marginBottom: 10 }}>
             Verdicts: TRADE 65+, CAUTION 40-64, AVOID below 40.
           </div>
 
@@ -147,7 +149,7 @@ function CompositeScoreInfo({ score, size = "sm" }: { score: CompositeTradeScore
           <ComponentSection title="Ticker Inputs" components={tickerComponents} />
 
           <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
-            <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
+            <div style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: 11, color: "var(--text-muted)" }}>
               Confidence {Math.round(score.confidence * 100)}%
             </div>
           </div>
@@ -162,7 +164,7 @@ function MetricCard({ label, value, tone }: { label: string; value: string; tone
     <div
       style={{
         padding: "8px 10px",
-        borderRadius: 4,
+        borderRadius: "var(--radius-sm)",
         border: "1px solid var(--border-dim)",
         background: "var(--bg-panel-raised)",
       }}
@@ -170,7 +172,7 @@ function MetricCard({ label, value, tone }: { label: string; value: string; tone
       <div style={{ fontFamily: "var(--font-mono)", fontSize: 10, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em", marginBottom: 3 }}>
         {label}
       </div>
-      <div style={{ fontFamily: "var(--font-mono)", fontSize: 16, fontWeight: 700, color: tone }}>
+      <div style={{ fontFamily: "var(--font-mono)", fontVariantNumeric: "tabular-nums", fontSize: 16, fontWeight: 700, color: tone }}>
         {value}
       </div>
     </div>
@@ -199,6 +201,7 @@ function ComponentSection({
               gap: 8,
               alignItems: "center",
               fontFamily: "var(--font-mono)",
+              fontVariantNumeric: "tabular-nums",
               fontSize: 11,
               color: "var(--text-secondary)",
             }}
@@ -238,8 +241,9 @@ export function TradeVerdictBadgeWithScore({
           display: "inline-flex",
           alignItems: "center",
           justifyContent: "center",
-          borderRadius: 999,
+          borderRadius: "var(--radius-pill)",
           fontFamily: "var(--font-mono)",
+          fontVariantNumeric: "tabular-nums",
           fontWeight: 600,
           letterSpacing: "0.03em",
           whiteSpace: "nowrap",

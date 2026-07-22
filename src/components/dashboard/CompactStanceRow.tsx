@@ -6,7 +6,7 @@ const compactStanceRowStyle: React.CSSProperties = {
   gap: 12,
   alignItems: "center",
   paddingTop: 8,
-  borderTop: "1px solid rgba(5, 173, 152, 0.12)",
+  borderTop: "1px solid rgba(0, 214, 79, 0.12)",
 };
 
 export function CompactStanceRow({ label, value }: { label: string; value: string }) {

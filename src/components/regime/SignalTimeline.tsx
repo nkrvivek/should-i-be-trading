@@ -39,7 +39,7 @@ export function SignalTimeline({ history }: Props) {
               alignItems: "flex-start",
               gap: 12,
               padding: "6px 8px",
-              background: isNew ? "rgba(5, 173, 152, 0.05)" : "transparent",
+              background: isNew ? "rgba(0, 214, 79, 0.05)" : "transparent",
               borderRadius: 4,
               borderLeft: `3px solid ${signalColor(entry.signal)}`,
             }}

@@ -17,7 +17,7 @@ const primaryBtnStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: 6,
   border: "1px solid var(--signal-core)",
-  background: "rgba(5, 173, 152, 0.12)",
+  background: "rgba(0, 214, 79, 0.12)",
   color: "var(--signal-core)",
   cursor: "pointer",
 };

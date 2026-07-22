@@ -165,10 +165,10 @@ export function SectorHeatMap() {
               const isPositive = s.change >= 0;
               const intensity = Math.min(1, Math.abs(s.change) / 3); // normalize to 3% max
               const bgColor = isPositive
-                ? `rgba(5, 173, 152, ${0.08 + intensity * 0.25})`
+                ? `rgba(0, 214, 79, ${0.08 + intensity * 0.25})`
                 : `rgba(232, 93, 108, ${0.08 + intensity * 0.25})`;
               const borderColor = isPositive
-                ? `rgba(5, 173, 152, ${0.2 + intensity * 0.4})`
+                ? `rgba(0, 214, 79, ${0.2 + intensity * 0.4})`
                 : `rgba(232, 93, 108, ${0.2 + intensity * 0.4})`;
 
               return (

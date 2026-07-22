@@ -1,4 +1,4 @@
-type BadgeVariant = "default" | "positive" | "negative" | "warning" | "info" | "critical";
+export type BadgeVariant = "default" | "positive" | "negative" | "warning" | "info" | "critical";
 
 const variantStyles: Record<BadgeVariant, { bg: string; color: string }> = {
   default: { bg: "var(--bg-panel-raised)", color: "var(--text-secondary)" },

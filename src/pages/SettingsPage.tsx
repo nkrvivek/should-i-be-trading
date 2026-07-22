@@ -7,16 +7,18 @@ import { ApiKeyForm } from "../components/settings/ApiKeyForm";
 import BrokerageSettings from "../components/settings/BrokerageSettings";
 import { TierManager } from "../components/settings/TierManager";
 import { NotificationSettings } from "../components/settings/NotificationSettings";
+import { CopilotSettings } from "../components/settings/CopilotSettings";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../stores/authStore";
 
-type Tab = "profile" | "api_keys" | "brokerage" | "plan" | "notifications";
+type Tab = "profile" | "api_keys" | "brokerage" | "plan" | "notifications" | "copilot";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "plan", label: "Plan" },
   { id: "api_keys", label: "API Keys" },
   { id: "brokerage", label: "Brokerage" },
   { id: "notifications", label: "Notifications" },
+  { id: "copilot", label: "Copilot" },
   { id: "profile", label: "Profile" },
 ];
 
@@ -24,7 +26,7 @@ export function SettingsPage() {
   const [activeTab, setActiveTab] = useState<Tab>(() => {
     const params = new URLSearchParams(window.location.search);
     const tab = params.get("tab") as Tab | null;
-    const valid: Tab[] = ["plan", "api_keys", "brokerage", "notifications", "profile"];
+    const valid: Tab[] = ["plan", "api_keys", "brokerage", "notifications", "copilot", "profile"];
     return tab && valid.includes(tab) ? tab : "plan";
   });
   const { user } = useAuthStore();
@@ -93,6 +95,7 @@ export function SettingsPage() {
         {activeTab === "api_keys" && <ApiKeyForm />}
         {activeTab === "brokerage" && <BrokerageSettings />}
         {activeTab === "notifications" && <NotificationSettings />}
+        {activeTab === "copilot" && <CopilotSettings />}
       </div>
     </TerminalShell>
   );

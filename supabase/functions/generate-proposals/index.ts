@@ -159,6 +159,57 @@ function candidateToInsertRow(userId: string, c: CoveredCallCandidate, expiresAt
   };
 }
 
+// ── Fire-and-forget council-verdict invocation ──────────────────────────
+// WS4 (docs/relaunch-plan-2026-07.md): every newly staged proposal
+// immediately gets a 5-persona council verdict. This call must never make
+// generate-proposals itself fail -- it isn't awaited by the candidate-
+// insertion loop, and every failure path here writes a proposal_events row
+// instead of throwing. `EdgeRuntime.waitUntil` (when available, i.e. when
+// actually running under Supabase's Deno Deploy runtime rather than a local
+// test harness) keeps the request alive long enough for this background
+// call to finish after the response has already been returned to the
+// caller -- without it, Deno Deploy can tear the isolate down the moment
+// the response is sent.
+function invokeCouncilVerdict(
+  svc: ReturnType<typeof createClient>,
+  userId: string,
+  proposalId: string,
+): void {
+  const task = (async () => {
+    try {
+      const url = `${Deno.env.get("SUPABASE_URL")}/functions/v1/council-verdict`;
+      const resp = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`,
+        },
+        body: JSON.stringify({ proposal_id: proposalId }),
+      });
+      if (!resp.ok) {
+        const respText = await resp.text().catch(() => "");
+        await svc.from("proposal_events").insert({
+          proposal_id: proposalId,
+          user_id: userId,
+          event: "council_invoke_failed",
+          detail: { reason: "non_ok_response", status: resp.status, body: respText.slice(0, 500) },
+        });
+      }
+    } catch (err) {
+      await svc.from("proposal_events").insert({
+        proposal_id: proposalId,
+        user_id: userId,
+        event: "council_invoke_failed",
+        detail: { reason: "fetch_error", error: err instanceof Error ? err.message : String(err) },
+      });
+    }
+  })();
+
+  const edgeRuntime = (globalThis as { EdgeRuntime?: { waitUntil?: (p: Promise<unknown>) => void } })
+    .EdgeRuntime;
+  edgeRuntime?.waitUntil?.(task);
+}
+
 // ── Edge function entry point ───────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -310,6 +361,7 @@ Deno.serve(async (req) => {
         event: "proposal_created",
         detail: { ticker: c.ticker, structure: c.structure, strike: c.strike, expiry: c.expiry, contracts: c.contracts },
       });
+      invokeCouncilVerdict(svc, auth.userId, proposalId);
     }
 
     // ── 9. Record every rejection (no proposal row exists for these —

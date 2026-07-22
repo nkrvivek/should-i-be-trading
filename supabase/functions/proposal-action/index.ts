@@ -408,7 +408,13 @@ async function executePaperProposal(svc: ServiceClient, proposal: ProposalRow): 
       strike: leg.strike,
     });
 
-  await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "executing" }, updateStatus });
+  // The approved→executing transition is the execution lock: whoever wins this
+  // conditional write is the only caller allowed to fill. A lost write means a
+  // concurrent request already owns execution — stop here, place nothing.
+  const execLock = await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "executing" }, updateStatus });
+  if (!execLock.ok) {
+    return { status: "conflict", message: "This proposal is already executing — no duplicate fill placed." };
+  }
   await insertEvent(svc, proposal.id, proposal.user_id, "execution_started", { symbol, qty: proposal.qty, mode: "paper" });
 
   const quote = await fetchTradierQuote(symbol);
@@ -542,7 +548,13 @@ async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow
     }
   }
 
-  await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "executing" }, updateStatus });
+  // Same execution lock as the paper path: only the winner of approved→executing
+  // may reach placeSnapTradeOrder. A lost conditional write = another request is
+  // already executing this proposal — return conflict, place nothing.
+  const execLock = await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "executing" }, updateStatus });
+  if (!execLock.ok) {
+    return { status: "conflict", message: "This proposal is already executing — no duplicate order placed." };
+  }
   await insertEvent(svc, proposal.id, proposal.user_id, "execution_started", { symbol, qty: proposal.qty });
 
   let placeResult: { brokerage_order_id?: string; id?: string; status?: string } | null = null;

@@ -26,7 +26,7 @@
  * a vote, and the daily AI-budget arithmetic.
  */
 
-import { getAiRequestLimit, type AiLimitTier } from "./aiLimits";
+import { getAiRequestLimit, type AiLimitTier } from "./aiLimits.ts";
 
 // ── GateResult (mirrors proposalEngine.ts's discriminated union) ──────────
 

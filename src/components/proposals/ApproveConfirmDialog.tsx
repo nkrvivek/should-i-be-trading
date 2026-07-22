@@ -1,6 +1,7 @@
 import { ConfirmDialog } from "../shared/ConfirmDialog";
 import type { Proposal } from "../../hooks/useProposals";
 import { fmtUsdExact } from "../../lib/format";
+import { approveDisclosure } from "../../lib/paperUi";
 
 type Props = {
   proposal: Proposal;
@@ -30,8 +31,8 @@ export function ApproveConfirmDialog({ proposal, loading, onConfirm, onCancel }:
             {proposal.max_loss_usd != null && <div>Max loss: {fmtUsdExact(proposal.max_loss_usd)}</div>}
             {proposal.collateral_usd != null && <div>Collateral: {fmtUsdExact(proposal.collateral_usd)}</div>}
           </div>
-          <div style={{ fontWeight: 600, color: "var(--text-primary)" }}>
-            This places a real order.
+          <div style={{ fontWeight: 600, color: proposal.mode === "live" ? "var(--text-primary)" : "var(--text-secondary)" }}>
+            {approveDisclosure(proposal.mode)}
           </div>
         </div>
       }

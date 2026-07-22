@@ -1,6 +1,6 @@
 export type FeatureSection = {
   title: string;
-  tier: "FREE" | "STARTER" | "PRO" | "ENTERPRISE";
+  tier: "FREE" | "STARTER" | "PRO" | "COPILOT" | "ENTERPRISE";
   description: string;
   details: string[];
   mockup: string; // ASCII art mockup
@@ -905,11 +905,85 @@ export const FEATURES: FeatureSection[] = [
 \u2502  Combined social score feeds into composite  \u2502
 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
   },
+  {
+    title: "Paper Trading With $100K",
+    tier: "FREE",
+    description: "Train on the real flow before you trust it with cash. One tap provisions a $100,000 paper account that runs every proposal, gate check, and council vote exactly like the live path \u2014 fills are simulated against live prices.",
+    details: [
+      "One-tap $100K paper account provisioning, no card required",
+      "Every proposal carries a PAPER or LIVE mode badge, so you always know which book you're in",
+      "Simulated fills price against live quotes, not stale snapshots",
+      "Positions and fill history tracked the same way as a real brokerage",
+      "Free tier: 20 actions per day across a 20-ticker allowlist",
+      "Upgrade removes the daily cap and ticker allowlist",
+    ],
+    mockup: `\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  PAPER TRADING                  MODE: PAPER  \u2502
+\u2502                                              \u2502
+\u2502  ACCOUNT VALUE                               \u2502
+\u2502  $103,420.18            +$3,420.18 since $100K\u2502
+\u2502                                              \u2502
+\u2502  POSITIONS                                   \u2502
+\u2502  AAPL   20 sh @ $214.30        $4,286.00     \u2502
+\u2502  NVDA   10 sh @ $128.90        $1,289.00     \u2502
+\u2502                                              \u2502
+\u2502  DAILY ACTIONS      6 / 20 used              \u2502
+\u2502  [\u2588\u2588\u2588\u2588\u2588\u2588\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591\u2591]  Upgrade for unlimited \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
+  {
+    title: "AI Proposals, Free Tier Included",
+    tier: "FREE",
+    description: "Council-reviewed trade proposals are no longer locked behind a paid tier. The free plan gets the full pipeline \u2014 signal confluence, risk-debate verdict, and portfolio-manager approval \u2014 capped to a daily action limit and a fixed ticker list.",
+    details: [
+      "Full proposal pipeline: signal rank, bull/bear debate, risk verdict, final approval",
+      "20 proposal actions per day on the free tier",
+      "20-ticker allowlist keeps the free tier focused and cost-bounded",
+      "Every proposal still requires your explicit approval before it fills",
+      "No credit card to start; upgrade only when you outgrow the cap",
+    ],
+    mockup: `\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  PROPOSALS                          FREE TIER\u2502
+\u2502                                              \u2502
+\u2502  AAPL  Covered Call    MODE: PAPER  PENDING  \u2502
+\u2502  Council: 4-1 approve   Risk verdict: OK     \u2502
+\u2502                                              \u2502
+\u2502  NVDA  Put Credit Spread MODE: PAPER APPROVED\u2502
+\u2502  Council: 3-2 approve   Risk verdict: OK     \u2502
+\u2502                                              \u2502
+\u2502  Actions today: 6 / 20                       \u2502
+\u2502  Allowlist: AAPL, NVDA, MSFT, TSLA, +16 more \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
+  {
+    title: "Copilot: Live Execution",
+    tier: "COPILOT",
+    description: "Everything in Pro, plus the step from simulation to your real broker. Copilot places live orders through the same council-reviewed pipeline \u2014 unlimited paper trading stays available side by side for testing new strategies.",
+    details: [
+      "Live order placement on your connected broker, same approval flow as paper",
+      "Unlimited paper trading alongside live \u2014 test before you commit real size",
+      "Mode badge on every proposal so paper and live never get confused",
+      "Full council pipeline, no daily action cap, no ticker allowlist",
+      "Priority execution queue during high-volatility sessions",
+    ],
+    mockup: `\u250c\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
+\u2502  COPILOT                             MODE: LIVE\u2502
+\u2502                                              \u2502
+\u2502  AAPL  Covered Call    MODE: LIVE  APPROVED  \u2502
+\u2502  This places a real order on your broker.    \u2502
+\u2502                                              \u2502
+\u2502  Broker: TradeStation \u2014 11087763             \u2502
+\u2502  Buying power verified \u2014 no margin debit     \u2502
+\u2502                                              \u2502
+\u2502  Paper account also active: $103,420.18      \u2502
+\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
+  },
 ];
 
 export const TIER_COLORS: Record<string, string> = {
   FREE: "#00c805",
   STARTER: "#60a5fa",
   PRO: "#F5A623",
+  COPILOT: "#22D3EE",
   ENTERPRISE: "#8B5CF6",
 };

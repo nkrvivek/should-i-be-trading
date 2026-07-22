@@ -25,6 +25,7 @@ const loadSignalsPage = () => import("./pages/SignalsPage");
 const loadTradingPage = () => import("./pages/TradingPage");
 const loadProgressPage = () => import("./pages/ProgressPage").then(m => ({ default: m.ProgressPage }));
 const loadProposalsPage = () => import("./pages/ProposalsPage").then(m => ({ default: m.ProposalsPage }));
+const loadPaperPage = () => import("./pages/PaperPage").then(m => ({ default: m.PaperPage }));
 
 // Lazy-load all pages — keeps initial bundle small
 const DashboardPage = lazy(loadDashboardPage);
@@ -42,6 +43,7 @@ const SignalsPage = lazy(loadSignalsPage);
 const TradingPage = lazy(loadTradingPage);
 const ProgressPage = lazy(loadProgressPage);
 const ProposalsPage = lazy(loadProposalsPage);
+const PaperPage = lazy(loadPaperPage);
 
 const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/": loadDashboardPage,
@@ -51,6 +53,7 @@ const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/progress": loadProgressPage,
   "/settings": loadSettingsPage,
   "/proposals": loadProposalsPage,
+  "/paper": loadPaperPage,
 };
 
 const PageLoader = () => (
@@ -93,6 +96,10 @@ export default function App() {
           {/* Gated utility */}
           <Route path="/alerts" element={<GatedPage feature="alerts"><AlertsPage /></GatedPage>} />
           <Route path="/proposals" element={<GatedPage feature="proposals"><ProposalsPage /></GatedPage>} />
+          {/* Paper trading is free on every tier (contract: 'paper_trading'
+              feature, not yet in featureGates.ts on this branch) — RequireAuth
+              only, no tier gate. */}
+          <Route path="/paper" element={<RequireAuth><PaperPage /></RequireAuth>} />
           <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
 
           {/* ── Redirects from old routes ─────────────────────── */}
@@ -153,6 +160,7 @@ export function AppNav() {
     { to: "/signals", label: "SIGNALS" },
     { to: "/trading", label: "TRADING", pro: true },
     { to: "/proposals", label: "PROPOSALS", pro: true, feature: "proposals" },
+    { to: "/paper", label: "PAPER" },
     { to: "/progress", label: "PROGRESS" },
   ];
 

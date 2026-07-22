@@ -2,7 +2,7 @@ import { callEdgeFunction } from "./edgeFunction";
 
 /** Redirect user to Stripe Checkout for a subscription */
 export async function redirectToCheckout(
-  tier: "starter" | "pro" | "enterprise",
+  tier: "starter" | "pro" | "copilot" | "enterprise",
   interval: "month" | "year",
 ) {
   const { url } = await callEdgeFunction("create-checkout", { tier, interval });

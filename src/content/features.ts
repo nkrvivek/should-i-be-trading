@@ -984,6 +984,6 @@ export const TIER_COLORS: Record<string, string> = {
   FREE: "#00c805",
   STARTER: "#60a5fa",
   PRO: "#F5A623",
-  COPILOT: "#22D3EE",
+  COPILOT: "#00c805",
   ENTERPRISE: "#8B5CF6",
 };

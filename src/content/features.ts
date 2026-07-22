@@ -1,5 +1,3 @@
-import { ACADEMY_FEATURE_DETAILS, ACADEMY_MARKETING } from "./academyMarketing";
-
 export type FeatureSection = {
   title: string;
   tier: "FREE" | "STARTER" | "PRO" | "ENTERPRISE";
@@ -702,27 +700,6 @@ export const FEATURES: FeatureSection[] = [
 \u2502  Disallowed loss: $800                       \u2502
 \u2502                                              \u2502
 \u2502  \u2713 18 other positions: No wash sales        \u2502
-\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
-  },
-  {
-    title: ACADEMY_MARKETING.title,
-    tier: "FREE",
-    description: ACADEMY_MARKETING.description,
-    details: ACADEMY_FEATURE_DETAILS,
-    mockup: `\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2510
-\u2502  LEARN                       [ACADEMY]      \u2502
-\u2502                                              \u2502
-\u2502  STREAK 4d   WEEKLY GOAL 2/3   FREE         \u2502
-\u2502                                              \u2502
-\u2502  ACTIVE TRACK                               \u2502
-\u2502  Options Basics   2/3 complete              \u2502
-\u2502                                              \u2502
-\u2502  1 LEARN   Calls, Puts, Contract Basics     \u2502
-\u2502  2 PRACTICE Defined Risk vs Undefined Risk  \u2502
-\u2502  3 APPLY   Open Trading Workflow            \u2502
-\u2502                                              \u2502
-\u2502  NEXT STEP: Buy to Open / Sell to Close     \u2502
-\u2502  [OPEN LESSON]   [SIMULATOR]   [WORKFLOW]   \u2502
 \u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2518`,
   },
   {

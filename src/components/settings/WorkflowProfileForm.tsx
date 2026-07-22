@@ -10,7 +10,7 @@ const OPTIONS: Array<{
   {
     value: "beginner",
     label: "Beginner",
-    body: "Best if you want the product to slow you down, prioritize lessons and simulator steps, and guide you clearly into safer workflows.",
+    body: "Best if you want the product to slow you down, prioritize simulator steps, and guide you clearly into safer workflows.",
   },
   {
     value: "active_trader",

@@ -593,21 +593,6 @@ export default function TradingPage() {
             >
               SYNC BROKER NOW
             </button>
-            <button
-              onClick={() => navigate("/learn")}
-              style={{
-                ...monoStyle,
-                fontSize: 13,
-                padding: "6px 12px",
-                border: "1px solid var(--border-dim)",
-                borderRadius: 4,
-                background: "none",
-                color: "var(--text-secondary)",
-                cursor: "pointer",
-              }}
-            >
-              REVIEW ACADEMY FIRST
-            </button>
           </div>
         </div>
       )}

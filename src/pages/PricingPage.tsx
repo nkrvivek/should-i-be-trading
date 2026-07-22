@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ACADEMY_FREE_TIER_FEATURES } from "../content/academyMarketing";
 import { TerminalShell } from "../components/layout/TerminalShell";
 import { useAuthStore } from "../stores/authStore";
 import { redirectToCheckout } from "../lib/stripe";
@@ -26,7 +25,6 @@ const TIERS: Tier[] = [
     yearlyPrice: 0,
     description: "Market regime dashboard with real-time signals",
     features: [
-      ...ACADEMY_FREE_TIER_FEATURES,
       "Traffic Light verdict (TRADE / CAUTION / NO TRADE)",
       "Market Quality Score (5-category, 0-100)",
       "Market Regime & Fragility Monitor (8 signals)",
@@ -65,7 +63,7 @@ const TIERS: Tier[] = [
       "AI chat (15 messages/day)",
       "5 watchlists, 50 tickers each",
       "All push notifications",
-      "Advanced simulator walkthroughs and progressive academy handoffs into research/trading workflows",
+      "Advanced simulator walkthroughs into research/trading workflows",
     ],
     trial: true,
     tier: "starter",

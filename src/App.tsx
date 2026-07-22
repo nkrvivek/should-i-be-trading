@@ -16,7 +16,6 @@ const loadSettingsPage = () => import("./pages/SettingsPage").then(m => ({ defau
 const loadAlertsPage = () => import("./pages/AlertsPage").then(m => ({ default: m.AlertsPage }));
 const loadTermsPage = () => import("./pages/TermsPage").then(m => ({ default: m.TermsPage }));
 const loadPrivacyPage = () => import("./pages/PrivacyPage").then(m => ({ default: m.PrivacyPage }));
-const loadGlossaryPage = () => import("./pages/GlossaryPage").then(m => ({ default: m.GlossaryPage }));
 const loadPricingPage = () => import("./pages/PricingPage").then(m => ({ default: m.PricingPage }));
 const loadLandingPage = () => import("./pages/LandingPage").then(m => ({ default: m.LandingPage }));
 const loadRiskDisclosurePage = () => import("./pages/RiskDisclosurePage").then(m => ({ default: m.RiskDisclosurePage }));
@@ -33,7 +32,6 @@ const SettingsPage = lazy(loadSettingsPage);
 const AlertsPage = lazy(loadAlertsPage);
 const TermsPage = lazy(loadTermsPage);
 const PrivacyPage = lazy(loadPrivacyPage);
-const GlossaryPage = lazy(loadGlossaryPage);
 const PricingPage = lazy(loadPricingPage);
 const LandingPage = lazy(loadLandingPage);
 const RiskDisclosurePage = lazy(loadRiskDisclosurePage);
@@ -48,7 +46,6 @@ const routePrefetchers: Record<string, () => Promise<unknown>> = {
   "/research": loadResearchPage,
   "/signals": loadSignalsPage,
   "/trading": loadTradingPage,
-  "/learn": loadGlossaryPage,
   "/progress": loadProgressPage,
   "/settings": loadSettingsPage,
 };
@@ -80,8 +77,8 @@ export default function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/risk" element={<RiskDisclosurePage />} />
           <Route path="/features" element={<FeaturesPage />} />
-          <Route path="/learn" element={<GlossaryPage />} />
-          <Route path="/glossary" element={<Navigate to="/learn" replace />} />
+          <Route path="/learn" element={<Navigate to="/" replace />} />
+          <Route path="/glossary" element={<Navigate to="/" replace />} />
 
           {/* Core 5 hub pages */}
           <Route path="/" element={<ErrorBoundary><SmartHome /></ErrorBoundary>} />
@@ -151,7 +148,6 @@ export function AppNav() {
     { to: "/research", label: "RESEARCH" },
     { to: "/signals", label: "SIGNALS" },
     { to: "/trading", label: "TRADING", pro: true },
-    { to: "/learn", label: "LEARN" },
     { to: "/progress", label: "PROGRESS" },
   ];
 

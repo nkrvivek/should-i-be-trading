@@ -5,14 +5,10 @@ import { useSignalHistory } from "../hooks/useSignalHistory";
 import { useMarketScore } from "../hooks/useMarketScore";
 import { useRegimeMonitor } from "../hooks/useRegimeMonitor";
 import { useAlertEvaluator } from "../hooks/useAlertEvaluator";
-import { useLearningAcademy } from "../hooks/useLearningAcademy";
 import { useTradeJournal } from "../hooks/useTradeJournal";
 import { useWatchlists } from "../hooks/useWatchlists";
 import { useStockMetrics } from "../hooks/useStockMetrics";
 import { computeVerdict } from "../lib/trafficLight";
-import { computeLearningStats } from "../lib/learningProgress";
-import { ALL_LEARNING_LESSONS, LEARNING_TRACKS } from "../lib/academy";
-import { isLessonUnlocked } from "../lib/academyUnlock";
 import { estimateStockScoreFromMetrics } from "../lib/estimatedStockScore";
 import { getCompositeTradeScore } from "../hooks/useCompositeTradeScore";
 import { WORKFLOW_PRESETS, WORKFLOW_OPTIONS } from "../lib/workflowPresets";
@@ -52,7 +48,6 @@ export function DashboardPage() {
   const { history, recordVerdict } = useSignalHistory();
   const { score: marketScore, loading: scoreLoading, refresh: refreshScore } = useMarketScore();
   const { regime } = useRegimeMonitor();
-  const { progress: learningProgress, persistence } = useLearningAcademy();
   const { openTrades, entries, stats: journalStats } = useTradeJournal();
   const { activeWatchlist } = useWatchlists();
   const { metrics, loading: metricsLoading, progress: metricsProgress } = useStockMetrics();
@@ -74,24 +69,6 @@ export function DashboardPage() {
       recordVerdict(verdict, marketScore.total ?? null, null);
     }
   }, [verdict.signal, marketScore?.total]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const learningStats = useMemo(
-    () => computeLearningStats(learningProgress, ALL_LEARNING_LESSONS.length),
-    [learningProgress],
-  );
-
-  const nextLesson = useMemo(
-    () => ALL_LEARNING_LESSONS.find((lesson) =>
-      !learningProgress.completedLessons[lesson.slug] &&
-      isLessonUnlocked(lesson.trackSlug, lesson.slug, learningProgress.completedLessons)
-    ) ?? ALL_LEARNING_LESSONS[0],
-    [learningProgress.completedLessons],
-  );
-
-  const nextLessonTrack = useMemo(
-    () => LEARNING_TRACKS.find((track) => track.slug === nextLesson?.trackSlug) ?? null,
-    [nextLesson],
-  );
 
   const marketRevision = marketScore?.timestamp ?? 0;
   const regimeRevision = regime?.timestamp ?? 0;
@@ -176,7 +153,7 @@ export function DashboardPage() {
                   Make the app feel more like your process.
                 </div>
                 <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, lineHeight: 1.65, color: "var(--text-secondary)", maxWidth: 860 }}>
-                  Pick the workflow that matches how you trade right now. This changes the default guidance across Home, Learn, and the rest of the product without hiding any of the core tools you already have.
+                  Pick the workflow that matches how you trade right now. This changes the default guidance across Home and the rest of the product without hiding any of the core tools you already have.
                 </div>
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
@@ -321,20 +298,6 @@ export function DashboardPage() {
               </div>
             </div>
               <ActionCard
-                eyebrow="Learn"
-                title={workflowPreset.learnTitle(nextLesson?.title)}
-                body={nextLessonTrack
-                  ? `${nextLessonTrack.title} • ${nextLesson.durationMinutes} min • ${nextLesson.riskLevel.toUpperCase()} risk framing • ${workflowPreset.learnBody}`
-                  : workflowPreset.learnFallback}
-                cta={workflowPreset.learnCta}
-                secondary={workflowPreset.learnSecondaryLabel(nextLesson)}
-                onClick={() => navigate("/learn")}
-                onSecondaryClick={() => {
-                  const route = workflowPreset.learnSecondaryRoute(nextLesson);
-                  if (route) navigate(route);
-                }}
-              />
-              <ActionCard
                 eyebrow="Research"
                 title={workflowPreset.researchTitle}
                 body={topOpportunities.length
@@ -397,17 +360,9 @@ export function DashboardPage() {
 
           <Panel title="Progress">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 10, marginBottom: 12 }}>
-              <MiniStat label="Lessons" value={`${learningStats.completedCount}/${ALL_LEARNING_LESSONS.length}`} tone="var(--text-primary)" />
-              <MiniStat label="Streak" value={`${learningStats.currentStreak}d`} tone="var(--warning)" />
-              <MiniStat label="Weekly Goal" value={`${learningStats.thisWeekSessions}/${learningStats.weeklyTarget}`} tone="var(--signal-core)" />
               <MiniStat label="Closed Trades" value={`${journalStats.totalTrades}`} tone="var(--positive)" />
             </div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              <ProgressNote
-                label="Academy"
-                value={nextLesson ? `Next up: ${nextLesson.title}` : "All lessons complete"}
-                detail={`Persistence: ${persistence.toUpperCase()}`}
-              />
               <ProgressNote
                 label="Journal"
                 value={lastJournalEntry ? `Last logged: ${lastJournalEntry.ticker} ${lastJournalEntry.strategy}` : "No trades logged yet"}
@@ -577,7 +532,7 @@ function getTodayActionTitle(profile: WorkflowProfile, status: string, stance: s
 function getTodayActionBody(profile: WorkflowProfile, status: string, stance: string): string {
   if (status !== "open") {
     return profile === "beginner"
-      ? "Stay in Learn or Simulator first, then revisit the top composite names before the next session."
+      ? "Stay in Simulator first, then revisit the top composite names before the next session."
       : "Use this time to narrow watchlist names, review one setup, and queue the next action before the open.";
   }
   if (getBiasLabel(stance) === "Defensive") {

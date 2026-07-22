@@ -86,23 +86,6 @@ export function FeaturesPage() {
         {/* CTA */}
         <div style={{ textAlign: "center", padding: "32px 0" }}>
           <div style={{ display: "flex", justifyContent: "center", gap: 12, flexWrap: "wrap" }}>
-            <button
-              onClick={() => navigate("/learn")}
-              style={{
-                padding: "12px 28px",
-                fontFamily: "var(--font-mono)",
-                fontSize: 13,
-                fontWeight: 600,
-                background: "transparent",
-                color: "var(--signal-core)",
-                border: "1px solid var(--signal-core)",
-                borderRadius: 4,
-                cursor: "pointer",
-                letterSpacing: "0.03em",
-              }}
-            >
-              EXPLORE FREE LEARNING
-            </button>
           <button
             onClick={() => navigate("/pricing")}
             style={{

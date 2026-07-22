@@ -146,21 +146,10 @@ function CompositeScoreInfo({ score, size = "sm" }: { score: CompositeTradeScore
           <ComponentSection title="Market Inputs" components={marketComponents} />
           <ComponentSection title="Ticker Inputs" components={tickerComponents} />
 
-          <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12 }}>
+          <div style={{ marginTop: 12, display: "flex", justifyContent: "flex-end", alignItems: "center", gap: 12 }}>
             <div style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
               Confidence {Math.round(score.confidence * 100)}%
             </div>
-            <a
-              href={`/learn?q=${encodeURIComponent("Composite Trade Score")}&term=${encodeURIComponent("Composite Trade Score")}`}
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: 11,
-                color: "var(--signal-core)",
-                textDecoration: "none",
-              }}
-            >
-              Learn more →
-            </a>
           </div>
         </div>
       )}

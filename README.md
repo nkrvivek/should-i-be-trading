@@ -16,7 +16,7 @@ Computes a proprietary Market Quality Score from VIX, trend structure, sector br
 
 Connect your brokerage in 30 seconds. No API keys needed.
 
-[**Get Started**](https://sibt.ai) · [**Features**](https://sibt.ai/features) · [**Pricing**](https://sibt.ai/pricing) · [**Glossary**](https://sibt.ai/learn)
+[**Get Started**](https://sibt.ai) · [**Features**](https://sibt.ai/features) · [**Pricing**](https://sibt.ai/pricing)
 
 <br />
 
@@ -65,8 +65,7 @@ Connect your brokerage in 30 seconds. No API keys needed.
 - AI earnings summaries — one-click TLDR of earnings call transcripts
 - Daily market briefing with full regime context (auto-populated from free market data, enhanced with AI)
 
-**Education & Alerts**
-- 82-term searchable glossary with 9 deep-dive articles
+**Alerts**
 - Alert system with real-time delivery (verdict changes, VIX spikes, insider surges)
 - Push notifications via Service Worker (PWA)
 
@@ -140,7 +139,7 @@ E2E tests cover: auth flows, CSV upload, strategy execution, multi-brokerage, se
 │  SIBT (Vite + React 19 + TypeScript + Zustand)               │
 │                                                              │
 │  Pages: Dashboard, Signals, Research, Strategies,            │
-│         Terminal, Settings, Learn, Execution                  │
+│         Terminal, Settings, Execution                         │
 │                                                              │
 │  Hooks ─── Edge Functions ─── External APIs                  │
 └──────┬───────────┬────────────┬───────────┬──────────────────┘

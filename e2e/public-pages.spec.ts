@@ -94,7 +94,6 @@ test.describe("Landing Page", () => {
     await expect(footer.locator('a[href="/terms"]')).toBeVisible();
     await expect(footer.locator('a[href="/privacy"]')).toBeVisible();
     await expect(footer.locator('a[href="/risk"]')).toBeVisible();
-    await expect(footer.locator('a[href="/glossary"]')).toBeVisible();
   });
 
   test("disclaimer text is present at bottom", async ({ page }) => {
@@ -271,94 +270,6 @@ test.describe("Features Page", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Learn Page (/learn)
-// ---------------------------------------------------------------------------
-test.describe("Learn Page", () => {
-  test.beforeEach(async ({ page }) => {
-    await page.goto("/learn");
-    await page.waitForLoadState("domcontentloaded");
-  });
-
-  test("page loads with academy as the default view", async ({ page }) => {
-    await expect(page.getByText("LEARN").first()).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByText("FREE-TIER LEARNING HUB").first()).toBeVisible();
-    await expect(page.locator("button", { hasText: "Academy" }).first()).toBeVisible();
-    await expect(page.locator("button", { hasText: "Glossary" }).first()).toBeVisible();
-  });
-
-  test("academy content and badge paths are visible", async ({ page }) => {
-    await expect(page.getByText("Learning Tracks").first()).toBeVisible();
-    await expect(page.getByText("SIBT Badge Paths").first()).toBeVisible();
-    await expect(page.getByText("Options Basics").first()).toBeVisible();
-    await expect(page.getByText("Stock Trading").first()).toBeVisible();
-  });
-
-  test("glossary tab exposes search and filters", async ({ page }) => {
-    await page.locator("button", { hasText: "Glossary" }).first().click();
-    const searchInput = page.locator('input[placeholder="Search terms..."]');
-    await expect(searchInput).toBeVisible();
-    await expect(page.locator("button", { hasText: "All" }).first()).toBeVisible();
-    await expect(page.getByText(/CATEGORY:/i).first()).toBeVisible();
-    await expect(page.getByText(/LEVEL:/i).first()).toBeVisible();
-  });
-
-  test("Deep Dives category filter shows educational articles", async ({ page }) => {
-    await page.locator("button", { hasText: "Glossary" }).first().click();
-    const deepDivesBtn = page.locator("button", { hasText: "Deep Dives" }).first();
-    await expect(deepDivesBtn).toBeVisible({ timeout: 5_000 });
-    await deepDivesBtn.click();
-    await page.waitForTimeout(300);
-
-    // Should show deep dive articles (at least a few)
-    const deepDiveItems = page.locator("text=Deep Dives");
-    expect(await deepDiveItems.count()).toBeGreaterThanOrEqual(1);
-  });
-
-  test("search filters glossary terms", async ({ page }) => {
-    await page.locator("button", { hasText: "Glossary" }).first().click();
-    const searchInput = page.locator('input[placeholder="Search terms..."]');
-    await searchInput.fill("VIX");
-    // Wait for filter to apply
-    await page.waitForTimeout(300);
-
-    // The term VIX should still be visible
-    await expect(page.getByText("VIX", { exact: true }).first()).toBeVisible();
-
-    // Search for something that should not match
-    await searchInput.fill("xyznonexistentterm123");
-    await page.waitForTimeout(300);
-    await expect(page.getByText(/No terms match/i).first()).toBeVisible();
-  });
-
-  test("category filter narrows results", async ({ page }) => {
-    await page.locator("button", { hasText: "Glossary" }).first().click();
-    // Click a specific category to filter
-    const technicalBtn = page.locator("button", { hasText: "Technical" }).first();
-    if (await technicalBtn.isVisible()) {
-      await technicalBtn.click();
-      await page.waitForTimeout(300);
-      // All visible category badges should be "Technical"
-      const badges = page.locator("text=Technical");
-      expect(await badges.count()).toBeGreaterThanOrEqual(1);
-    }
-  });
-
-  test("term definitions are present when a glossary card is opened", async ({ page }) => {
-    await page.locator("button", { hasText: "Glossary" }).first().click();
-    const firstTerm = page.locator('button:has-text("VIX")').first();
-    await firstTerm.click();
-    await expect(page.getByText(/fear gauge/i).first()).toBeVisible();
-  });
-
-  test("term deep links open glossary view automatically", async ({ page }) => {
-    await page.goto("/learn?term=vix");
-    await page.waitForLoadState("domcontentloaded");
-    await expect(page.locator('input[placeholder="Search terms..."]')).toBeVisible();
-    await expect(page.getByText("VIX", { exact: true }).first()).toBeVisible();
-  });
-});
-
-// ---------------------------------------------------------------------------
 // Legal Pages
 // ---------------------------------------------------------------------------
 test.describe("Legal Pages", () => {
@@ -454,20 +365,6 @@ test.describe("Cross-Page Navigation", () => {
     await privacyLink.click();
     await page.waitForURL(/\/privacy/, { timeout: 10_000 });
     await expect(page.getByText(/privacy/i).first()).toBeVisible();
-  });
-
-  test("Landing footer -> Glossary page", async ({ page }) => {
-    await page.goto("/welcome");
-    await page.waitForLoadState("domcontentloaded");
-
-    // Footer link may point to /glossary (which redirects to /learn) or /learn directly
-    const glossaryLink = page.locator('footer a[href="/glossary"], footer a[href="/learn"]').first();
-    await glossaryLink.scrollIntoViewIfNeeded();
-    await glossaryLink.click();
-    await page.waitForURL(/\/learn/, { timeout: 10_000 });
-    await expect(
-      page.getByText(/LEARN|TRADING GLOSSARY/i).first()
-    ).toBeVisible();
   });
 
   test("Features -> Pricing via CTA button", async ({ page }) => {

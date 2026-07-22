@@ -75,7 +75,7 @@ const suggestionRowStyle: React.CSSProperties = {
 };
 
 const riskBadgeColors: Record<string, { bg: string; color: string }> = {
-  conservative: { bg: "rgba(0, 214, 79, 0.15)", color: "var(--positive)" },
+  conservative: { bg: "rgba(0, 200, 5, 0.15)", color: "var(--positive)" },
   moderate: { bg: "rgba(234, 179, 8, 0.15)", color: "var(--warning)" },
   aggressive: { bg: "rgba(232, 93, 108, 0.15)", color: "var(--negative)" },
 };

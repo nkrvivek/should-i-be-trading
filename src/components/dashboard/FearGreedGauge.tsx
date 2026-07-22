@@ -13,7 +13,7 @@ const ZONES = [
   { label: "Extreme Fear", min: 0, max: 20, color: "#dc2626" },
   { label: "Fear", min: 20, max: 40, color: "#E85D6C" },
   { label: "Neutral", min: 40, max: 60, color: "#94a3b8" },
-  { label: "Greed", min: 60, max: 80, color: "#00D64F" },
+  { label: "Greed", min: 60, max: 80, color: "#00c805" },
   { label: "Extreme Greed", min: 80, max: 100, color: "#3BE87A" },
 ];
 

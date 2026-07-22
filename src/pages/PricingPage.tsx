@@ -280,7 +280,7 @@ export function PricingContent() {
         <div style={{
           padding: "12px 20px",
           marginBottom: 16,
-          background: "rgba(0, 214, 79, 0.1)",
+          background: "rgba(0, 200, 5, 0.1)",
           border: "1px solid var(--positive)",
           borderRadius: "var(--radius-md)",
           fontFamily: "var(--font-mono)",

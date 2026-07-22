@@ -234,7 +234,7 @@ export default function CsvUploadPanel() {
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           style={{
-            border: `2px dashed ${dragOver ? "var(--signal-core, #00D64F)" : "var(--border-dim, #e2e8f0)"}`,
+            border: `2px dashed ${dragOver ? "var(--signal-core, #00c805)" : "var(--border-dim, #e2e8f0)"}`,
             borderRadius: 8,
             padding: "48px 24px",
             textAlign: "center",
@@ -399,7 +399,7 @@ export default function CsvUploadPanel() {
                 ...monoStyle,
                 fontSize: 13,
                 padding: "8px 24px",
-                background: "var(--signal-core, #00D64F)",
+                background: "var(--signal-core, #00c805)",
                 color: "#fff",
                 border: "none",
                 borderRadius: 4,

@@ -44,7 +44,7 @@ export function AiUsageBadge() {
         fontSize: 10,
         color: "var(--positive)",
         padding: "2px 6px",
-        background: "rgba(0, 214, 79, 0.1)",
+        background: "rgba(0, 200, 5, 0.1)",
         borderRadius: 3,
       }}>
         OWN KEY

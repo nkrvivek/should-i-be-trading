@@ -87,7 +87,7 @@ const btnBase: React.CSSProperties = {
 };
 
 const riskBadgeColors: Record<string, { bg: string; color: string }> = {
-  conservative: { bg: "rgba(0, 214, 79, 0.15)", color: "var(--positive)" },
+  conservative: { bg: "rgba(0, 200, 5, 0.15)", color: "var(--positive)" },
   moderate: { bg: "rgba(234, 179, 8, 0.15)", color: "var(--warning)" },
   aggressive: { bg: "rgba(232, 93, 108, 0.15)", color: "var(--negative)" },
 };
@@ -410,7 +410,7 @@ export default function OrderReviewModal({
                 ? "1px solid var(--positive)"
                 : "1px solid var(--warning)",
               background: isPaper
-                ? "rgba(0, 214, 79, 0.06)"
+                ? "rgba(0, 200, 5, 0.06)"
                 : "rgba(234, 179, 8, 0.06)",
               fontFamily: "var(--font-sans)",
               fontSize: 12,
@@ -556,7 +556,7 @@ export default function OrderReviewModal({
                       : "var(--negative)"
                 }`,
                 background: executionResult.success
-                  ? "rgba(0, 214, 79, 0.06)"
+                  ? "rgba(0, 200, 5, 0.06)"
                   : executionResult.partialExecution
                     ? "rgba(234, 179, 8, 0.06)"
                     : "rgba(232, 93, 108, 0.06)",
@@ -726,7 +726,7 @@ function TradeRiskAnalysis({ equity, maxLoss, maxProfit }: { equity: number; max
         </div>
       )}
       {meetsTargetProfit && (
-        <div style={{ marginTop: 4, fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--positive)", padding: "4px 8px", background: "rgba(0,214,79,0.08)", borderRadius: 3 }}>
+        <div style={{ marginTop: 4, fontFamily: "var(--font-mono)", fontSize: 11, fontWeight: 600, color: "var(--positive)", padding: "4px 8px", background: "rgba(0, 200, 5,0.08)", borderRadius: 3 }}>
           Potential gain of {profitPct!.toFixed(1)}% meets your {targetProfitPercent}% target
         </div>
       )}

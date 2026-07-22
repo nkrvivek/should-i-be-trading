@@ -100,7 +100,7 @@ export default function InstitutionalContent() {
                     alignItems: "center",
                     justifyContent: "space-between",
                     padding: "10px 12px",
-                    background: isSelected ? "rgba(0, 214, 79, 0.08)" : "transparent",
+                    background: isSelected ? "rgba(0, 200, 5, 0.08)" : "transparent",
                     border: "none",
                     borderBottom: "1px solid var(--border-dim)",
                     borderLeft: isSelected ? "3px solid var(--signal-core)" : "3px solid transparent",
@@ -233,8 +233,8 @@ export default function InstitutionalContent() {
               <div
                 style={{
                   padding: "10px 12px",
-                  background: "rgba(0, 214, 79, 0.05)",
-                  border: "1px solid rgba(0, 214, 79, 0.2)",
+                  background: "rgba(0, 200, 5, 0.05)",
+                  border: "1px solid rgba(0, 200, 5, 0.2)",
                   borderRadius: 4,
                 }}
               >

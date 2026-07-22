@@ -105,7 +105,7 @@ export function AlertsPage() {
                           fontSize: 12,
                           cursor: "pointer",
                           border: formDirection === dir ? "1px solid var(--signal-core)" : "1px solid var(--border-dim)",
-                          background: formDirection === dir ? "rgba(0, 214, 79, 0.1)" : "transparent",
+                          background: formDirection === dir ? "rgba(0, 200, 5, 0.1)" : "transparent",
                           color: formDirection === dir ? "var(--signal-core)" : "var(--text-muted)",
                         }}
                       >

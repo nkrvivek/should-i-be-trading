@@ -80,7 +80,7 @@ export function StrategiesPanel({ positions, orders, onSimulate, onExecute }: {
                 fontSize: 10,
                 padding: "1px 6px",
                 borderRadius: 8,
-                background: t.key === "washsale" ? "var(--negative, #ef4444)" : "var(--signal-core, #00D64F)",
+                background: t.key === "washsale" ? "var(--negative, #ef4444)" : "var(--signal-core, #00c805)",
                 color: "#fff",
                 fontWeight: 600,
               }}>

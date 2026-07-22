@@ -9,7 +9,7 @@ import type {
 } from "../../lib/compositeTradeScore";
 
 const verdictColors: Record<CompositeTradeVerdict, { bg: string; color: string }> = {
-  TRADE: { bg: "rgba(0, 214, 79, 0.15)", color: "var(--positive)" },
+  TRADE: { bg: "rgba(0, 200, 5, 0.15)", color: "var(--positive)" },
   CAUTION: { bg: "rgba(245, 166, 35, 0.15)", color: "var(--warning)" },
   AVOID: { bg: "rgba(232, 93, 108, 0.15)", color: "var(--negative)" },
 };

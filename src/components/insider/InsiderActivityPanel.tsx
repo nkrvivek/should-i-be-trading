@@ -179,7 +179,7 @@ function SummaryView({ data }: { data: InsiderActivitySummary }) {
               style={{
                 padding: "2px 8px", borderRadius: 999,
                 border: `1px solid ${period === p ? "var(--signal-core)" : "var(--border-dim)"}`,
-                background: period === p ? "rgba(0, 214, 79, 0.1)" : "transparent",
+                background: period === p ? "rgba(0, 200, 5, 0.1)" : "transparent",
                 fontFamily: "var(--font-mono)", fontSize: 11,
                 color: period === p ? "var(--signal-core)" : "var(--text-muted)",
                 cursor: "pointer", fontWeight: period === p ? 600 : 400,

@@ -29,87 +29,90 @@
   --transition-fast: 150ms var(--ease-out);
   --transition-base: 200ms var(--ease-out);
 
-  /* Radii — consistent scale for the surfaces in this design pass.
-     NOTE: most existing panels/chips elsewhere in the app still use their prior
-     one-off radii (4/6/8px) — left untouched outside the core-surface scope of
-     this pass (see PR notes). */
-  --radius-sm: 10px;
-  --radius-md: 14px;
+  /* Radii — design v2 (RH-style stark scale): small controls stay tight,
+     panels get a bit more air, pills are fully round. */
+  --radius-sm: 4px;
+  --radius-md: 8px;
   --radius-lg: 16px;
-  --radius-pill: 999px;
+  --radius-pill: 9999px;
 }
 
 [data-theme="dark"] {
-  --bg-base: #0a0f14;
-  --bg-panel: #0f1519;
-  --bg-panel-raised: #151c22;
-  --bg-hover: #151c22;
-  --border-dim: #1e293b;
-  --border-focus: #00D64F;
-  --text-primary: #e2e8f0;
-  --text-secondary: #94a3b8;
-  --text-muted: #475569;
-  /* Accent green — Robinhood-family, tuned for AA: dark near-black text on this
-     fill contrasts ~9.8:1; as standalone text on --bg-base it contrasts ~9.8:1. */
-  --accent-bg: #00D64F;
-  --accent-text: #0a0f14;
-  --scrollbar-track: #0a0f14;
-  --scrollbar-thumb: #1e293b;
-  --positive: #00D64F;
+  /* Design v2: pure black background, stark contrast is the whole point —
+     not a near-black gray. Panels sit barely above it at #121212. */
+  --bg-base: #000000;
+  --bg-panel: #121212;
+  --bg-panel-raised: #121212;
+  --bg-hover: #1a1a1a;
+  --border-dim: #1a1a1a;
+  --border-focus: #00c805;
+  --text-primary: #ffffff;
+  --text-secondary: #999999;
+  --text-muted: #666666;
+  /* Accent green — flat #00c805 both themes per design v2 spec. Black text on
+     this fill contrasts ~13:1; as standalone text on pure black it's ~9.7:1. */
+  --accent-bg: #00c805;
+  --accent-text: #000000;
+  --scrollbar-track: #000000;
+  --scrollbar-thumb: #1a1a1a;
+  --positive: #00c805;
   --negative: #E85D6C;
   --warning: #F5A623;
   --info: #8B5CF6;
-  --signal-core: #00D64F;
+  --signal-core: #00c805;
   --signal-strong: #3BE87A;
   --signal-deep: #009A3D;
   --dislocation: #D946A8;
   --extreme: #8B5CF6;
   --fault: #E85D6C;
   --neutral: #94a3b8;
-  --chart-grid: rgba(148, 163, 184, 0.16);
-  --chart-axis: #1e293b;
-  --chart-tooltip-bg: #0f1519;
-  --chart-tooltip-border: #1e293b;
-  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.4);
+  --chart-grid: rgba(148, 163, 184, 0.12);
+  --chart-axis: #1a1a1a;
+  --chart-tooltip-bg: #121212;
+  --chart-tooltip-border: #1a1a1a;
+  /* No shadow stacking on flat dark surfaces — hairline borders carry the
+     separation instead (design v2: kill border+shadow+radius triple-stack). */
+  --shadow-card: none;
   --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.45);
 }
 
 [data-theme="light"] {
-  --bg-base: #FFFFFF;
-  --bg-panel: #FFFFFF;
-  --bg-panel-raised: #F1F5F9;
-  --bg-hover: #f1f5f9;
-  --border-dim: #BBBFBF;
-  --border-focus: #00D64F;
+  /* Design v2: pure white background; cards are white too, separated only by
+     a hairline border — not a shaded gray panel. */
+  --bg-base: #ffffff;
+  --bg-panel: #ffffff;
+  --bg-panel-raised: #ffffff;
+  --bg-hover: #f7f7f7;
+  --border-dim: #f0f0f0;
+  --border-focus: #00c805;
   --text-primary: #000000;
-  --text-secondary: #636363;
-  --text-muted: #878787;
-  /* Same accent value as dark mode (one accent green, not per-theme).
-     --accent-text was white here before, which only contrasts ~2.5:1 against
-     this green (fails AA) — switched to the same near-black used on dark
-     mode's fill, which contrasts ~9.8:1 regardless of theme. */
-  --accent-bg: #00D64F;
-  --accent-text: #0a0f14;
-  --scrollbar-track: #FFFFFF;
-  --scrollbar-thumb: #BBBFBF;
-  /* --positive is darkened relative to --accent-bg because it's read as text
-     directly on white (contrast ~5.4:1 vs ~2.3:1 for the brighter accent). */
-  --positive: #067A3D;
+  --text-secondary: #4d4d4d;
+  --text-muted: #8c8c8c;
+  /* Same flat accent value as dark mode — one accent green, not per-theme. */
+  --accent-bg: #00c805;
+  --accent-text: #000000;
+  --scrollbar-track: #ffffff;
+  --scrollbar-thumb: #f0f0f0;
+  /* --positive is darkened relative to --accent-bg (hue-matched) because it's
+     read as text directly on white — raw #00c805 on white is ~2.3:1 (fails
+     AA); this darker green is ~5.3:1. Same fix the v1 team already applied
+     to --positive for the same reason, just re-tuned to the new hue. */
+  --positive: #067d05;
   --negative: #D4183D;
   --warning: #D4910A;
   --info: #7C3AED;
-  --signal-core: #00D64F;
+  --signal-core: #00c805;
   --signal-strong: #059669;
   --signal-deep: #04703A;
   --dislocation: #C026A0;
   --extreme: #7C3AED;
   --fault: #D4183D;
   --neutral: #878787;
-  --chart-grid: rgba(100, 116, 139, 0.22);
-  --chart-axis: #BBBFBF;
-  --chart-tooltip-bg: #FFFFFF;
-  --chart-tooltip-border: #BBBFBF;
-  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06), 0 1px 1px rgba(15, 23, 42, 0.04);
+  --chart-grid: rgba(100, 116, 139, 0.16);
+  --chart-axis: #f0f0f0;
+  --chart-tooltip-bg: #ffffff;
+  --chart-tooltip-border: #f0f0f0;
+  --shadow-card: none;
   --shadow-elevated: 0 12px 32px rgba(15, 23, 42, 0.12);
 }
 
@@ -214,6 +217,85 @@ body {
   border: 1px solid var(--border-dim);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-card);
+}
+
+/* ── Design v2: edge-to-edge list rows ────────────────────
+   The RH signature — data surfaces are hairline-divided rows, not bordered
+   card grids. A row is left label/sublabel + right-aligned number/delta. */
+.list-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.list-section-header {
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  padding: 4px 4px 8px;
+}
+
+.list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 4px;
+  border-bottom: 1px solid var(--border-dim);
+}
+
+button.list-row {
+  width: 100%;
+  background: none;
+  border: none;
+  border-bottom: 1px solid var(--border-dim);
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: background-color var(--transition-fast);
+}
+button.list-row:hover { background: var(--bg-hover); }
+
+.list-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.list-row-label {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.list-row-sublabel {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.list-row-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.list-row-number {
+  font-family: var(--font-sans);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.list-row-delta {
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 600;
 }
 
 @media (prefers-reduced-motion: reduce) {

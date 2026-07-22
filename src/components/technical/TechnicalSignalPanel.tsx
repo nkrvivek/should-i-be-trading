@@ -343,7 +343,7 @@ function SRRow({ level, currentPrice }: { level: SRLevel; currentPrice: number }
         <span style={{
           fontFamily: "var(--font-mono)", fontSize: 10, fontWeight: 600,
           padding: "2px 6px", borderRadius: 999, color,
-          background: level.type === "support" ? "rgba(5, 173, 152, 0.1)" : "rgba(232, 93, 108, 0.1)",
+          background: level.type === "support" ? "rgba(0, 214, 79, 0.1)" : "rgba(232, 93, 108, 0.1)",
           border: `1px solid ${color}`,
         }}>
           {level.type === "support" ? "SUP" : "RES"}

@@ -140,7 +140,7 @@ export function ColumnMapperDialog({ headers, initialMapping, onApply, onCancel 
             ...monoStyle,
             fontSize: 13,
             padding: "8px 20px",
-            background: symbolMapped ? "var(--signal-core, #05AD98)" : "var(--border-dim)",
+            background: symbolMapped ? "var(--signal-core, #00D64F)" : "var(--border-dim)",
             color: "#fff",
             border: "none",
             borderRadius: 4,

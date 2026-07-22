@@ -57,7 +57,7 @@ export function WatchlistManager() {
               fontSize: 12,
               fontWeight: w.id === activeId ? 600 : 400,
               color: w.id === activeId ? "var(--signal-core)" : "var(--text-muted)",
-              background: w.id === activeId ? "rgba(5, 173, 152, 0.1)" : "transparent",
+              background: w.id === activeId ? "rgba(0, 214, 79, 0.1)" : "transparent",
               border: `1px solid ${w.id === activeId ? "var(--signal-core)" : "var(--border-dim)"}`,
               borderRadius: 4,
               cursor: "pointer",

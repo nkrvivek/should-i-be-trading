@@ -403,8 +403,8 @@ function EmptyState({ text }: { text: string }) {
 const heroStyle: React.CSSProperties = {
   padding: 16,
   borderRadius: 8,
-  border: "1px solid rgba(5, 173, 152, 0.25)",
-  background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
+  border: "1px solid rgba(0, 214, 79, 0.25)",
+  background: "linear-gradient(180deg, rgba(0, 214, 79, 0.08), rgba(0, 214, 79, 0.02))",
 };
 
 const metricCardStyle: React.CSSProperties = {
@@ -476,7 +476,7 @@ const primaryBtnStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: 6,
   border: "1px solid var(--signal-core)",
-  background: "rgba(5, 173, 152, 0.12)",
+  background: "rgba(0, 214, 79, 0.12)",
   color: "var(--signal-core)",
   cursor: "pointer",
 };
@@ -535,7 +535,7 @@ function formatThesisOutcome(outcome: "worked" | "mixed" | "failed"): string {
 
 function executionQualityStyle(grade: "A" | "B" | "C"): { bg: string; fg: string } {
   if (grade === "A") {
-    return { bg: "rgba(5, 173, 152, 0.14)", fg: "var(--positive)" };
+    return { bg: "rgba(0, 214, 79, 0.14)", fg: "var(--positive)" };
   }
   if (grade === "B") {
     return { bg: "rgba(245, 166, 35, 0.14)", fg: "var(--warning)" };
@@ -545,7 +545,7 @@ function executionQualityStyle(grade: "A" | "B" | "C"): { bg: string; fg: string
 
 function thesisOutcomeStyle(outcome: "worked" | "mixed" | "failed"): { bg: string; fg: string } {
   if (outcome === "worked") {
-    return { bg: "rgba(5, 173, 152, 0.14)", fg: "var(--positive)" };
+    return { bg: "rgba(0, 214, 79, 0.14)", fg: "var(--positive)" };
   }
   if (outcome === "mixed") {
     return { bg: "rgba(245, 166, 35, 0.14)", fg: "var(--warning)" };

@@ -22,8 +22,8 @@ export function WorkflowHandoffCard({
       style={{
         padding: 16,
         borderRadius: 8,
-        border: "1px solid rgba(5, 173, 152, 0.25)",
-        background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
+        border: "1px solid rgba(0, 214, 79, 0.25)",
+        background: "linear-gradient(180deg, rgba(0, 214, 79, 0.08), rgba(0, 214, 79, 0.02))",
       }}
     >
       <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 8 }}>
@@ -58,7 +58,7 @@ const primaryBtnStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: 6,
   border: "1px solid var(--signal-core)",
-  background: "rgba(5, 173, 152, 0.12)",
+  background: "rgba(0, 214, 79, 0.12)",
   color: "var(--signal-core)",
   cursor: "pointer",
 };

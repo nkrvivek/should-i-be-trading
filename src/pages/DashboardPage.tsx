@@ -127,9 +127,9 @@ export function DashboardPage() {
             alignItems: "center",
             gap: 8,
             padding: "6px 16px",
-            background: "rgba(5, 173, 152, 0.08)",
-            border: "1px solid rgba(5, 173, 152, 0.2)",
-            borderRadius: 4,
+            background: "rgba(0, 214, 79, 0.08)",
+            border: "1px solid rgba(0, 214, 79, 0.2)",
+            borderRadius: "var(--radius-md)",
             fontFamily: "var(--font-mono)",
             fontSize: 13,
             color: "var(--signal-core)",
@@ -202,12 +202,12 @@ export function DashboardPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                   {marketScore.categories.map((cat) => (
                     <div key={cat.name} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                      <span style={{ ...mono, fontSize: 11, color: "var(--text-muted)" }}>{cat.name}</span>
+                      <span style={{ ...mono, fontSize: 11, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{cat.name}</span>
                       <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 80 }}>
-                        <div style={{ flex: 1, height: 4, borderRadius: 2, background: "rgba(148, 163, 184, 0.15)", overflow: "hidden" }}>
-                          <div style={{ width: `${Math.min(cat.score, 100)}%`, height: "100%", borderRadius: 2, background: cat.score >= 60 ? "var(--signal-core)" : cat.score >= 40 ? "var(--warning)" : "var(--fault)" }} />
+                        <div style={{ flex: 1, height: 4, borderRadius: "var(--radius-pill)", background: "rgba(148, 163, 184, 0.15)", overflow: "hidden" }}>
+                          <div style={{ width: `${Math.min(cat.score, 100)}%`, height: "100%", borderRadius: "var(--radius-pill)", background: cat.score >= 60 ? "var(--signal-core)" : cat.score >= 40 ? "var(--warning)" : "var(--fault)", transition: "width var(--transition-base)" }} />
                         </div>
-                        <span style={{ ...mono, fontSize: 11, fontWeight: 700, color: cat.score >= 60 ? "var(--signal-core)" : cat.score >= 40 ? "var(--warning)" : "var(--fault)", minWidth: 24, textAlign: "right" }}>{cat.score}</span>
+                        <span style={{ ...mono, fontVariantNumeric: "tabular-nums", fontSize: 11, fontWeight: 700, color: cat.score >= 60 ? "var(--signal-core)" : cat.score >= 40 ? "var(--warning)" : "var(--fault)", minWidth: 24, textAlign: "right" }}>{cat.score}</span>
                       </div>
                     </div>
                   ))}
@@ -221,7 +221,7 @@ export function DashboardPage() {
               <div style={{ ...mono, fontSize: 11, fontWeight: 700, color: "var(--signal-core)", letterSpacing: "0.08em", marginBottom: 6 }}>
                 TODAY&apos;S STANCE
               </div>
-              <div style={{ ...mono, fontSize: 22, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
+              <div className="heading-tight" style={{ ...mono, fontSize: 26, fontWeight: 700, color: "var(--text-primary)", marginBottom: 4 }}>
                 {stance}
               </div>
               <div style={{ ...mono, fontSize: 12, color: "var(--text-muted)", marginBottom: 8 }}>
@@ -281,11 +281,12 @@ export function DashboardPage() {
                         fontSize: 11,
                         fontWeight: 700,
                         padding: "5px 9px",
-                        borderRadius: 999,
+                        borderRadius: "var(--radius-pill)",
                         border: `1px solid ${active ? "var(--signal-core)" : "var(--border-dim)"}`,
-                        background: active ? "rgba(5, 173, 152, 0.12)" : "transparent",
+                        background: active ? "rgba(0, 214, 79, 0.12)" : "transparent",
                         color: active ? "var(--signal-core)" : "var(--text-secondary)",
                         cursor: "pointer",
+                        transition: "border-color var(--transition-fast), background-color var(--transition-fast)",
                       }}
                     >
                       {option.label}
@@ -349,7 +350,7 @@ export function DashboardPage() {
                       </div>
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ ...mono, fontSize: 18, fontWeight: 700, color: "var(--text-primary)" }}>{row.overall}</div>
+                      <div className="heading-tight" style={{ ...mono, fontVariantNumeric: "tabular-nums", fontSize: 20, fontWeight: 700, color: "var(--text-primary)" }}>{row.overall}</div>
                       <TradeVerdictBadgeWithScore symbol={row.symbol} size="sm" showScore={false} inputs={{ stockScoreComposite: row.stockScore }} />
                     </div>
                   </button>
@@ -545,10 +546,11 @@ function getTodayActionBody(profile: WorkflowProfile, status: string, stance: st
 }
 
 const heroCardStyle: React.CSSProperties = {
-  border: "1px solid rgba(5, 173, 152, 0.25)",
-  borderRadius: 8,
+  border: "1px solid rgba(0, 214, 79, 0.25)",
+  borderRadius: "var(--radius-lg)",
   padding: 16,
-  background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
+  background: "linear-gradient(180deg, rgba(0, 214, 79, 0.08), rgba(0, 214, 79, 0.02))",
+  boxShadow: "var(--shadow-card)",
 };
 
 const actionCardStyle: React.CSSProperties = {
@@ -556,9 +558,10 @@ const actionCardStyle: React.CSSProperties = {
   flexDirection: "column",
   gap: 10,
   padding: 12,
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
+  boxShadow: "var(--shadow-card)",
 };
 
 const focusRowStyle: React.CSSProperties = {
@@ -567,7 +570,7 @@ const focusRowStyle: React.CSSProperties = {
   gap: 12,
   alignItems: "center",
   padding: 12,
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
 };
@@ -580,10 +583,11 @@ const listRowButtonStyle: React.CSSProperties = {
   alignItems: "center",
   textAlign: "left",
   padding: 12,
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
   cursor: "pointer",
+  transition: "border-color var(--transition-fast), background-color var(--transition-fast)",
 };
 
 const primaryBtnStyle: React.CSSProperties = {
@@ -591,11 +595,12 @@ const primaryBtnStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
   padding: "8px 12px",
-  borderRadius: 6,
+  borderRadius: "var(--radius-pill)",
   border: "1px solid var(--signal-core)",
-  background: "rgba(5, 173, 152, 0.12)",
+  background: "rgba(0, 214, 79, 0.12)",
   color: "var(--signal-core)",
   cursor: "pointer",
+  transition: "background-color var(--transition-fast)",
 };
 
 const secondaryBtnStyle: React.CSSProperties = {
@@ -603,23 +608,26 @@ const secondaryBtnStyle: React.CSSProperties = {
   fontSize: 12,
   fontWeight: 700,
   padding: "8px 12px",
-  borderRadius: 6,
+  borderRadius: "var(--radius-pill)",
   border: "1px solid var(--border-dim)",
   background: "transparent",
   color: "var(--text-secondary)",
   cursor: "pointer",
+  transition: "border-color var(--transition-fast), background-color var(--transition-fast)",
 };
 
 const presetCardStyle: React.CSSProperties = {
   padding: 12,
-  borderRadius: 8,
+  borderRadius: "var(--radius-lg)",
   border: "1px solid var(--border-dim)",
   background: "var(--bg-panel-raised)",
+  boxShadow: "var(--shadow-card)",
 };
 
 const marketAccentCardStyle: React.CSSProperties = {
   padding: 12,
-  borderRadius: 8,
-  border: "1px solid rgba(5, 173, 152, 0.2)",
-  background: "linear-gradient(180deg, rgba(5, 173, 152, 0.06), rgba(5, 173, 152, 0.01))",
+  borderRadius: "var(--radius-lg)",
+  border: "1px solid rgba(0, 214, 79, 0.2)",
+  background: "linear-gradient(180deg, rgba(0, 214, 79, 0.06), rgba(0, 214, 79, 0.01))",
+  boxShadow: "var(--shadow-card)",
 };

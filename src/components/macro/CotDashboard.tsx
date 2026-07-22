@@ -126,8 +126,8 @@ export function CotDashboard() {
       <div
         style={{
           padding: "10px 12px",
-          background: "rgba(5, 173, 152, 0.05)",
-          border: "1px solid rgba(5, 173, 152, 0.2)",
+          background: "rgba(0, 214, 79, 0.05)",
+          border: "1px solid rgba(0, 214, 79, 0.2)",
           borderRadius: 4,
         }}
       >

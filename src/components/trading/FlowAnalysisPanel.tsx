@@ -98,7 +98,7 @@ export default function FlowAnalysisPanel() {
           )}
 
           {/* Supports */}
-          <FlowSection title="Flow Supports Position" entries={data.supports} color="var(--signal-core, #05AD98)" emptyText="No supporting flow detected" />
+          <FlowSection title="Flow Supports Position" entries={data.supports} color="var(--signal-core, #00D64F)" emptyText="No supporting flow detected" />
 
           {/* Against */}
           <FlowSection title="Flow Against Position" entries={data.against} color="var(--fault, #E85D6C)" emptyText="No opposing flow detected" />
@@ -146,7 +146,7 @@ function FlowSection({ title, entries, color, emptyText }: { title: string; entr
                     borderRadius: 4,
                     fontSize: 12,
                     fontWeight: 600,
-                    background: e.flow_class === "accum" ? "rgba(5, 173, 152, 0.1)" : e.flow_class === "distrib" ? "rgba(232, 93, 108, 0.1)" : "#f1f5f9",
+                    background: e.flow_class === "accum" ? "rgba(0, 214, 79, 0.1)" : e.flow_class === "distrib" ? "rgba(232, 93, 108, 0.1)" : "#f1f5f9",
                     color: e.flow_class === "accum" ? "var(--signal-core)" : e.flow_class === "distrib" ? "var(--fault)" : "var(--text-secondary)",
                     border: `1px solid ${e.flow_class === "accum" ? "var(--signal-core)" : e.flow_class === "distrib" ? "var(--fault)" : "var(--border-dim)"}`,
                   }}>

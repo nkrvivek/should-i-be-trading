@@ -85,7 +85,7 @@ export default function CTAPanel() {
   const postureColor = (p: string) =>
     p.includes("HEAVY SHORT") ? "var(--fault, #E85D6C)"
     : p.includes("SHORT") ? "#f97316"
-    : p.includes("HEAVY LONG") ? "var(--signal-core, #05AD98)"
+    : p.includes("HEAVY LONG") ? "var(--signal-core, #00D64F)"
     : p.includes("LONG") ? "#22c55e"
     : "var(--text-secondary)";
 
@@ -172,7 +172,7 @@ export default function CTAPanel() {
                         <span style={{
                           padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600,
                           color: postureColor(l.posture),
-                          background: l.posture.includes("SHORT") ? "rgba(232, 93, 108, 0.1)" : l.posture.includes("LONG") ? "rgba(5, 173, 152, 0.1)" : "#f1f5f9",
+                          background: l.posture.includes("SHORT") ? "rgba(232, 93, 108, 0.1)" : l.posture.includes("LONG") ? "rgba(0, 214, 79, 0.1)" : "#f1f5f9",
                         }}>
                           {l.posture}
                         </span>

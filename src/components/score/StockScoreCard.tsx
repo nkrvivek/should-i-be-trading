@@ -58,7 +58,7 @@ export function StockScoreCard({ score }: Props) {
               fontFamily: "var(--font-mono)",
               fontSize: 9,
               color: "var(--signal-core)",
-              background: "rgba(5, 173, 152, 0.12)",
+              background: "rgba(0, 214, 79, 0.12)",
               padding: "1px 6px",
               borderRadius: 3,
               fontWeight: 600,
@@ -91,7 +91,7 @@ export function StockScoreCard({ score }: Props) {
         <div
           style={{
             padding: "8px 16px",
-            background: "rgba(5, 173, 152, 0.05)",
+            background: "rgba(0, 214, 79, 0.05)",
             borderBottom: "1px solid var(--border-dim)",
             fontFamily: "var(--font-sans)",
             fontSize: 12,

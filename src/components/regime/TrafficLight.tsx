@@ -5,9 +5,9 @@ type Props = {
 };
 
 const signalConfig: Record<TrafficSignal, { color: string; label: string; glow: string }> = {
-  TRADE: { color: "var(--positive)", label: "TRADE", glow: "0 0 40px rgba(5, 173, 152, 0.4)" },
-  CAUTION: { color: "var(--warning)", label: "CAUTION", glow: "0 0 40px rgba(245, 166, 35, 0.4)" },
-  NO_TRADE: { color: "var(--negative)", label: "NO TRADE", glow: "0 0 40px rgba(232, 93, 108, 0.4)" },
+  TRADE: { color: "var(--positive)", label: "TRADE", glow: "0 0 24px rgba(0, 214, 79, 0.28)" },
+  CAUTION: { color: "var(--warning)", label: "CAUTION", glow: "0 0 24px rgba(245, 166, 35, 0.28)" },
+  NO_TRADE: { color: "var(--negative)", label: "NO TRADE", glow: "0 0 24px rgba(232, 93, 108, 0.28)" },
 };
 
 export function TrafficLight({ verdict }: Props) {
@@ -23,7 +23,8 @@ export function TrafficLight({ verdict }: Props) {
         padding: "24px 32px",
         background: "var(--bg-panel)",
         border: "1px solid var(--border-dim)",
-        borderRadius: 4,
+        borderRadius: "var(--radius-lg)",
+        boxShadow: "var(--shadow-card)",
       }}
     >
       {/* Signal indicator */}
@@ -54,12 +55,12 @@ export function TrafficLight({ verdict }: Props) {
 
       {/* Label */}
       <span
+        className="heading-tight"
         style={{
-          fontFamily: "var(--font-mono)",
+          fontFamily: "var(--font-sans)",
           fontSize: 28,
-          fontWeight: 600,
+          fontWeight: 700,
           color: config.color,
-          letterSpacing: "0.05em",
         }}
       >
         {config.label}
@@ -68,7 +69,8 @@ export function TrafficLight({ verdict }: Props) {
       {/* Confidence */}
       <span
         style={{
-          fontFamily: "var(--font-mono)",
+          fontFamily: "var(--font-sans)",
+          fontVariantNumeric: "tabular-nums",
           fontSize: 13,
           color: "var(--text-muted)",
         }}
@@ -113,7 +115,7 @@ export function TrafficLight({ verdict }: Props) {
           marginTop: 8,
           padding: "8px 12px",
           background: "var(--bg-panel-raised)",
-          borderRadius: 4,
+          borderRadius: "var(--radius-sm)",
           border: `1px solid ${vixRegimeColor(verdict.vixRegime.action)}22`,
         }}
       >

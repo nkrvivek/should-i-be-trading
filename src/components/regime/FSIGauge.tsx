@@ -8,7 +8,7 @@ import type { FSIResult } from "../../lib/regimeScoring";
 
 function labelColor(label: string): string {
   switch (label) {
-    case "Healthy": return "#05AD98";
+    case "Healthy": return "#00D64F";
     case "Cautious": return "#F5A623";
     case "Stressed": return "#E85D6C";
     case "Critical": return "#dc2626";
@@ -67,7 +67,7 @@ export function FSIGauge({ fsi }: Props) {
           style={{
             width: `${fsi.score}%`,
             height: "100%",
-            background: `linear-gradient(90deg, #dc2626, #E85D6C, #F5A623, #05AD98)`,
+            background: `linear-gradient(90deg, #dc2626, #E85D6C, #F5A623, #00D64F)`,
             borderRadius: 3,
             transition: "width 0.5s ease",
           }}

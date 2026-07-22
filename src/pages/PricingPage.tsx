@@ -242,7 +242,7 @@ export function PricingContent() {
         </div>
 
         {/* Billing toggle */}
-        <div style={{ display: "inline-flex", background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ display: "inline-flex", background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius-pill)", overflow: "hidden" }}>
           <button
             onClick={() => setInterval("month")}
             style={{
@@ -280,9 +280,9 @@ export function PricingContent() {
         <div style={{
           padding: "12px 20px",
           marginBottom: 16,
-          background: "rgba(5, 173, 152, 0.1)",
+          background: "rgba(0, 214, 79, 0.1)",
           border: "1px solid var(--positive)",
-          borderRadius: 4,
+          borderRadius: "var(--radius-md)",
           fontFamily: "var(--font-mono)",
           fontSize: 14,
           color: "var(--positive)",
@@ -305,7 +305,8 @@ export function PricingContent() {
                 padding: 24,
                 background: "var(--bg-panel)",
                 border: `${tier.highlighted ? "2px" : "1px"} solid ${tier.highlighted ? "var(--signal-core)" : "var(--border-dim)"}`,
-                borderRadius: 4,
+                borderRadius: "var(--radius-lg)",
+                boxShadow: tier.highlighted ? "var(--shadow-elevated)" : "var(--shadow-card)",
                 position: "relative",
               }}
             >
@@ -321,7 +322,7 @@ export function PricingContent() {
                   fontFamily: "var(--font-mono)",
                   fontSize: 11,
                   fontWeight: 600,
-                  borderRadius: 999,
+                  borderRadius: "var(--radius-pill)",
                   letterSpacing: "0.05em",
                 }}>
                   MOST POPULAR
@@ -333,7 +334,16 @@ export function PricingContent() {
                   {tier.name}
                 </div>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 4, marginBottom: 4 }}>
-                  <span style={{ fontFamily: "var(--font-mono)", fontSize: 32, fontWeight: 600, color: tier.highlighted ? "var(--signal-core)" : "var(--text-primary)" }}>
+                  <span
+                    className="heading-tight"
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      fontVariantNumeric: "tabular-nums",
+                      fontSize: 36,
+                      fontWeight: 700,
+                      color: tier.highlighted ? "var(--signal-core)" : "var(--text-primary)",
+                    }}
+                  >
                     {formatPrice(tier)}
                   </span>
                   {tier.tier !== "free" && (
@@ -372,13 +382,14 @@ export function PricingContent() {
                   background: isCurrent ? "var(--bg-panel-raised)" : tier.highlighted ? "var(--signal-core)" : "var(--bg-panel-raised)",
                   color: isCurrent ? "var(--text-muted)" : tier.highlighted ? "var(--bg-base)" : "var(--text-primary)",
                   border: `1px solid ${tier.highlighted ? "var(--signal-core)" : "var(--border-dim)"}`,
-                  borderRadius: 4,
+                  borderRadius: "var(--radius-pill)",
                   fontFamily: "var(--font-mono)",
                   fontSize: 13,
                   fontWeight: 600,
                   cursor: isCurrent ? "default" : "pointer",
                   letterSpacing: "0.03em",
                   opacity: loading === tier.tier ? 0.6 : 1,
+                  transition: "background-color var(--transition-fast), opacity var(--transition-fast)",
                 }}
               >
                 {loading === tier.tier ? "REDIRECTING..." : ctaLabel(tier)}
@@ -394,7 +405,7 @@ export function PricingContent() {
         padding: 16,
         background: "var(--bg-panel)",
         border: "1px solid var(--border-dim)",
-        borderRadius: 4,
+        borderRadius: "var(--radius-md)",
         textAlign: "center",
       }}>
         <div style={{ fontFamily: "var(--font-sans)", fontSize: 12, color: "var(--text-muted)", lineHeight: 1.6 }}>
@@ -428,7 +439,7 @@ export function PricingContent() {
 
 function FaqItem({ q, a }: { q: string; a: string }) {
   return (
-    <div style={{ padding: 12, background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: 4 }}>
+    <div style={{ padding: 12, background: "var(--bg-panel)", border: "1px solid var(--border-dim)", borderRadius: "var(--radius-md)" }}>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 14, fontWeight: 500, color: "var(--text-primary)", marginBottom: 4 }}>{q}</div>
       <div style={{ fontFamily: "var(--font-sans)", fontSize: 13, color: "var(--text-muted)", lineHeight: 1.5 }}>{a}</div>
     </div>

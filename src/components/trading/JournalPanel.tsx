@@ -160,7 +160,7 @@ export function JournalPanel() {
               />
             </label>
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <button onClick={saveReview} style={{ ...monoStyle, fontSize: 12, fontWeight: 700, padding: "8px 12px", border: "1px solid var(--signal-core)", borderRadius: 6, background: "rgba(5, 173, 152, 0.12)", color: "var(--signal-core)", cursor: "pointer" }}>
+              <button onClick={saveReview} style={{ ...monoStyle, fontSize: 12, fontWeight: 700, padding: "8px 12px", border: "1px solid var(--signal-core)", borderRadius: 6, background: "rgba(0, 214, 79, 0.12)", color: "var(--signal-core)", cursor: "pointer" }}>
                 SAVE REVIEW
               </button>
               <button onClick={() => setReviewingId(null)} style={{ ...monoStyle, fontSize: 12, fontWeight: 700, padding: "8px 12px", border: "1px solid var(--border-dim)", borderRadius: 6, background: "transparent", color: "var(--text-secondary)", cursor: "pointer" }}>

@@ -67,7 +67,7 @@ const stripPrimaryButtonStyle: React.CSSProperties = {
   padding: "8px 12px",
   borderRadius: 6,
   border: "1px solid var(--signal-core)",
-  background: "rgba(5, 173, 152, 0.12)",
+  background: "rgba(0, 214, 79, 0.12)",
   color: "var(--signal-core)",
   cursor: "pointer",
 };
@@ -289,10 +289,10 @@ export default function TradingPage() {
                       borderRadius: 999,
                       background: connError
                         ? "rgba(234, 179, 8, 0.12)"
-                        : "rgba(5, 173, 152, 0.12)",
+                        : "rgba(0, 214, 79, 0.12)",
                       color: connError
                         ? "var(--warning, #f59e0b)"
-                        : "var(--signal-core, #05AD98)",
+                        : "var(--signal-core, #00D64F)",
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
@@ -388,8 +388,8 @@ export default function TradingPage() {
           <div style={{
             padding: 14,
             borderRadius: 8,
-            border: "1px solid rgba(5, 173, 152, 0.25)",
-            background: "linear-gradient(180deg, rgba(5, 173, 152, 0.08), rgba(5, 173, 152, 0.02))",
+            border: "1px solid rgba(0, 214, 79, 0.25)",
+            background: "linear-gradient(180deg, rgba(0, 214, 79, 0.08), rgba(0, 214, 79, 0.02))",
           }}>
             <div style={{ ...monoStyle, fontSize: 11, color: "var(--signal-core)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6 }}>
               ACTIVE TICKER
@@ -431,7 +431,7 @@ export default function TradingPage() {
                   padding: "8px 12px",
                   borderRadius: 999,
                   border: `1px solid ${isActive ? "var(--signal-core)" : "var(--border-dim)"}`,
-                  background: isActive ? "rgba(5, 173, 152, 0.12)" : "transparent",
+                  background: isActive ? "rgba(0, 214, 79, 0.12)" : "transparent",
                   color: isActive ? "var(--signal-core)" : "var(--text-secondary)",
                   cursor: "pointer",
                   textTransform: "uppercase",
@@ -474,7 +474,7 @@ export default function TradingPage() {
                 padding: "8px 12px",
                 borderRadius: 6,
                 border: "1px solid var(--signal-core)",
-                background: "rgba(5, 173, 152, 0.12)",
+                background: "rgba(0, 214, 79, 0.12)",
                 color: "var(--signal-core)",
                 cursor: "pointer",
               }}

@@ -225,7 +225,7 @@ export function TierManager() {
       {success && (
         <div style={{
           padding: "12px 16px",
-          background: "rgba(5, 173, 152, 0.1)",
+          background: "rgba(0, 214, 79, 0.1)",
           border: "1px solid var(--positive)",
           borderRadius: 4,
           fontFamily: "var(--font-mono)",

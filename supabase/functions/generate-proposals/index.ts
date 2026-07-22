@@ -48,6 +48,8 @@ import {
 import {
   getSnapTradePositions,
   getSnapTradeBalances,
+  isOptionPosition,
+  countBrokerShortCallsByTicker,
   type SnapTradePositionRaw,
 } from "../_shared/snaptradeClient.ts";
 import { tradierStrikeSelector, fetchTradierQuote } from "../_shared/tradierClient.ts";
@@ -81,13 +83,13 @@ async function getUserTier(supabase: ReturnType<typeof createClient>, userId: st
 }
 
 // ── SnapTrade position -> pure EquityHolding mapping ────────────────────
-
-/** SnapTrade option positions carry a "oo" (option) symbol.type.code —
- * everything else (common stock "cs", ETPs "et", etc.) is treated as an
- * equity holding for v1. Covered calls only make sense on equities/ETPs. */
-function isOptionPosition(p: SnapTradePositionRaw): boolean {
-  return p.symbol?.symbol?.type?.code === "oo";
-}
+// isOptionPosition/countBrokerShortCallsByTicker now live in
+// _shared/snaptradeClient.ts (shared with proposal-action/index.ts's
+// pre-execution live re-check — see that file's verifyLiveCoverageBeforeExecute).
+// Positions are fetched WITH options included (never discarded) so the
+// broker's real short-call count feeds the coverage guard below — only
+// mapPositionsToHoldings itself filters options out, because an option
+// position is never an equity holding.
 
 function mapPositionsToHoldings(positions: SnapTradePositionRaw[]): EquityHolding[] {
   const holdings: EquityHolding[] = [];
@@ -509,6 +511,12 @@ Deno.serve(async (req) => {
       getSnapTradeBalances(snaptradeUserId, snaptradeUserSecret, accountId),
     ]);
     const holdings = mapPositionsToHoldings(positions);
+    // Broker's real option book — short calls already written, whether or
+    // not this app's own `proposals` table knows about them (manually
+    // written, via another client, or pre-dating this app). Fed into the
+    // candidate builder below and combined with the internal ledger via
+    // max() (see proposalEngine.ts's buildCoveredCallCandidates).
+    const brokerShortCallsByTicker = countBrokerShortCallsByTicker(positions);
     // Fails closed: if the balance endpoint doesn't return total equity, the
     // per-name risk cap gate (accountEquityUsd <= 0) rejects everything
     // rather than sizing risk against an unknown account value.
@@ -562,6 +570,7 @@ Deno.serve(async (req) => {
         today,
         strikeSelector: tradierStrikeSelector,
         earningsChecker: finnhubEarningsChecker,
+        brokerShortCallsByTicker,
       });
       candidates = result.candidates;
       rejectionsToRecord.push(...result.rejections);

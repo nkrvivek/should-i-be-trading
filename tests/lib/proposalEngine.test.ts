@@ -332,6 +332,48 @@ describe("buildCoveredCallCandidates (integration of gates + builder)", () => {
     expect(candidates[0].earningsStatus).toBe("unknown");
   });
 
+  it("counts a broker-side short call the internal ledger doesn't know about (external/manual write)", async () => {
+    // No open_proposals row at all for this ticker — only the broker's real
+    // option book (via brokerShortCallsByTicker) knows a call is written.
+    // Coverage guard fix: this must still reduce available contracts, not
+    // just the internal proposals-table ledger.
+    const { candidates, rejections } = await buildCoveredCallCandidates({
+      holdings: [baseHolding], // 300 shares -> 3 lots
+      openProposals: [],
+      accountEquityUsd: 1_000_000,
+      today: TODAY,
+      brokerShortCallsByTicker: { AAPL: 2 },
+    });
+    expect(rejections).toHaveLength(0);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].contracts).toBe(1); // 3 lots - 2 broker-written = 1 available
+  });
+
+  it("takes the broker count over the internal ledger when the broker count is higher (max, not sum)", async () => {
+    const openProposals = [makeOpenProposal({ ticker: "AAPL", qty: 1, status: "approved" })];
+    const { candidates } = await buildCoveredCallCandidates({
+      holdings: [baseHolding],
+      openProposals, // internal ledger says 1 written
+      accountEquityUsd: 1_000_000,
+      today: TODAY,
+      brokerShortCallsByTicker: { AAPL: 2 }, // broker says 2 written — higher, wins
+    });
+    expect(candidates[0].contracts).toBe(1); // 3 lots - max(1, 2) = 1, never 3 - (1+2)
+  });
+
+  it("keeps the internal ledger as a floor when the broker feed lags (internal higher than broker)", async () => {
+    const openProposals = [makeOpenProposal({ ticker: "AAPL", qty: 3, status: "approved" })];
+    const { candidates, rejections } = await buildCoveredCallCandidates({
+      holdings: [baseHolding], // 3 lots, all 3 already written per the internal ledger
+      openProposals,
+      accountEquityUsd: 1_000_000,
+      today: TODAY,
+      brokerShortCallsByTicker: { AAPL: 0 }, // broker feed hasn't caught up yet
+    });
+    expect(candidates).toHaveLength(0);
+    expect(rejections[0].reason).toBe("no_coverage_available");
+  });
+
   it("passes ticker/spot/costBasis/today through to the injected strike selector", async () => {
     const calls: unknown[] = [];
     const { candidates } = await buildCoveredCallCandidates({

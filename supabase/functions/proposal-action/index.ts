@@ -38,15 +38,36 @@ import { BRAND } from "../_shared/email.ts";
 import { consumeRateLimit } from "../_shared/rateLimit.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import {
-  checkProposalTransition,
   verifyMagicLinkToken,
   mapBrokerStatusToExecutionStatus,
   buildOccSymbol,
+  transitionProposal,
+  writeStatusIfCurrently,
   type ProposalAction,
+  type ConditionalStatusUpdate,
 } from "../../../src/lib/proposalActions.ts";
-import { placeSnapTradeOrder, getSnapTradeOrderStatus } from "../_shared/snaptradeClient.ts";
+import {
+  placeSnapTradeOrder,
+  getSnapTradeOrderStatus,
+  getSnapTradePositions,
+  getSnapTradeBalances,
+  isOptionPosition,
+  countBrokerShortCallsByTicker,
+  type SnapTradePositionRaw,
+  type SnapTradeBalanceRaw,
+} from "../_shared/snaptradeClient.ts";
 import { fetchTradierQuote } from "../_shared/tradierClient.ts";
 import { selectFillPrice, type PaperFillSide } from "../../../src/lib/paperFillEngine.ts";
+import {
+  checkCoverageAvailable,
+  availableCoverageContracts,
+  openCoveredCallContracts,
+  openNameRiskUsd,
+  checkPerNameRiskCap,
+  LIVE_RISK_STATUSES,
+  PENDING_STATUSES,
+  type OpenProposal,
+} from "../../../src/lib/proposalEngine.ts";
 
 function getServiceClient() {
   return createClient(
@@ -82,15 +103,146 @@ interface ProposalRow {
   status: string;
   expires_at: string;
   mode: "paper" | "live";
+  collateral_usd: number | null;
+  max_loss_usd: number | null;
 }
 
 async function fetchProposal(svc: ServiceClient, proposalId: string): Promise<ProposalRow | null> {
   const { data } = await svc
     .from("proposals")
-    .select("id, user_id, ticker, structure, legs, qty, expiry, status, expires_at, mode")
+    .select("id, user_id, ticker, structure, legs, qty, expiry, status, expires_at, mode, collateral_usd, max_loss_usd")
     .eq("id", proposalId)
     .maybeSingle();
   return (data as ProposalRow | null) ?? null;
+}
+
+/** Single-authority conditional status write — real Supabase-backed
+ * implementation of transitionProposal/writeStatusIfCurrently's injected
+ * `updateStatus` (src/lib/proposalActions.ts). The conditional UPDATE's own
+ * WHERE clause (id + expected prior status) is what makes this race-safe:
+ * of two concurrent callers, at most one affects a row. `.select("id")`
+ * lets us read back whether a row actually matched, since Supabase's
+ * `.update()` doesn't otherwise report affected-row count. */
+function makeConditionalStatusUpdate(svc: ServiceClient): ConditionalStatusUpdate {
+  return async (proposalId, expectedPriorStatus, patch) => {
+    const { data, error } = await svc
+      .from("proposals")
+      .update(patch)
+      .eq("id", proposalId)
+      .eq("status", expectedPriorStatus)
+      .select("id");
+    if (error) {
+      throw new Error(`conditional status update failed: ${error.message}`);
+    }
+    return Array.isArray(data) && data.length > 0;
+  };
+}
+
+/** Fix for the coverage guard only ever seeing this app's own proposals
+ * table: re-fetch live positions/balances from the broker right before
+ * placing the order (proposal data can be up to 24h stale) and re-run the
+ * same coverage + per-name-risk gates generate-proposals used at staging
+ * time, against fresh numbers. Any mismatch (shares gone, coverage shrunk,
+ * an option already written since) fails the trade rather than placing it.
+ * Fails closed on a fetch error — "cannot verify" is never treated the same
+ * as "verified fine". Only relevant to covered_call today (v1's only
+ * structure); other structures skip this and rely on the atomic status
+ * transition alone. */
+async function verifyLiveCoverageBeforeExecute(params: {
+  svc: ServiceClient;
+  proposal: ProposalRow;
+  snaptradeUserId: string;
+  userSecret: string;
+  accountId: string;
+}): Promise<{ ok: true } | { ok: false; reason: "verify_unavailable" | "stale_coverage"; detail: Record<string, unknown> }> {
+  const { svc, proposal, snaptradeUserId, userSecret, accountId } = params;
+  const ticker = proposal.ticker.toUpperCase();
+
+  let positions: SnapTradePositionRaw[];
+  let balances: SnapTradeBalanceRaw | null;
+  try {
+    [positions, balances] = await Promise.all([
+      getSnapTradePositions(snaptradeUserId, userSecret, accountId),
+      getSnapTradeBalances(snaptradeUserId, userSecret, accountId),
+    ]);
+  } catch (err) {
+    return {
+      ok: false,
+      reason: "verify_unavailable",
+      detail: { error: err instanceof Error ? err.message : String(err) },
+    };
+  }
+
+  const sharesHeld = positions
+    .filter((p) => !isOptionPosition(p) && (p.symbol?.symbol?.symbol ?? "").toUpperCase() === ticker)
+    .reduce((sum, p) => sum + (p.units ?? 0), 0);
+
+  const brokerShortCallsByTicker = countBrokerShortCallsByTicker(positions);
+
+  // Every other live-risk/pending proposal for this user (excluding this one
+  // — its own coverage/risk footprint is what we're re-verifying, not
+  // double-counting against itself).
+  const { data: openRows } = await svc
+    .from("proposals")
+    .select("ticker, structure, legs, qty, expiry, status, collateral_usd, max_loss_usd")
+    .eq("user_id", proposal.user_id)
+    .neq("id", proposal.id)
+    .in("status", [...LIVE_RISK_STATUSES, ...PENDING_STATUSES]);
+
+  const openProposals: OpenProposal[] = ((openRows ?? []) as Array<{
+    ticker: string;
+    structure: string;
+    legs: ProposalLeg[] | null;
+    qty: number;
+    expiry: string | null;
+    status: string;
+    collateral_usd: number | null;
+    max_loss_usd: number | null;
+  }>).map((r) => ({
+    ticker: r.ticker,
+    structure: r.structure as OpenProposal["structure"],
+    expiry: r.legs?.[0]?.expiry ?? r.expiry ?? "",
+    strike: r.legs?.[0]?.strike ?? 0,
+    qty: r.qty,
+    maxLossUsd: r.max_loss_usd,
+    collateralUsd: r.collateral_usd,
+    status: r.status,
+  }));
+
+  const today = new Date().toISOString().slice(0, 10);
+  // Same max(internal ledger, broker's real book) combination as the
+  // candidate builder (src/lib/proposalEngine.ts's buildCoveredCallCandidates)
+  // — the internal ledger is a floor (broker feed can lag a just-submitted
+  // order), the broker count catches a call written outside this app.
+  const internalWrittenByTicker = openCoveredCallContracts(openProposals, today);
+  const writtenNow = Math.max(internalWrittenByTicker[ticker] ?? 0, brokerShortCallsByTicker[ticker] ?? 0);
+
+  const availableNow = availableCoverageContracts(sharesHeld, writtenNow);
+  const coverageGate = checkCoverageAvailable({ sharesHeld, alreadyWrittenContracts: writtenNow });
+  if (!coverageGate.ok || availableNow < proposal.qty) {
+    return {
+      ok: false,
+      reason: "stale_coverage",
+      detail: {
+        reason: "insufficient_live_coverage",
+        sharesHeld,
+        writtenNow,
+        availableNow,
+        requestedQty: proposal.qty,
+      },
+    };
+  }
+
+  const leg = proposal.legs?.[0];
+  const candidateRiskUsd = proposal.collateral_usd ?? proposal.max_loss_usd ?? (leg?.strike != null ? leg.strike * 100 * proposal.qty : 0);
+  const accountEquityUsd = balances?.total_value?.value ?? 0;
+  const riskByTicker = openNameRiskUsd(openProposals, today);
+  const riskGate = checkPerNameRiskCap({ ticker, candidateRiskUsd, accountEquityUsd, openRiskByTicker: riskByTicker });
+  if (!riskGate.ok) {
+    return { ok: false, reason: "stale_coverage", detail: riskGate.detail };
+  }
+
+  return { ok: true };
 }
 
 async function insertEvent(svc: ServiceClient, proposalId: string, userId: string, event: string, detail: unknown) {
@@ -179,11 +331,27 @@ async function actOnProposal(params: {
   approvedVia: "in_app" | "magic_link";
 }): Promise<ActResult> {
   const { svc, proposal, action, approvedVia } = params;
+  const updateStatus = makeConditionalStatusUpdate(svc);
 
-  const transition = checkProposalTransition({
+  // The pending -> approved/rejected transition is a single conditional
+  // UPDATE (`.eq("status", "pending")` inside updateStatus) — the authority
+  // on whether this action happens, not the `proposal.status` this function
+  // was handed (which could be a moment stale under a double-tap, a client
+  // retry, or a magic-link race). Two concurrent callers can both reach here
+  // with proposal.status === "pending"; at most one of their conditional
+  // writes affects a row, so at most one proceeds to execute anything.
+  const patch =
+    action === "reject"
+      ? { status: "rejected" }
+      : { status: "approved", approved_at: new Date().toISOString(), approved_via: approvedVia };
+
+  const transition = await transitionProposal({
+    proposalId: proposal.id,
     status: proposal.status,
     expiresAt: proposal.expires_at,
     action,
+    patch,
+    updateStatus,
   });
 
   if (!transition.ok) {
@@ -192,6 +360,9 @@ async function actOnProposal(params: {
       attempted_action: action,
       current_status: proposal.status,
     });
+    if (transition.reason === "conflict") {
+      return { ok: false, status: "conflict", message: "This proposal was already acted on — no action taken." };
+    }
     const message =
       transition.reason === "expired"
         ? "This proposal has expired and can no longer be acted on."
@@ -200,15 +371,10 @@ async function actOnProposal(params: {
   }
 
   if (action === "reject") {
-    await svc.from("proposals").update({ status: "rejected" }).eq("id", proposal.id);
     await insertEvent(svc, proposal.id, proposal.user_id, "proposal_rejected", { via: approvedVia });
     return { ok: true, status: "rejected", message: "Proposal rejected." };
   }
 
-  await svc
-    .from("proposals")
-    .update({ status: "approved", approved_at: new Date().toISOString(), approved_via: approvedVia })
-    .eq("id", proposal.id);
   await insertEvent(svc, proposal.id, proposal.user_id, "proposal_approved", { via: approvedVia });
 
   const exec =
@@ -224,9 +390,11 @@ async function actOnProposal(params: {
 // stages covered-call candidates (see generate-proposals/index.ts's
 // handlePaperGenerate), so every leg here is an option leg (multiplier 100).
 async function executePaperProposal(svc: ServiceClient, proposal: ProposalRow): Promise<{ status: string; message: string }> {
+  const updateStatus = makeConditionalStatusUpdate(svc);
+
   const leg = proposal.legs?.[0];
   if (!leg || leg.strike == null || !proposal.expiry) {
-    await svc.from("proposals").update({ status: "failed" }).eq("id", proposal.id);
+    await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "failed" }, updateStatus });
     await insertEvent(svc, proposal.id, proposal.user_id, "execution_failed", { reason: "missing_leg_detail" });
     return { status: "failed", message: "Approved, but the proposal is missing strike/expiry detail — nothing was filled." };
   }
@@ -240,7 +408,13 @@ async function executePaperProposal(svc: ServiceClient, proposal: ProposalRow): 
       strike: leg.strike,
     });
 
-  await svc.from("proposals").update({ status: "executing" }).eq("id", proposal.id);
+  // The approved→executing transition is the execution lock: whoever wins this
+  // conditional write is the only caller allowed to fill. A lost write means a
+  // concurrent request already owns execution — stop here, place nothing.
+  const execLock = await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "executing" }, updateStatus });
+  if (!execLock.ok) {
+    return { status: "conflict", message: "This proposal is already executing — no duplicate fill placed." };
+  }
   await insertEvent(svc, proposal.id, proposal.user_id, "execution_started", { symbol, qty: proposal.qty, mode: "paper" });
 
   const quote = await fetchTradierQuote(symbol);
@@ -283,7 +457,7 @@ async function executePaperProposal(svc: ServiceClient, proposal: ProposalRow): 
     };
   }
 
-  await svc.from("proposals").update({ status: "executed" }).eq("id", proposal.id);
+  await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "executing", patch: { status: "executed" }, updateStatus });
   await insertEvent(svc, proposal.id, proposal.user_id, "execution_confirmed", {
     symbol,
     qty: proposal.qty,
@@ -299,6 +473,8 @@ async function executePaperProposal(svc: ServiceClient, proposal: ProposalRow): 
 }
 
 async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow): Promise<{ status: string; message: string }> {
+  const updateStatus = makeConditionalStatusUpdate(svc);
+
   const { data: connRow, error: connErr } = await svc
     .from("broker_connections")
     .select("id, snaptrade_user_id, snaptrade_user_secret_encrypted, account_id")
@@ -307,7 +483,7 @@ async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow
     .maybeSingle();
 
   if (connErr || !connRow || !(connRow as { account_id?: string }).account_id) {
-    await svc.from("proposals").update({ status: "failed" }).eq("id", proposal.id);
+    await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "failed" }, updateStatus });
     await insertEvent(svc, proposal.id, proposal.user_id, "execution_failed", { reason: "no_broker_connection" });
     return { status: "failed", message: "Approved, but no broker connection is on file — nothing was placed." };
   }
@@ -325,7 +501,7 @@ async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow
     encrypted_text: conn.snaptrade_user_secret_encrypted,
   });
   if (decErr || !decrypted) {
-    await svc.from("proposals").update({ status: "failed" }).eq("id", proposal.id);
+    await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "failed" }, updateStatus });
     await insertEvent(svc, proposal.id, proposal.user_id, "execution_failed", { reason: "credential_decrypt_failed" });
     return { status: "failed", message: "Approved, but the stored broker credential could not be read — nothing was placed." };
   }
@@ -333,7 +509,7 @@ async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow
 
   const leg = proposal.legs?.[0];
   if (!leg || leg.strike == null || !proposal.expiry) {
-    await svc.from("proposals").update({ status: "failed" }).eq("id", proposal.id);
+    await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "failed" }, updateStatus });
     await insertEvent(svc, proposal.id, proposal.user_id, "execution_failed", { reason: "missing_leg_detail" });
     return { status: "failed", message: "Approved, but the proposal is missing strike/expiry detail — nothing was placed." };
   }
@@ -347,7 +523,38 @@ async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow
       strike: leg.strike,
     });
 
-  await svc.from("proposals").update({ status: "executing" }).eq("id", proposal.id);
+  // R20-equivalent for this rail: proposal data can be up to 24h stale (its
+  // own expires_at window) — re-check live coverage/risk right before
+  // placing, not just at generate-proposals staging time. Covered-call only
+  // (v1's only structure); a fetch failure fails closed (verify_unavailable),
+  // a genuine mismatch fails closed too (stale_coverage) — neither reaches
+  // placeSnapTradeOrder below.
+  if (proposal.structure === "covered_call") {
+    const liveCheck = await verifyLiveCoverageBeforeExecute({
+      svc,
+      proposal,
+      snaptradeUserId: conn.snaptrade_user_id,
+      userSecret,
+      accountId: conn.account_id,
+    });
+    if (!liveCheck.ok) {
+      await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "failed" }, updateStatus });
+      await insertEvent(svc, proposal.id, proposal.user_id, liveCheck.reason, liveCheck.detail);
+      const message =
+        liveCheck.reason === "verify_unavailable"
+          ? "Approved, but live position data could not be verified before placing the order — nothing was placed."
+          : "Approved, but live broker data no longer supports this trade (coverage or risk cap moved) — nothing was placed.";
+      return { status: "failed", message };
+    }
+  }
+
+  // Same execution lock as the paper path: only the winner of approved→executing
+  // may reach placeSnapTradeOrder. A lost conditional write = another request is
+  // already executing this proposal — return conflict, place nothing.
+  const execLock = await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "approved", patch: { status: "executing" }, updateStatus });
+  if (!execLock.ok) {
+    return { status: "conflict", message: "This proposal is already executing — no duplicate order placed." };
+  }
   await insertEvent(svc, proposal.id, proposal.user_id, "execution_started", { symbol, qty: proposal.qty });
 
   let placeResult: { brokerage_order_id?: string; id?: string; status?: string } | null = null;
@@ -362,8 +569,8 @@ async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow
   } catch (placeErr) {
     // Fail-closed: an error placing the order does not prove the broker
     // never received it (e.g. a network blip after the request was sent).
-    // Stay at 'executing' + 'verify_pending' rather than guessing 'failed'.
-    await svc.from("proposals").update({ status: "executing" }).eq("id", proposal.id);
+    // Stay at 'executing' + 'verify_pending' rather than guessing 'failed' —
+    // no status write needed here, it's already 'executing' from above.
     await insertEvent(svc, proposal.id, proposal.user_id, "verify_pending", {
       reason: "place_order_error",
       error: placeErr instanceof Error ? placeErr.message : String(placeErr),
@@ -393,7 +600,7 @@ async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow
   }
 
   const mapped = mapBrokerStatusToExecutionStatus(finalStatus);
-  await svc.from("proposals").update({ status: mapped.status }).eq("id", proposal.id);
+  await writeStatusIfCurrently({ proposalId: proposal.id, expectedPriorStatus: "executing", patch: { status: mapped.status }, updateStatus });
   await insertEvent(svc, proposal.id, proposal.user_id, mapped.event, {
     brokerage_order_id: brokerageOrderId,
     broker_status: finalStatus,
@@ -484,7 +691,8 @@ Deno.serve(async (req) => {
         return htmlResponse(resultPage("Not found", "This proposal no longer exists."), 404);
       }
       const result = await actOnProposal({ svc, proposal, action: action as ProposalAction, approvedVia: "magic_link" });
-      return htmlResponse(resultPage(result.ok ? "Done" : "No action taken", result.message));
+      const httpStatus = result.status === "conflict" ? 409 : 200;
+      return htmlResponse(resultPage(result.ok ? "Done" : "No action taken", result.message), httpStatus);
     }
 
     // ── In-app path: authenticated ───────────────────────────────────────
@@ -496,7 +704,8 @@ Deno.serve(async (req) => {
       return errorResponse("Proposal not found", 404, req);
     }
     const result = await actOnProposal({ svc, proposal, action: action as ProposalAction, approvedVia: "in_app" });
-    return jsonResponse({ ok: result.ok, status: result.status, message: result.message }, 200, req);
+    const httpStatus = result.status === "conflict" ? 409 : 200;
+    return jsonResponse({ ok: result.ok, status: result.status, message: result.message }, httpStatus, req);
   } catch (e) {
     const msg = e instanceof Error ? e.message : "proposal-action error";
     const sanitizedMsg = String(sanitizeError(msg));

@@ -79,17 +79,19 @@ Deno.serve(async (req) => {
     const svc = getServiceClient();
 
     // Encrypt via the same DB function user_credentials already uses
-    // (011_encrypt_credentials.sql) — never store the raw secret. Falls
-    // back to the raw value only if the RPC itself is unreachable (matches
-    // encrypt_credential's own dev-mode fallback when no encryption key is
-    // configured — see that migration's comment).
+    // (011_encrypt_credentials.sql, hardened by 018_require_credential_
+    // encryption_key.sql) — never store the raw secret. encrypt_credential
+    // now raises when no encryption key is configured rather than silently
+    // returning plaintext, so a missing key surfaces here as encErr; there
+    // is no plaintext fallback — fail closed and do not store anything.
     const { data: encrypted, error: encErr } = await svc.rpc("encrypt_credential", {
       raw_text: snaptrade_user_secret,
     });
-    if (encErr) {
-      return errorResponse(`Failed to encrypt credential: ${encErr.message}`, 500, req);
+    if (encErr || !encrypted) {
+      console.error("encrypt_credential failed in save-broker-connection:", encErr?.message ?? "empty result");
+      return errorResponse("Failed to encrypt credential — connection was not saved", 500, req);
     }
-    const encryptedSecret = (encrypted as string) ?? snaptrade_user_secret;
+    const encryptedSecret = encrypted as string;
 
     const { data: connRow, error: upsertErr } = await svc
       .from("broker_connections")

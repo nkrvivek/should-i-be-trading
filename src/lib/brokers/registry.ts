@@ -30,9 +30,9 @@ export const BROKER_REGISTRY: BrokerInfo[] = [
     name: "Interactive Brokers",
     slug: "ibkr",
     icon: "🏦",
-    description: "Professional-grade broker. Requires local Radon + IB Gateway.",
+    description: "Coming soon — local gateway rail removed 2026-07-21, pending OAuth rail integration.",
     isPaperAvailable: true,
-    status: "available",
+    status: "coming_soon",
     credentialFields: [
       { key: "apiUrl", label: "FastAPI URL", type: "text", placeholder: "http://localhost:8321" },
     ],

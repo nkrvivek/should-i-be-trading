@@ -184,7 +184,14 @@ export type TransitionResult =
  * other status (already approved/rejected/executing/executed/failed/
  * cancelled) or an expired-but-still-pending proposal is rejected with an
  * explicit machine-readable reason. This is what stops a double-approve or a
- * stale magic link from re-triggering execution. */
+ * stale magic link from re-triggering execution.
+ *
+ * IMPORTANT: this check alone is NOT race-safe — it only reads the status
+ * the caller already fetched (a moment earlier), so two concurrent requests
+ * can both see 'pending' and both pass. It is a cheap pre-check for the
+ * obvious cases (already-terminal, expired), not the authority. Callers that
+ * actually write the transition MUST go through transitionProposal below,
+ * which makes the database's conditional UPDATE the single authority. */
 export function checkProposalTransition(params: TransitionParams): TransitionResult {
   if (params.status !== "pending") {
     return { ok: false, reason: "not_pending" };
@@ -194,6 +201,82 @@ export function checkProposalTransition(params: TransitionParams): TransitionRes
     return { ok: false, reason: "expired" };
   }
   return { ok: true, nextStatus: params.action === "approve" ? "approved" : "rejected" };
+}
+
+// ── Atomic transition authority (closes the checkProposalTransition TOCTOU) ─
+//
+// checkProposalTransition above only inspects an in-memory status read
+// moments earlier — a double-tap, a client retry, or a magic-link race can
+// have two requests both read 'pending' and both pass that check. The fix:
+// the actual state change is never "read status, then write" — it is a
+// single conditional UPDATE (`.eq("id", id).eq("status", expectedPrior)`)
+// whose row-count IS the answer. Postgres serializes concurrent UPDATEs
+// against the same row, so of two racing conditional updates, at most one
+// affects a row; the other affects zero and must be treated as a conflict,
+// not retried as if nothing happened.
+//
+// `updateStatus` is injected (rather than this module calling Supabase
+// directly) so this stays dependency-free and unit-testable — the real
+// implementation (proposal-action/index.ts's makeConditionalStatusUpdate)
+// wraps `.update(patch).eq("id", id).eq("status", expectedPriorStatus).select()`.
+
+/** Perform one conditional status write: true if a row matched (the
+ * transition happened), false if zero rows matched (someone else already
+ * moved the proposal off `expectedPriorStatus`). */
+export type ConditionalStatusUpdate = (
+  proposalId: string,
+  expectedPriorStatus: string,
+  patch: Record<string, unknown>,
+) => Promise<boolean>;
+
+export type TransitionOutcome =
+  | { ok: true; nextStatus: "approved" | "rejected" }
+  | { ok: false; reason: "not_pending" | "expired" }
+  | { ok: false; reason: "conflict" };
+
+/** The pending -> approved/rejected transition's single authority. Runs the
+ * cheap pre-check first (obvious already-terminal/expired cases never need a
+ * database round trip), then performs the actual state change as one
+ * conditional UPDATE guarded on status='pending'. A racing second caller's
+ * UPDATE affects zero rows and gets `{ ok: false, reason: "conflict" }` —
+ * callers MUST NOT proceed to execute anything on that outcome. */
+export async function transitionProposal(params: {
+  proposalId: string;
+  status: string;
+  expiresAt: string;
+  action: ProposalAction;
+  /** Row patch to write on success — e.g. { status: "approved", approved_at, approved_via }. */
+  patch: Record<string, unknown>;
+  updateStatus: ConditionalStatusUpdate;
+  nowMs?: number;
+}): Promise<TransitionOutcome> {
+  const guard = checkProposalTransition({
+    status: params.status,
+    expiresAt: params.expiresAt,
+    action: params.action,
+    nowMs: params.nowMs,
+  });
+  if (!guard.ok) return guard;
+
+  const updated = await params.updateStatus(params.proposalId, "pending", params.patch);
+  if (!updated) return { ok: false, reason: "conflict" };
+  return { ok: true, nextStatus: guard.nextStatus };
+}
+
+/** A single guarded status write outside the pending->approved/rejected
+ * transition (e.g. approved->executing, executing->executed/failed) — same
+ * "conditional UPDATE is the authority" contract as transitionProposal, just
+ * without the pending-specific pre-check (there's no cheap in-memory guard
+ * to run first; the expected prior status is whatever the caller's own
+ * state machine says it should be at this point). */
+export async function writeStatusIfCurrently(params: {
+  proposalId: string;
+  expectedPriorStatus: string;
+  patch: Record<string, unknown>;
+  updateStatus: ConditionalStatusUpdate;
+}): Promise<{ ok: true } | { ok: false; reason: "conflict" }> {
+  const updated = await params.updateStatus(params.proposalId, params.expectedPriorStatus, params.patch);
+  return updated ? { ok: true } : { ok: false, reason: "conflict" };
 }
 
 // ── Fail-closed execution-status mapping ───────────────────────────────────

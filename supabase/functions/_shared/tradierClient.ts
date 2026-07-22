@@ -43,6 +43,23 @@ interface TradierChainResponse {
   options?: { option?: TradierOptionRaw[] | TradierOptionRaw };
 }
 
+interface TradierQuoteRaw {
+  symbol?: string;
+  last?: number;
+  bid?: number;
+  ask?: number;
+}
+
+interface TradierQuotesResponse {
+  quotes?: { quote?: TradierQuoteRaw[] | TradierQuoteRaw };
+}
+
+export interface LiveQuote {
+  bid: number;
+  ask: number;
+  last: number;
+}
+
 function tradierBase(): string {
   return Deno.env.get("TRADIER_SANDBOX") === "true" ? SANDBOX_BASE : PROD_BASE;
 }
@@ -106,6 +123,34 @@ async function fetchCallChain(symbol: string, expiry: string, apiKey: string): P
       bid: o.bid ?? 0,
       delta: o.greeks?.delta ?? null,
     }));
+}
+
+/**
+ * Live equity or option quote for paper-mode spot/fill-price lookups (a
+ * symbol may be a plain ticker or a full OCC option symbol — Tradier's
+ * quotes endpoint resolves both). Returns null on a missing API key, a
+ * non-ok response, or an empty/malformed body — callers must fail closed
+ * (never guess a fill price), same posture as fetchExpirations/fetchCallChain
+ * above. bid/ask fall back to `last` when Tradier omits them (thin/illiquid
+ * quote), so a caller can always compute a fill price from the result.
+ */
+export async function fetchTradierQuote(symbol: string): Promise<LiveQuote | null> {
+  const apiKey = Deno.env.get("TRADIER_API_KEY");
+  if (!apiKey) return null;
+
+  try {
+    const url = `${tradierBase()}/markets/quotes?symbols=${encodeURIComponent(symbol)}`;
+    const res = await fetch(url, { headers: tradierHeaders(apiKey) });
+    if (!res.ok) return null;
+    const data = (await res.json()) as TradierQuotesResponse;
+    const raw = data.quotes?.quote;
+    if (!raw) return null;
+    const quote = Array.isArray(raw) ? raw[0] : raw;
+    if (!quote || typeof quote.last !== "number") return null;
+    return { last: quote.last, bid: quote.bid ?? quote.last, ask: quote.ask ?? quote.last };
+  } catch {
+    return null;
+  }
 }
 
 /** Real, Tradier-backed StrikeSelector. Returns null (reject the holding) on

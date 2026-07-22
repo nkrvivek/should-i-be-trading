@@ -50,8 +50,10 @@ import {
   getSnapTradeBalances,
   type SnapTradePositionRaw,
 } from "../_shared/snaptradeClient.ts";
-import { tradierStrikeSelector } from "../_shared/tradierClient.ts";
+import { tradierStrikeSelector, fetchTradierQuote } from "../_shared/tradierClient.ts";
 import { finnhubEarningsChecker } from "../_shared/finnhubClient.ts";
+import { checkPaperActionBudget, isPaperTickerAllowed, FREE_PAPER_DAILY_ACTIONS } from "../../../src/lib/paperLimits.ts";
+import type { UserTier } from "../../../src/stores/authStore.ts";
 
 // ── Feature gate ─────────────────────────────────────────────────────────
 // Tiers allowed to use the proposal engine. src/lib/featureGates.ts is the
@@ -134,9 +136,10 @@ function mapRowToOpenProposal(row: ProposalRow): OpenProposal {
 
 // ── Candidate -> proposals insert row ───────────────────────────────────
 
-function candidateToInsertRow(userId: string, c: CoveredCallCandidate, expiresAt: string) {
+function candidateToInsertRow(userId: string, c: CoveredCallCandidate, expiresAt: string, mode: "paper" | "live") {
   return {
     user_id: userId,
+    mode,
     ticker: c.ticker,
     structure: c.structure,
     legs: [{ action: "SELL_TO_OPEN", right: "C", strike: c.strike }],
@@ -223,6 +226,218 @@ function invokeCouncilVerdict(
   edgeRuntime?.waitUntil?.(task);
 }
 
+// ── Paper mode: paper_positions -> pure EquityHolding mapping ───────────
+// Paper positions have no live price of their own (only qty/avg_price), so
+// the spot price used for strike selection comes from a live Tradier quote,
+// falling back to avg_price if the quote fetch fails — same fail-soft
+// posture as the starter-portfolio seeding in paperAccountDefaults.ts, since
+// generate-proposals must still work for a user whose Tradier quote is
+// momentarily unavailable rather than hard-failing the whole call.
+//
+// An OCC option symbol is always longer than a plain equity ticker (6+
+// chars padded root alone), so `symbol.length > 6` reliably distinguishes a
+// held short option leg (not eligible to be an equity holding) from an
+// equity ticker. Only long (qty > 0) equity rows are covered-call
+// candidates — v1 doesn't build proposals against a short option position.
+interface PaperPositionRow {
+  symbol: string;
+  qty: number;
+  avg_price: number;
+}
+
+interface PaperAccountRow {
+  cash_usd: number;
+}
+
+function mapPaperPositionsToHoldings(
+  positions: PaperPositionRow[],
+  quotes: Record<string, number>,
+): EquityHolding[] {
+  const holdings: EquityHolding[] = [];
+  for (const p of positions) {
+    if (p.symbol.length > 6 || p.qty <= 0) continue;
+    const price = quotes[p.symbol.toUpperCase()] ?? p.avg_price;
+    holdings.push({
+      ticker: p.symbol,
+      sharesHeld: p.qty,
+      avgPrice: p.avg_price,
+      marketValue: price * p.qty,
+    });
+  }
+  return holdings;
+}
+
+/** Paper-mode proposal generation: everyone authenticated can use it
+ * (paper_trading is a free-tier feature — see src/lib/featureGates.ts), but
+ * the free tier is capped on both a daily action budget and a 20-ticker
+ * allowlist (src/lib/paperLimits.ts). Holdings come from the user's own
+ * paper_positions/paper_accounts rows, never SnapTrade. */
+async function handlePaperGenerate(
+  svc: ReturnType<typeof createClient>,
+  userId: string,
+  tier: UserTier | undefined,
+  req: Request,
+): Promise<Response> {
+  // ── 1. Daily action budget (atomic, Postgres is authoritative) ─────
+  const dailyLimit = checkPaperActionBudget(0, tier).limit; // null for paid tiers
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: usageResult, error: usageErr } = await svc.rpc("increment_paper_action_usage", {
+    p_user_id: userId,
+    p_usage_date: today,
+    p_daily_limit: dailyLimit,
+  });
+  if (usageErr) {
+    return errorResponse(`Failed to check paper action budget: ${usageErr.message}`, 500, req);
+  }
+  if (typeof usageResult === "number" && usageResult < 0) {
+    await svc.from("proposal_events").insert({
+      proposal_id: null,
+      user_id: userId,
+      event: "candidate_rejected",
+      detail: { ticker: "*", reason: "paper_action_budget_exceeded", dailyLimit: FREE_PAPER_DAILY_ACTIONS },
+    });
+    return errorResponse(
+      `Daily paper-trading action limit (${FREE_PAPER_DAILY_ACTIONS}/day) reached. Upgrade for unlimited paper trading.`,
+      429,
+      req,
+    );
+  }
+
+  // ── 2. Paper account + positions (no SnapTrade in paper mode) ──────
+  const [{ data: accountRow }, { data: positionRows }] = await Promise.all([
+    svc.from("paper_accounts").select("cash_usd").eq("user_id", userId).maybeSingle(),
+    svc.from("paper_positions").select("symbol, qty, avg_price").eq("user_id", userId),
+  ]);
+  if (!accountRow) {
+    return errorResponse(
+      "No paper trading account yet — call provision-paper-account first.",
+      400,
+      req,
+    );
+  }
+  const account = accountRow as PaperAccountRow;
+  const positions = (positionRows ?? []) as PaperPositionRow[];
+
+  // ── 3. Ticker allowlist filter (free tier only) ────────────────────
+  const rejectionsToRecord: CandidateRejection[] = [];
+  const allowedPositions = positions.filter((p) => {
+    if (p.symbol.length > 6) return true; // not an equity holding, unrelated to the allowlist
+    const allowed = isPaperTickerAllowed(p.symbol, tier);
+    if (!allowed) {
+      rejectionsToRecord.push({
+        ticker: p.symbol,
+        reason: "ticker_not_allowed",
+        detail: { reason: "ticker_not_allowed" },
+      });
+    }
+    return allowed;
+  });
+
+  // ── 4. Live quotes for spot price (fail-soft to avg_price) ─────────
+  const equitySymbols = [...new Set(allowedPositions.filter((p) => p.symbol.length <= 6 && p.qty > 0).map((p) => p.symbol))];
+  const quoteEntries = await Promise.all(
+    equitySymbols.map(async (symbol) => [symbol.toUpperCase(), await fetchTradierQuote(symbol)] as const),
+  );
+  const quotes: Record<string, number> = {};
+  for (const [symbol, quote] of quoteEntries) {
+    if (quote) quotes[symbol] = quote.last;
+  }
+  const holdings = mapPaperPositionsToHoldings(allowedPositions, quotes);
+
+  // Simple mark-to-market equity total for the per-name risk-cap basis —
+  // paper mode has no separate "balances" endpoint the way SnapTrade does,
+  // so account equity is just cash plus the marked value of every holding.
+  const accountEquityUsd = account.cash_usd + holdings.reduce((sum, h) => sum + h.marketValue, 0);
+
+  // ── 5. Existing paper proposals for this user (gates + dedup) ──────
+  const { data: existingRows, error: existingErr } = await svc
+    .from("proposals")
+    .select("id, ticker, structure, legs, qty, expiry, max_loss_usd, collateral_usd, status")
+    .eq("user_id", userId)
+    .eq("mode", "paper")
+    .in("status", ["pending", "approved", "executing", "executed"]);
+  if (existingErr) {
+    return errorResponse(`Failed to read existing paper proposals: ${existingErr.message}`, 500, req);
+  }
+  const openProposals: OpenProposal[] = ((existingRows ?? []) as ProposalRow[]).map(mapRowToOpenProposal);
+  const pendingCount = openProposals.filter((p) => p.status === "pending").length;
+
+  const nowMs = Date.now();
+  const expiresAt = new Date(nowMs + 24 * 60 * 60 * 1000).toISOString();
+
+  let candidates: CoveredCallCandidate[] = [];
+  const MAX_PENDING = 3;
+  if (pendingCount >= MAX_PENDING) {
+    rejectionsToRecord.push({
+      ticker: "*",
+      reason: "max_pending_proposals_reached",
+      detail: { reason: "max_pending_proposals_reached", currentPendingCount: pendingCount, maxPending: MAX_PENDING },
+    });
+  } else {
+    const result = await buildCoveredCallCandidates({
+      holdings,
+      openProposals,
+      accountEquityUsd,
+      today,
+      strikeSelector: tradierStrikeSelector,
+      earningsChecker: finnhubEarningsChecker,
+    });
+    candidates = result.candidates;
+    rejectionsToRecord.push(...result.rejections);
+  }
+
+  // ── 6. Insert surviving candidates ──────────────────────────────────
+  const created: Array<{ id: string; ticker: string; strike: number; expiry: string; contracts: number }> = [];
+  for (const c of candidates) {
+    const row = candidateToInsertRow(userId, c, expiresAt, "paper");
+    const { data: inserted, error: insertErr } = await svc.from("proposals").insert(row).select("id").single();
+    if (insertErr || !inserted) {
+      rejectionsToRecord.push({
+        ticker: c.ticker,
+        reason: "insert_failed",
+        detail: { reason: "insert_failed", error: insertErr?.message ?? "unknown" },
+      });
+      continue;
+    }
+    const proposalId = (inserted as { id: string }).id;
+    created.push({ id: proposalId, ticker: c.ticker, strike: c.strike, expiry: c.expiry, contracts: c.contracts });
+    await svc.from("proposal_events").insert({
+      proposal_id: proposalId,
+      user_id: userId,
+      event: "proposal_created",
+      detail: { ticker: c.ticker, structure: c.structure, strike: c.strike, expiry: c.expiry, contracts: c.contracts, mode: "paper" },
+    });
+    if (c.earningsStatus === "unknown") {
+      await svc.from("proposal_events").insert({
+        proposal_id: proposalId,
+        user_id: userId,
+        event: "earnings_unknown",
+        detail: { ticker: c.ticker, expiry: c.expiry },
+      });
+    }
+    invokeCouncilVerdict(svc, userId, proposalId);
+  }
+
+  // ── 7. Record every rejection ────────────────────────────────────────
+  for (const r of rejectionsToRecord) {
+    await svc.from("proposal_events").insert({
+      proposal_id: null,
+      user_id: userId,
+      event: "candidate_rejected",
+      detail: { ticker: r.ticker, reason: r.reason, ...r.detail },
+    });
+  }
+
+  return jsonResponse(
+    {
+      created,
+      rejected: rejectionsToRecord.map((r) => ({ ticker: r.ticker, reason: r.reason })),
+    },
+    200,
+    req,
+  );
+}
+
 // ── Edge function entry point ───────────────────────────────────────────
 
 Deno.serve(async (req) => {
@@ -240,14 +455,28 @@ Deno.serve(async (req) => {
 
     const body = await req.json().catch(() => ({}));
     const {
+      mode: rawMode,
       accountId,
       snaptradeUserId,
       snaptradeUserSecret,
     } = body as {
+      mode?: string;
       accountId?: string;
       snaptradeUserId?: string;
       snaptradeUserSecret?: string;
     };
+
+    // Paper mode is the default (relaunch 2026-07-21): the free-tier funnel,
+    // no broker credentials needed. Live mode is unchanged below and keeps
+    // requiring accountId/snaptradeUserId/snaptradeUserSecret.
+    const mode: "paper" | "live" = rawMode === "live" ? "live" : "paper";
+
+    const svc = await getServiceClient();
+
+    if (mode === "paper") {
+      const tier = (await getUserTier(svc, auth.userId)) as UserTier | null;
+      return await handlePaperGenerate(svc, auth.userId, tier ?? undefined, req);
+    }
 
     if (!accountId || !snaptradeUserId || !snaptradeUserSecret) {
       return errorResponse("Missing accountId, snaptradeUserId, or snaptradeUserSecret", 400, req);
@@ -257,9 +486,7 @@ Deno.serve(async (req) => {
       return errorResponse("Invalid account ID format", 400, req);
     }
 
-    const svc = await getServiceClient();
-
-    // ── 1. Feature gate ──────────────────────────────────────────────
+    // ── 1. Feature gate (live mode only — paper mode is gated above) ──
     const tier = await getUserTier(svc, auth.userId);
     if (!tier || !ALLOWED_TIERS.includes(tier)) {
       return errorResponse("Your plan does not include proposal generation. Upgrade to Pro or Copilot.", 403, req);
@@ -343,7 +570,7 @@ Deno.serve(async (req) => {
     // ── 8. Insert surviving candidates ───────────────────────────────
     const created: Array<{ id: string; ticker: string; strike: number; expiry: string; contracts: number }> = [];
     for (const c of candidates) {
-      const row = candidateToInsertRow(auth.userId, c, expiresAt);
+      const row = candidateToInsertRow(auth.userId, c, expiresAt, "live");
       const { data: inserted, error: insertErr } = await svc.from("proposals").insert(row).select("id").single();
       if (insertErr || !inserted) {
         rejectionsToRecord.push({

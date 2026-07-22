@@ -25,6 +25,7 @@ export type Feature =
   | "social_sentiment"
   | "market_activity"
   | "proposals"
+  | "paper_trading"
   | "copilot_execution"
   | "auto_execute";
 
@@ -51,7 +52,11 @@ const FEATURE_MAP: Record<Feature, UserTier[]> = {
   snaptrade: ["pro", "enterprise"],
   social_sentiment: ["starter", "pro", "enterprise"],
   market_activity: ["starter", "pro", "enterprise"],
-  proposals: ["pro", "copilot", "enterprise"],
+  // Paper proposals are the free-tier funnel (relaunch 2026-07-21): every
+  // tier can generate/approve paper trades, capped by src/lib/paperLimits.ts
+  // for the free tier. Live execution stays behind copilot_execution below.
+  proposals: ["free", "starter", "pro", "copilot", "enterprise"],
+  paper_trading: ["free", "starter", "pro", "copilot", "enterprise"],
   copilot_execution: ["copilot", "enterprise"],
   auto_execute: ["copilot", "enterprise"],
 };

@@ -152,11 +152,28 @@ describe("hasFeature", () => {
     expect(hasFeature("pro", "auto_execute")).toBe(false);
   });
 
-  it("starter and free tiers do not have proposal features", () => {
-    expect(hasFeature("starter", "proposals")).toBe(false);
-    expect(hasFeature("free", "proposals")).toBe(false);
+  it("starter and free tiers have paper proposals but not copilot execution features", () => {
+    // Paper proposals became the free-tier funnel (relaunch 2026-07-21) —
+    // every tier can generate proposals now, but only copilot/enterprise
+    // can execute for real.
+    expect(hasFeature("starter", "proposals")).toBe(true);
+    expect(hasFeature("free", "proposals")).toBe(true);
     expect(hasFeature("starter", "copilot_execution")).toBe(false);
     expect(hasFeature("free", "auto_execute")).toBe(false);
+  });
+
+  // ── paper_trading (free-tier funnel) ──
+
+  it("every tier has access to paper_trading", () => {
+    expect(hasFeature("free", "paper_trading")).toBe(true);
+    expect(hasFeature("starter", "paper_trading")).toBe(true);
+    expect(hasFeature("pro", "paper_trading")).toBe(true);
+    expect(hasFeature("copilot", "paper_trading")).toBe(true);
+    expect(hasFeature("enterprise", "paper_trading")).toBe(true);
+  });
+
+  it("undefined tier has access to paper_trading (treated as free)", () => {
+    expect(hasFeature(undefined, "paper_trading")).toBe(true);
   });
 
   // ── Undefined tier (treated as free) ──
@@ -202,8 +219,12 @@ describe("getRequiredTier", () => {
     expect(getRequiredTier("automation")).toBe("enterprise");
   });
 
-  it("returns pro for proposals (lowest tier that has it)", () => {
-    expect(getRequiredTier("proposals")).toBe("pro");
+  it("returns free for proposals (paper proposals are the free-tier funnel)", () => {
+    expect(getRequiredTier("proposals")).toBe("free");
+  });
+
+  it("returns free for paper_trading", () => {
+    expect(getRequiredTier("paper_trading")).toBe("free");
   });
 
   it("returns copilot for copilot-gated features, not enterprise", () => {

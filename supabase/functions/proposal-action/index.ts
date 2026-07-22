@@ -45,6 +45,8 @@ import {
   type ProposalAction,
 } from "../../../src/lib/proposalActions.ts";
 import { placeSnapTradeOrder, getSnapTradeOrderStatus } from "../_shared/snaptradeClient.ts";
+import { fetchTradierQuote } from "../_shared/tradierClient.ts";
+import { selectFillPrice, type PaperFillSide } from "../../../src/lib/paperFillEngine.ts";
 
 function getServiceClient() {
   return createClient(
@@ -79,12 +81,13 @@ interface ProposalRow {
   expiry: string | null;
   status: string;
   expires_at: string;
+  mode: "paper" | "live";
 }
 
 async function fetchProposal(svc: ServiceClient, proposalId: string): Promise<ProposalRow | null> {
   const { data } = await svc
     .from("proposals")
-    .select("id, user_id, ticker, structure, legs, qty, expiry, status, expires_at")
+    .select("id, user_id, ticker, structure, legs, qty, expiry, status, expires_at, mode")
     .eq("id", proposalId)
     .maybeSingle();
   return (data as ProposalRow | null) ?? null;
@@ -208,8 +211,91 @@ async function actOnProposal(params: {
     .eq("id", proposal.id);
   await insertEvent(svc, proposal.id, proposal.user_id, "proposal_approved", { via: approvedVia });
 
-  const exec = await executeApprovedProposal(svc, proposal);
+  const exec =
+    proposal.mode === "paper"
+      ? await executePaperProposal(svc, proposal)
+      : await executeApprovedProposal(svc, proposal);
   return { ok: true, status: exec.status, message: exec.message };
+}
+
+// ── Paper-mode execution: fill at a live Tradier quote, book it through the
+// execute_paper_fill RPC (supabase/migrations/017_paper_trading.sql) — no
+// SnapTrade/broker_connections involvement at all. v1 paper mode only ever
+// stages covered-call candidates (see generate-proposals/index.ts's
+// handlePaperGenerate), so every leg here is an option leg (multiplier 100).
+async function executePaperProposal(svc: ServiceClient, proposal: ProposalRow): Promise<{ status: string; message: string }> {
+  const leg = proposal.legs?.[0];
+  if (!leg || leg.strike == null || !proposal.expiry) {
+    await svc.from("proposals").update({ status: "failed" }).eq("id", proposal.id);
+    await insertEvent(svc, proposal.id, proposal.user_id, "execution_failed", { reason: "missing_leg_detail" });
+    return { status: "failed", message: "Approved, but the proposal is missing strike/expiry detail — nothing was filled." };
+  }
+
+  const symbol =
+    leg.occ_symbol ??
+    buildOccSymbol({
+      ticker: proposal.ticker,
+      expiry: leg.expiry ?? proposal.expiry,
+      right: (leg.right as "C" | "P") ?? "C",
+      strike: leg.strike,
+    });
+
+  await svc.from("proposals").update({ status: "executing" }).eq("id", proposal.id);
+  await insertEvent(svc, proposal.id, proposal.user_id, "execution_started", { symbol, qty: proposal.qty, mode: "paper" });
+
+  const quote = await fetchTradierQuote(symbol);
+  if (!quote) {
+    await insertEvent(svc, proposal.id, proposal.user_id, "verify_pending", { reason: "quote_unavailable" });
+    return { status: "executing", message: "Approved. A live quote wasn't available for the fill — try again shortly." };
+  }
+
+  const SIDE_BY_LEG_ACTION: Record<string, PaperFillSide> = {
+    SELL_TO_OPEN: "sell_to_open",
+    BUY_TO_CLOSE: "buy_to_close",
+    BUY: "buy",
+    SELL: "sell",
+  };
+  const side = SIDE_BY_LEG_ACTION[(leg.action ?? "SELL_TO_OPEN").toUpperCase()] ?? "sell_to_open";
+  const price = selectFillPrice(side, quote);
+  const OPTION_MULTIPLIER = 100;
+
+  const { data: fillResult, error: fillErr } = await svc.rpc("execute_paper_fill", {
+    p_user_id: proposal.user_id,
+    p_proposal_id: proposal.id,
+    p_symbol: symbol,
+    p_side: side,
+    p_qty: proposal.qty,
+    p_price: price,
+    p_multiplier: OPTION_MULTIPLIER,
+  });
+
+  if (fillErr || !fillResult) {
+    const insufficientCash = (fillErr?.message ?? "").toLowerCase().includes("insufficient");
+    await insertEvent(svc, proposal.id, proposal.user_id, "verify_pending", {
+      reason: insufficientCash ? "insufficient_paper_cash" : "paper_fill_failed",
+      error: fillErr?.message ?? "unknown",
+    });
+    return {
+      status: "executing",
+      message: insufficientCash
+        ? "Approved, but your paper account doesn't have enough cash for this fill — nothing was recorded."
+        : "Approved, but the paper fill couldn't be recorded — please retry.",
+    };
+  }
+
+  await svc.from("proposals").update({ status: "executed" }).eq("id", proposal.id);
+  await insertEvent(svc, proposal.id, proposal.user_id, "execution_confirmed", {
+    symbol,
+    qty: proposal.qty,
+    price,
+    side,
+    mode: "paper",
+  });
+
+  return {
+    status: "executed",
+    message: `Approved and filled in paper trading at $${price.toFixed(2)} — no real money moved.`,
+  };
 }
 
 async function executeApprovedProposal(svc: ServiceClient, proposal: ProposalRow): Promise<{ status: string; message: string }> {

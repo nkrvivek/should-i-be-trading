@@ -387,10 +387,25 @@ export async function buildCoveredCallCandidates(params: {
   strikeSelector?: StrikeSelector;
   earningsChecker?: EarningsChecker;
   perNameCapPct?: number;
+  /** Short-call contracts actually held at the broker right now, keyed by
+   * uppercase underlying ticker (countBrokerShortCallsByTicker in
+   * _shared/snaptradeClient.ts). Optional — paper mode has no real broker.
+   * Combined with the internal `openProposals` ledger via max() per ticker:
+   * the internal ledger is kept as a floor (the broker feed can lag a
+   * just-submitted order), while the broker count catches a written call
+   * the app's own proposals table doesn't know about (written manually, via
+   * another client, or before this app existed) — see
+   * generate-proposals/index.ts and proposal-action/index.ts callers. */
+  brokerShortCallsByTicker?: Record<string, number>;
 }): Promise<BuildCandidatesResult> {
   const strikeSelector = params.strikeSelector ?? stubStrikeSelector;
   const earningsChecker = params.earningsChecker ?? stubEarningsChecker;
-  const writtenByTicker = openCoveredCallContracts(params.openProposals, params.today);
+  const internalWrittenByTicker = openCoveredCallContracts(params.openProposals, params.today);
+  const brokerWrittenByTicker = params.brokerShortCallsByTicker ?? {};
+  const writtenByTicker: Record<string, number> = {};
+  for (const ticker of new Set([...Object.keys(internalWrittenByTicker), ...Object.keys(brokerWrittenByTicker)])) {
+    writtenByTicker[ticker] = Math.max(internalWrittenByTicker[ticker] ?? 0, brokerWrittenByTicker[ticker] ?? 0);
+  }
   const riskByTicker = openNameRiskUsd(params.openProposals, params.today);
   const pendingProposals = params.openProposals.filter((p) => PENDING_STATUSES.includes(p.status as "pending"));
 

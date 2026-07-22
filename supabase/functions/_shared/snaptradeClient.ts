@@ -111,12 +111,55 @@ export async function snapRequest(
 
 /** SnapTrade position shape (subset — only the fields generate-proposals
  * needs). SnapTrade's real payload has more fields; this is intentionally
- * narrow. */
+ * narrow. `option_symbol` is only present when `type.code === "oo"` — it
+ * carries the underlying + right needed to count short calls already
+ * written at the broker (see countBrokerShortCallsByTicker below). */
 export interface SnapTradePositionRaw {
-  symbol?: { symbol?: { symbol?: string; type?: { code?: string } } };
+  symbol?: {
+    symbol?: {
+      symbol?: string;
+      type?: { code?: string };
+      option_symbol?: {
+        option_type?: "CALL" | "PUT";
+        underlying_symbol?: { symbol?: string };
+      };
+    };
+  };
   units?: number;
   average_purchase_price?: number;
   price?: number;
+}
+
+/** SnapTrade position type.code "oo" = option. Shared by generate-proposals
+ * (excludes options from equity holdings) and proposal-action (re-checks the
+ * broker's option book before executing — fix for the coverage guard only
+ * ever seeing the app's own proposals table, never a manually-written or
+ * externally-placed short call). */
+export function isOptionPosition(p: SnapTradePositionRaw): boolean {
+  return p.symbol?.symbol?.type?.code === "oo";
+}
+
+/** Count short (written) call contracts actually held at the broker, keyed
+ * by uppercase underlying ticker. This is the broker's real option book —
+ * the app's own `proposals` table can lag it (a call written manually, via
+ * another client, or before this app existed) or run ahead of it (broker
+ * feed settlement delay), so callers combine this with the internal ledger
+ * via max(), never using this alone. */
+export function countBrokerShortCallsByTicker(positions: SnapTradePositionRaw[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const p of positions) {
+    if (!isOptionPosition(p)) continue;
+    const opt = p.symbol?.symbol?.option_symbol;
+    const units = p.units ?? 0;
+    // Short = negative units. Only short CALLs count as coverage already
+    // used against a holding — a short put or a long call isn't a written
+    // covered call.
+    if (!opt || opt.option_type !== "CALL" || units >= 0) continue;
+    const underlying = opt.underlying_symbol?.symbol?.toUpperCase();
+    if (!underlying) continue;
+    counts[underlying] = (counts[underlying] ?? 0) + Math.abs(units);
+  }
+  return counts;
 }
 
 /** SnapTrade account balance shape (subset). */

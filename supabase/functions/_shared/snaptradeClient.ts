@@ -142,3 +142,71 @@ export async function getSnapTradeBalances(
   if (Array.isArray(data)) return (data[0] as SnapTradeBalanceRaw) ?? null;
   return (data as SnapTradeBalanceRaw) ?? null;
 }
+
+// ── Order placement + status (WS3a: HITL approve/execute rail) ───────────
+// Same tradeBody/signing shape as broker-snaptrade/index.ts's "placeOrder"
+// and "getOrders" actions — mirrored here rather than imported, per this
+// module's existing duplication note at the top of the file.
+
+export interface SnapTradeOrderRequest {
+  /** e.g. "SELL_TO_OPEN", "BUY_TO_CLOSE". */
+  action: string;
+  /** "Market" | "Limit" | "Stop" | "StopLimit". */
+  order_type: string;
+  /** "Day" | "GTC" | "FOK" | "IOC". */
+  time_in_force: string;
+  symbol: string;
+  units: number;
+  /** Limit price, if order_type is Limit/StopLimit. */
+  price?: number;
+  /** Stop price, if order_type is Stop/StopLimit. */
+  stop?: number;
+}
+
+export interface SnapTradeOrderRaw {
+  brokerage_order_id?: string;
+  id?: string;
+  status?: string;
+  [key: string]: unknown;
+}
+
+/** Place an order via SnapTrade — same tradeBody shape as
+ * broker-snaptrade/index.ts's "placeOrder" action. */
+export async function placeSnapTradeOrder(
+  userId: string,
+  userSecret: string,
+  accountId: string,
+  order: SnapTradeOrderRequest,
+): Promise<SnapTradeOrderRaw> {
+  const tradeBody: Record<string, unknown> = {
+    account_id: accountId,
+    action: order.action,
+    order_type: order.order_type,
+    time_in_force: order.time_in_force,
+    symbol: order.symbol,
+    units: order.units,
+  };
+  if (order.price != null) tradeBody.price = order.price;
+  if (order.stop != null) tradeBody.stop = order.stop;
+  const data = await snapRequest("POST", "trade/place", { userId, userSecret, body: tradeBody });
+  return (data ?? {}) as SnapTradeOrderRaw;
+}
+
+/** Look up a previously placed order's current status. SnapTrade has no
+ * single-order-by-id GET, so — same as broker-snaptrade/index.ts's
+ * "getOrders" action — this fetches the account's order list (GET
+ * accounts/{accountId}/orders) and filters client-side for the matching
+ * brokerage_order_id. Returns null if the order can't be found (fail-closed
+ * callers should treat that the same as an unconfirmed/pending status, not
+ * as a failure). */
+export async function getSnapTradeOrderStatus(
+  userId: string,
+  userSecret: string,
+  accountId: string,
+  brokerageOrderId: string,
+): Promise<string | null> {
+  const data = await snapRequest("GET", `accounts/${accountId}/orders`, { userId, userSecret });
+  const orders = Array.isArray(data) ? (data as SnapTradeOrderRaw[]) : [];
+  const match = orders.find((o) => o.brokerage_order_id === brokerageOrderId || o.id === brokerageOrderId);
+  return match?.status ?? null;
+}

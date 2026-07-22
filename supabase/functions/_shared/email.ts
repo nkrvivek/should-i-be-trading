@@ -4,7 +4,17 @@
  * Single source of truth for branding, layout, and styles.
  * Used by edge functions (welcome email) and the template sync script
  * (confirm signup, magic link, password reset).
+ *
+ * NOTE: this file is imported by scripts/sync-email-templates.ts, a plain
+ * Node/tsx script — not Deno. It must stay free of Deno.env/Deno-only APIs.
+ * That's why buildProposalActionUrls' actual logic lives in the portable
+ * src/lib/proposalActions.ts (taking baseUrl/secret as explicit params
+ * instead of reading env itself); this is a thin re-export so WS3a's
+ * approve/execute rail can still `import { buildProposalActionUrls } from
+ * "../_shared/email.ts"` per its own spec.
  */
+
+export { buildProposalActionUrls } from "../../../src/lib/proposalActions.ts";
 
 // ── Brand constants ──────────────────────────────────────────────
 export const BRAND = {

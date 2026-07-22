@@ -32,7 +32,20 @@ export type Proposal = {
   expires_at: string;
   created_at: string;
   updated_at: string;
+  // 'mode' is a new column owned by the backend branch (default 'paper').
+  // Rows fetched before that migration lands won't carry it — normalizeMode
+  // below defaults missing/unrecognized values to 'paper', the safer read
+  // (never mistake an old row for a live order).
+  mode: "paper" | "live";
 };
+
+function normalizeMode(value: unknown): "paper" | "live" {
+  return value === "live" ? "live" : "paper";
+}
+
+function normalizeProposal(row: Record<string, unknown>): Proposal {
+  return { ...row, mode: normalizeMode(row.mode) } as Proposal;
+}
 
 export type ProposalEvent = {
   id: number;
@@ -65,7 +78,7 @@ export function useProposals() {
       return;
     }
     setError(null);
-    if (data) setProposals(data);
+    if (data) setProposals(data.map(normalizeProposal));
   }, [user]);
 
   useEffect(() => {
@@ -85,7 +98,7 @@ export function useProposals() {
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "proposals", filter: `user_id=eq.${user.id}` },
         (payload) => {
-          const row = payload.new as Proposal;
+          const row = normalizeProposal(payload.new as Record<string, unknown>);
           setProposals((prev) => [row, ...prev.filter((p) => p.id !== row.id)]);
         },
       )
@@ -93,7 +106,7 @@ export function useProposals() {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "proposals", filter: `user_id=eq.${user.id}` },
         (payload) => {
-          const row = payload.new as Proposal;
+          const row = normalizeProposal(payload.new as Record<string, unknown>);
           setProposals((prev) => prev.map((p) => (p.id === row.id ? row : p)));
         },
       )

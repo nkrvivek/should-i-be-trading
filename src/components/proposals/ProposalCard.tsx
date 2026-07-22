@@ -11,6 +11,7 @@ import {
   deriveGateChips,
   deriveCouncilSummary,
 } from "../../lib/proposalUi";
+import { modeBadge } from "../../lib/paperUi";
 
 const PENDING_STATUSES = new Set(["pending"]);
 const MUTED_STATUSES = new Set(["expired", "cancelled"]);
@@ -55,6 +56,7 @@ function StatTile({ label, value, tone }: { label: string; value: string; tone?:
 export function ProposalCard({ proposal, actionState, events, onApprove, onReject, onFetchEvents }: Props) {
   const [showApproveConfirm, setShowApproveConfirm] = useState(false);
   const badge = statusBadge(proposal.status);
+  const mode = modeBadge(proposal.mode);
   const gateChips = deriveGateChips(proposal.proposal_signals);
   const councilSummary = deriveCouncilSummary(proposal.council_verdict);
   const dte = daysToExpiry(proposal.expiry);
@@ -94,7 +96,10 @@ export function ProposalCard({ proposal, actionState, events, onApprove, onRejec
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
-          <Badge label={badge.label} variant={badge.variant} />
+          <div style={{ display: "flex", gap: 6 }}>
+            <Badge label={mode.label} variant={mode.variant} />
+            <Badge label={badge.label} variant={badge.variant} />
+          </div>
           {!isMuted && proposal.status !== "executed" && (
             <span className="num-tabular" style={{ fontFamily: "var(--font-mono)", fontSize: 11, color: "var(--text-muted)" }}>
               {isPending ? `expires in ${formatCountdown(proposal.expires_at)}` : formatCountdown(proposal.expires_at)}

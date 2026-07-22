@@ -14,7 +14,7 @@ type Tier = {
   description: string;
   features: string[];
   highlighted?: boolean;
-  tier: "free" | "starter" | "pro" | "enterprise";
+  tier: "free" | "starter" | "pro" | "copilot" | "enterprise";
   trial?: boolean;
 };
 
@@ -23,8 +23,10 @@ const TIERS: Tier[] = [
     name: "Free",
     monthlyPrice: 0,
     yearlyPrice: 0,
-    description: "Market regime dashboard with real-time signals",
+    description: "Paper trading with $100K, AI trade proposals, and real-time market signals",
     features: [
+      "Paper trading with $100K in simulated cash — no real money",
+      "AI trade proposals with council votes (capped at 20 actions/day, 20 tickers)",
       "Traffic Light verdict (TRADE / CAUTION / NO TRADE)",
       "Market Quality Score (5-category, 0-100)",
       "Market Regime & Fragility Monitor (8 signals)",
@@ -75,6 +77,7 @@ const TIERS: Tier[] = [
     description: "Full Bloomberg-style terminal with AI analysis",
     features: [
       "Everything in Starter",
+      "Unlimited paper trading — no daily cap, every ticker",
       "Portfolio-aware AI chat (positions, P&L, account context)",
       "AI Stock Screener (natural language queries)",
       "AI Earnings Summaries (one-click TLDR)",
@@ -96,18 +99,31 @@ const TIERS: Tier[] = [
     tier: "pro",
   },
   {
+    name: "Copilot",
+    monthlyPrice: 99,
+    yearlyPrice: 849,
+    description: "AI proposals with one-click execution on your own broker",
+    features: [
+      "Everything in Pro",
+      "Unlimited paper trading + live execution on your broker",
+      "One-click order placement from AI proposals — paper or live",
+      "Every live order passes the same execution-playbook gates as paper",
+      "Broker-connected auto-execute with a kill switch",
+    ],
+    trial: true,
+    tier: "copilot",
+  },
+  {
     name: "Enterprise",
     monthlyPrice: 79,
     yearlyPrice: 699,
     description: "Automated strategies with risk controls + cloud Radon",
     features: [
-      "Everything in Pro",
+      "Everything in Copilot",
       "Strategy backtester (Web Worker engine)",
       "Automated trading (user-configured rules)",
-      "Signal-to-order pipeline with kill switch",
       "Daily loss limits + position caps",
       "Full audit log of automated decisions",
-      "Paper trading validation mode",
       "Cloud-hosted Radon instance",
       "Early access to new features",
     ],
@@ -158,13 +174,13 @@ export function PricingContent() {
 
       // If user already has an active paid subscription, go to Stripe to change plan
       if (hasActiveSub) {
-        await redirectToCheckout(tier.tier as "starter" | "pro" | "enterprise", interval);
+        await redirectToCheckout(tier.tier as "starter" | "pro" | "copilot" | "enterprise", interval);
         return;
       }
 
       // If user is on an active trial, they want to subscribe (go to Stripe)
       if (isTrialActive()) {
-        await redirectToCheckout(tier.tier as "starter" | "pro" | "enterprise", interval);
+        await redirectToCheckout(tier.tier as "starter" | "pro" | "copilot" | "enterprise", interval);
         return;
       }
 
@@ -185,7 +201,7 @@ export function PricingContent() {
       if (store.profile) {
         store.setProfile({
           ...store.profile,
-          trial_tier: tier.tier as "starter" | "pro" | "enterprise",
+          trial_tier: tier.tier as "starter" | "pro" | "copilot" | "enterprise",
           trial_ends_at: trialEnd.toISOString(),
         });
       }

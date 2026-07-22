@@ -120,10 +120,43 @@ describe("hasFeature", () => {
       "snaptrade",
       "social_sentiment",
       "market_activity",
+      "proposals",
+      "copilot_execution",
+      "auto_execute",
     ];
     for (const feature of allFeatures) {
       expect(hasFeature("enterprise", feature)).toBe(true);
     }
+  });
+
+  // ── Copilot tier ──
+
+  it("copilot tier has access to proposals and execution features", () => {
+    expect(hasFeature("copilot", "proposals")).toBe(true);
+    expect(hasFeature("copilot", "copilot_execution")).toBe(true);
+    expect(hasFeature("copilot", "auto_execute")).toBe(true);
+  });
+
+  it("copilot tier does not inherit pro-only features not in its own gate list", () => {
+    expect(hasFeature("copilot", "terminal")).toBe(false);
+    expect(hasFeature("copilot", "ai_analysis")).toBe(false);
+  });
+
+  it("copilot tier does not have enterprise-only features", () => {
+    expect(hasFeature("copilot", "automation")).toBe(false);
+  });
+
+  it("pro tier does not have copilot-only execution features", () => {
+    expect(hasFeature("pro", "proposals")).toBe(true);
+    expect(hasFeature("pro", "copilot_execution")).toBe(false);
+    expect(hasFeature("pro", "auto_execute")).toBe(false);
+  });
+
+  it("starter and free tiers do not have proposal features", () => {
+    expect(hasFeature("starter", "proposals")).toBe(false);
+    expect(hasFeature("free", "proposals")).toBe(false);
+    expect(hasFeature("starter", "copilot_execution")).toBe(false);
+    expect(hasFeature("free", "auto_execute")).toBe(false);
   });
 
   // ── Undefined tier (treated as free) ──
@@ -167,6 +200,15 @@ describe("getRequiredTier", () => {
 
   it("returns enterprise for enterprise-only features", () => {
     expect(getRequiredTier("automation")).toBe("enterprise");
+  });
+
+  it("returns pro for proposals (lowest tier that has it)", () => {
+    expect(getRequiredTier("proposals")).toBe("pro");
+  });
+
+  it("returns copilot for copilot-gated features, not enterprise", () => {
+    expect(getRequiredTier("copilot_execution")).toBe("copilot");
+    expect(getRequiredTier("auto_execute")).toBe("copilot");
   });
 });
 

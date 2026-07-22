@@ -21,6 +21,11 @@ const TIER_INFO: Record<UserTier, { label: string; color: string; features: stri
     color: "var(--positive)",
     features: ["Full Terminal", "AI Analysis", "Dark Pool Scanner", "Alerts", "Custom Watchlists", "Daily Briefings"],
   },
+  copilot: {
+    label: "COPILOT",
+    color: "var(--info)",
+    features: ["Everything in Pro", "Trade Proposals", "AI Council Verdicts", "HITL Approve/Reject", "Opt-in Auto-Execute"],
+  },
   enterprise: {
     label: "ENTERPRISE",
     color: "var(--info)",

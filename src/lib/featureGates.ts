@@ -23,7 +23,10 @@ export type Feature =
   | "csv_upload"
   | "snaptrade"
   | "social_sentiment"
-  | "market_activity";
+  | "market_activity"
+  | "proposals"
+  | "copilot_execution"
+  | "auto_execute";
 
 const FEATURE_MAP: Record<Feature, UserTier[]> = {
   regime_dashboard: ["free", "starter", "pro", "enterprise"],
@@ -48,6 +51,9 @@ const FEATURE_MAP: Record<Feature, UserTier[]> = {
   snaptrade: ["pro", "enterprise"],
   social_sentiment: ["starter", "pro", "enterprise"],
   market_activity: ["starter", "pro", "enterprise"],
+  proposals: ["pro", "copilot", "enterprise"],
+  copilot_execution: ["copilot", "enterprise"],
+  auto_execute: ["copilot", "enterprise"],
 };
 
 export function hasFeature(tier: UserTier | undefined, feature: Feature): boolean {
@@ -60,6 +66,7 @@ export function getRequiredTier(feature: Feature): UserTier {
   if (tiers.includes("free")) return "free";
   if (tiers.includes("starter")) return "starter";
   if (tiers.includes("pro")) return "pro";
+  if (tiers.includes("copilot")) return "copilot";
   return "enterprise";
 }
 
@@ -77,7 +84,11 @@ export function maxWatchlists(tier: UserTier | undefined): number {
   return 1;
 }
 
-/** Max AI requests per day by tier (when using server-side key) */
+/** Max AI requests per day by tier (when using server-side key).
+ * `copilot` has no AI-rate-limit tier of its own yet (aiLimits.ts covers only
+ * the read/analysis surface, not the proposal/council pipeline) — treat it as
+ * `pro` for this budget until a dedicated copilot AI budget is defined. */
 export function maxAiRequests(tier: UserTier | undefined): number {
-  return getAiRequestLimit(tier ?? "free");
+  const aiTier = tier === "copilot" ? "pro" : tier;
+  return getAiRequestLimit(aiTier ?? "free");
 }

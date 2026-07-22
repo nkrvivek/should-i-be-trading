@@ -14,11 +14,19 @@
  * supabase/functions/proxy-anthropic/index.ts importing src/lib/aiLimits.ts)
  * and by vitest unit tests under tests/lib/.
  *
- * Strike selection and the earnings-window check are NOT real yet — both are
- * injected functions (see StrikeSelector / EarningsChecker) so the caller can
- * swap in real option-chain data and a real earnings calendar in a later
- * workstream without touching the gate/candidate logic here.
+ * Strike selection and the earnings-window check are injected functions (see
+ * StrikeSelector / EarningsChecker) so a real option-chain lookup
+ * (supabase/functions/_shared/tradierClient.ts) and a real earnings calendar
+ * (supabase/functions/_shared/finnhubClient.ts) can be swapped in by the
+ * caller without touching the gate/candidate logic here — tests inject
+ * fakes the same way.
  */
+
+import type { StrikeSelectionMethod } from "./strikeSelector";
+import type { EarningsGateStatus } from "./earningsGate";
+
+export type { EarningsGateStatus } from "./earningsGate";
+export type { StrikeSelectionMethod } from "./strikeSelector";
 
 // ── Schema-aligned types (mirror the `proposals` / `proposal_events` table
 // contract from docs/relaunch-plan-2026-07.md Phase 2 WS2 brief — WS1 owns
@@ -64,42 +72,69 @@ export type GateResult =
   | { ok: true }
   | { ok: false; reason: string; detail: RejectionDetail };
 
-// ── Injected dependencies (real implementations arrive in later workstreams) ─
+// ── Injected dependencies (real implementations live in
+// supabase/functions/_shared/{tradierClient,finnhubClient}.ts) ─────────────
 
-/** Strike selector — v1 stub returns a naive 5% OTM strike. Swappable so a
- * real option-chain lookup can replace it without touching candidate-builder
- * or gate logic. TODO(workstream 3+): replace with real chain data (delta
- * target, DTE band) — see quality_pcs.py::select_pcs_spread for the shape a
- * real selector should return (strike + expiry + delta + premium). */
-export type StrikeSelector = (spot: number) => { strike: number; expiry: string };
+export interface StrikeSelectorParams {
+  ticker: string;
+  spot: number;
+  /** Holding's average cost basis, or null when unknown. */
+  costBasis: number | null;
+  /** ISO date (YYYY-MM-DD), injected for testability rather than `new Date()`. */
+  today: string;
+}
+
+export interface StrikeSelectorResult {
+  strike: number;
+  expiry: string;
+  delta: number | null;
+  bid: number;
+  method: StrikeSelectionMethod;
+  /** Where this strike came from — recorded to proposal_signals so a
+   * proposal's provenance is auditable (e.g. "tradier" vs "stub"). */
+  chainSource: string;
+}
+
+/** Strike selector — returns null when nothing in the chain clears the gates
+ * (no chain data, no expiry in range, bid too low, etc.); the candidate
+ * builder treats null as "reject this holding with no_valid_strike". */
+export type StrikeSelector = (params: StrikeSelectorParams) => Promise<StrikeSelectorResult | null>;
 
 export const DEFAULT_OTM_PCT = 0.05;
 
-/** Default expiry placeholder: 30 days out. Real expiry selection needs a
- * real option chain (same TODO as the strike itself). */
-function defaultExpiryIsoPlus30d(): string {
-  const d = new Date();
+/** Default expiry: 30 days out from `today` (injected, not `new Date()`, so
+ * this stays deterministic in tests). */
+function defaultExpiryIsoPlus30d(today: string): string {
+  const d = new Date(`${today}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + 30);
   return d.toISOString().slice(0, 10);
 }
 
-/** TODO(workstream 3+, real chain data): stub strike selector — 5% OTM from
- * spot, rounded to the nearest whole dollar (typical equity strike
- * increment). Marked clearly so nobody mistakes this for a real chain
- * lookup. */
-export const stubStrikeSelector: StrikeSelector = (spot: number) => ({
-  strike: Math.round(spot * (1 + DEFAULT_OTM_PCT)),
-  expiry: defaultExpiryIsoPlus30d(),
+/** Fallback strike selector — 5% OTM from spot, rounded to the nearest whole
+ * dollar. Used when no real chain data is available; the caller should
+ * prefer a real chain-backed StrikeSelector (tradierStrikeSelector) whenever
+ * one is configured. Marked 'stub' as its chainSource so a proposal built
+ * from this fallback is auditable. */
+export const stubStrikeSelector: StrikeSelector = async (params) => ({
+  strike: Math.round(params.spot * (1 + DEFAULT_OTM_PCT)),
+  expiry: defaultExpiryIsoPlus30d(params.today),
+  delta: null,
+  bid: 0,
+  method: "otm_fallback",
+  chainSource: "stub",
 });
 
-/** Earnings-window checker — v1 stub always says "clear". TODO(workstream
- * 3+): wire to a real earnings calendar (see traderkit earnings_calendar /
- * autopilot's optionlib._earnings_days for the pattern: block if expiry
- * window straddles the next earnings date). Swappable via injection so the
- * gate composition below never has to change when the real checker lands. */
-export type EarningsChecker = (ticker: string, expiry: string) => Promise<boolean>; // true = clear (no earnings in window)
+/** Earnings-window checker — swappable so a real earnings calendar
+ * (finnhubEarningsChecker) can replace the always-clear stub without the
+ * gate composition below ever changing. Fail-open by contract: 'unknown'
+ * must never be treated as 'blocked' by callers. */
+export type EarningsChecker = (params: {
+  ticker: string;
+  today: string;
+  expiry: string;
+}) => Promise<EarningsGateStatus>;
 
-export const stubEarningsChecker: EarningsChecker = async () => true;
+export const stubEarningsChecker: EarningsChecker = async () => "clear";
 
 // ── Structural fingerprint (dedup) ──────────────────────────────────────────
 
@@ -306,6 +341,12 @@ export interface CoveredCallCandidate {
   expiry: string;
   contracts: number;
   rationale: string;
+  /** Chain/greeks provenance — recorded to proposal_signals by the caller. */
+  delta: number | null;
+  bid: number;
+  strikeMethod: StrikeSelectionMethod;
+  strikeSource: string;
+  earningsStatus: EarningsGateStatus;
 }
 
 export interface CandidateRejection {
@@ -331,18 +372,24 @@ export interface BuildCandidatesResult {
  * gate and reporting all failures):
  *   1. minimum 100-share lot
  *   2. coverage available (shares_held // 100 - already-written contracts)
- *   3. duplicate fingerprint vs existing pending proposals
- *   4. per-name open-risk cap
+ *   3. strike selection (no_valid_strike if the selector returns null)
+ *   4. duplicate fingerprint vs existing pending proposals (needs the real,
+ *      selected expiry+strike, so this runs AFTER strike selection)
+ *   5. earnings-window gate (needs the real, selected expiry, so this also
+ *      runs after strike selection; 'unknown' does NOT block — fail-open)
+ *   6. per-name open-risk cap
  */
-export function buildCoveredCallCandidates(params: {
+export async function buildCoveredCallCandidates(params: {
   holdings: EquityHolding[];
   openProposals: OpenProposal[];
   accountEquityUsd: number;
   today: string; // ISO date, injected for testability
   strikeSelector?: StrikeSelector;
+  earningsChecker?: EarningsChecker;
   perNameCapPct?: number;
-}): BuildCandidatesResult {
+}): Promise<BuildCandidatesResult> {
   const strikeSelector = params.strikeSelector ?? stubStrikeSelector;
+  const earningsChecker = params.earningsChecker ?? stubEarningsChecker;
   const writtenByTicker = openCoveredCallContracts(params.openProposals, params.today);
   const riskByTicker = openNameRiskUsd(params.openProposals, params.today);
   const pendingProposals = params.openProposals.filter((p) => PENDING_STATUSES.includes(p.status as "pending"));
@@ -378,7 +425,18 @@ export function buildCoveredCallCandidates(params: {
       });
       continue;
     }
-    const { strike, expiry } = strikeSelector(spot);
+
+    const costBasis = holding.avgPrice > 0 ? holding.avgPrice : null;
+    const selection = await strikeSelector({ ticker, spot, costBasis, today: params.today });
+    if (!selection) {
+      rejections.push({
+        ticker,
+        reason: "no_valid_strike",
+        detail: { reason: "no_valid_strike", spot, costBasis },
+      });
+      continue;
+    }
+    const { strike, expiry, delta, bid, method, chainSource } = selection;
     const contracts = availableCoverageContracts(holding.sharesHeld, alreadyWritten);
 
     if (isDuplicateCandidate({ ticker, structure: "covered_call", expiry, strike }, pendingProposals)) {
@@ -389,6 +447,19 @@ export function buildCoveredCallCandidates(params: {
       });
       continue;
     }
+
+    const earningsStatus = await earningsChecker({ ticker, today: params.today, expiry });
+    if (earningsStatus === "blocked") {
+      rejections.push({
+        ticker,
+        reason: "earnings_window_blocked",
+        detail: { reason: "earnings_window_blocked", expiry },
+      });
+      continue;
+    }
+    // "unknown" falls through deliberately — fail-open with disclosure. The
+    // caller records earningsStatus in proposal_signals and logs an
+    // 'earnings_unknown' event; this function never blocks on it.
 
     // Notional the strike represents — used as the open-risk-cap basis for a
     // covered call (see openNameRiskUsd doc comment: the risk-cap sense of
@@ -414,7 +485,23 @@ export function buildCoveredCallCandidates(params: {
       strike,
       expiry,
       contracts,
-      rationale: buildRationale({ ticker, sharesHeld: holding.sharesHeld, alreadyWritten, contracts, strike, expiry }),
+      rationale: buildRationale({
+        ticker,
+        sharesHeld: holding.sharesHeld,
+        alreadyWritten,
+        contracts,
+        strike,
+        expiry,
+        delta,
+        bid,
+        method,
+        earningsStatus,
+      }),
+      delta,
+      bid,
+      strikeMethod: method,
+      strikeSource: chainSource,
+      earningsStatus,
     });
   }
 
@@ -429,15 +516,26 @@ export function buildRationale(params: {
   contracts: number;
   strike: number;
   expiry: string;
+  delta: number | null;
+  bid: number;
+  method: StrikeSelectionMethod;
+  earningsStatus: EarningsGateStatus;
 }): string {
   const coverageLine =
     params.alreadyWritten > 0
       ? `${params.sharesHeld} shares held, ${params.alreadyWritten} contract(s) already written, ${params.contracts} available`
       : `${params.sharesHeld} shares held, ${params.contracts} contract(s) available (${Math.floor(params.sharesHeld / 100)} lots, none written yet)`;
+  const strikeLine =
+    params.method === "delta_band" && params.delta != null
+      ? `${params.method.replace("_", " ")}, delta ${params.delta.toFixed(2)}, bid $${params.bid.toFixed(2)}`
+      : `${params.method.replace("_", " ")}, bid $${params.bid.toFixed(2)} (no greeks on chain)`;
+  const earningsLine =
+    params.earningsStatus === "unknown"
+      ? " Earnings calendar unavailable for this window — verify manually before approving."
+      : "";
   return (
     `Covered call on ${params.ticker}: ${coverageLine}. ` +
-    `Sell ${params.contracts}x ${params.strike} call exp ${params.expiry} ` +
-    `(strike selection is a placeholder ~5% OTM — real option-chain pricing lands in a later workstream). ` +
-    `Passed coverage guard, duplicate check, and per-name open-risk cap.`
+    `Sell ${params.contracts}x ${params.strike} call exp ${params.expiry} (${strikeLine}). ` +
+    `Passed coverage guard, duplicate check, earnings gate, and per-name open-risk cap.${earningsLine}`
   );
 }

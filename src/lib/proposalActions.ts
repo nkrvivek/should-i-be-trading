@@ -237,15 +237,21 @@ export interface OccSymbolParams {
 }
 
 /** Build a standard 21-character OCC option symbol (root padded to 6 chars +
- * YYMMDD + C/P + 8-digit strike-in-thousandths). This is a stand-in: today's
- * proposals.legs rows (see generate-proposals/index.ts's candidateToInsertRow)
- * carry no occ_symbol, and SnapTrade's real order-placement API resolves
- * options via a universal_symbol lookup rather than a raw OCC string —
- * broker-snaptrade/index.ts's existing placeOrder action already just
- * forwards order.symbol as-is, so this matches that same integration depth
- * rather than a full SnapTrade symbol-resolution implementation. */
+ * YYMMDD + C/P + 8-digit strike-in-thousandths). This is the single, canonical
+ * OCC builder for the repo — src/lib/execution/orderMapper.ts delegates its
+ * differently-shaped (positional-arg, YYYYMMDD, "call"/"put") private helper
+ * to this function via a param adapter rather than keeping its own copy.
+ * Today's proposals.legs rows (see generate-proposals/index.ts's
+ * candidateToInsertRow) carry no occ_symbol, and SnapTrade's real
+ * order-placement API resolves options via a universal_symbol lookup rather
+ * than a raw OCC string — broker-snaptrade/index.ts's existing placeOrder
+ * action already just forwards order.symbol as-is, so this matches that same
+ * integration depth rather than a full SnapTrade symbol-resolution
+ * implementation. */
 export function buildOccSymbol(params: OccSymbolParams): string {
-  const root = params.ticker.toUpperCase().padEnd(6, " ").slice(0, 6);
+  // Dots (e.g. BRK.B) aren't part of an OCC root — strip them before padding.
+  const cleanTicker = params.ticker.toUpperCase().replace(/\./g, "");
+  const root = cleanTicker.padEnd(6, " ").slice(0, 6);
   const [y, m, d] = params.expiry.split("-");
   const yy = y.slice(2);
   const strikeThousandths = Math.round(params.strike * 1000);

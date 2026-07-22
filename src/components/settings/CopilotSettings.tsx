@@ -52,6 +52,22 @@ const numberInputStyle: React.CSSProperties = {
   width: 140,
 };
 
+const setupButtonStyle: React.CSSProperties = {
+  display: "inline-flex",
+  alignItems: "center",
+  height: 32,
+  padding: "0 16px",
+  marginTop: 8,
+  borderRadius: "var(--radius-sm)",
+  fontFamily: "var(--font-mono)",
+  fontSize: 13,
+  fontWeight: 600,
+  cursor: "pointer",
+  border: "1px solid var(--accent-bg)",
+  background: "rgba(0, 214, 79, 0.12)",
+  color: "var(--positive)",
+};
+
 function toggleStyle(active: boolean, dangerWhenActive = false): React.CSSProperties {
   return {
     display: "inline-flex",
@@ -73,7 +89,7 @@ function toggleStyle(active: boolean, dangerWhenActive = false): React.CSSProper
 export function CopilotSettings() {
   const { effectiveTier } = useAuthStore();
   const tier = effectiveTier();
-  const { settings, loading, provisioned, saving, error, update } = useExecutionSettings();
+  const { settings, loading, provisioned, saving, error, update, provision } = useExecutionSettings();
   const [notional, setNotional] = useState("0");
   const [maxTrades, setMaxTrades] = useState("0");
   const [showAutoConfirm, setShowAutoConfirm] = useState(false);
@@ -100,10 +116,14 @@ export function CopilotSettings() {
       {loading && <div style={{ fontSize: 13, color: "var(--text-muted)" }}>Loading…</div>}
 
       {!loading && !provisioned && (
-        <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
-          Auto-execute isn't set up for your account yet. It provisions automatically the first
-          time you opt in through Copilot onboarding — check back after that, or contact support
-          if this persists.
+        <div>
+          <div style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.5 }}>
+            Auto-execute isn't set up for your account yet. Set it up now — it starts off, with
+            zero caps, and stays that way until you turn it on below.
+          </div>
+          <button style={setupButtonStyle} onClick={() => provision()} disabled={saving}>
+            {saving ? "Setting up…" : "Set up Copilot"}
+          </button>
         </div>
       )}
 

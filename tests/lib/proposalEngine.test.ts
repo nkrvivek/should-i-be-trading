@@ -207,22 +207,25 @@ describe("checkKillSwitch", () => {
 describe("buildCoveredCallCandidates (integration of gates + builder)", () => {
   const baseHolding: EquityHolding = { ticker: "AAPL", sharesHeld: 300, avgPrice: 180, marketValue: 60000 }; // spot=200
 
-  it("builds one candidate per eligible holding with the stub strike ~5% OTM", () => {
-    const { candidates, rejections } = buildCoveredCallCandidates({
+  it("builds one candidate per eligible holding with the stub strike ~5% OTM", async () => {
+    const { candidates, rejections } = await buildCoveredCallCandidates({
       holdings: [baseHolding],
       openProposals: [],
       accountEquityUsd: 1_000_000,
       today: TODAY,
     });
+    const stub = await stubStrikeSelector({ ticker: "AAPL", spot: 200, costBasis: 180, today: TODAY });
     expect(rejections).toHaveLength(0);
     expect(candidates).toHaveLength(1);
     expect(candidates[0].ticker).toBe("AAPL");
     expect(candidates[0].contracts).toBe(3);
-    expect(candidates[0].strike).toBe(stubStrikeSelector(200).strike);
+    expect(candidates[0].strike).toBe(stub!.strike);
+    expect(candidates[0].strikeSource).toBe("stub");
+    expect(candidates[0].earningsStatus).toBe("clear");
   });
 
-  it("rejects a holding under 100 shares with below_100_share_lot", () => {
-    const { candidates, rejections } = buildCoveredCallCandidates({
+  it("rejects a holding under 100 shares with below_100_share_lot", async () => {
+    const { candidates, rejections } = await buildCoveredCallCandidates({
       holdings: [{ ticker: "SOFI", sharesHeld: 40, avgPrice: 10, marketValue: 400 }],
       openProposals: [],
       accountEquityUsd: 1_000_000,
@@ -234,9 +237,9 @@ describe("buildCoveredCallCandidates (integration of gates + builder)", () => {
     ]);
   });
 
-  it("reduces contract count by already-written calls and rejects fully-covered holdings", () => {
+  it("reduces contract count by already-written calls and rejects fully-covered holdings", async () => {
     const openProposals = [makeOpenProposal({ ticker: "AAPL", qty: 3, status: "approved" })];
-    const { candidates, rejections } = buildCoveredCallCandidates({
+    const { candidates, rejections } = await buildCoveredCallCandidates({
       holdings: [baseHolding], // 300 shares -> 3 lots, all 3 already written
       openProposals,
       accountEquityUsd: 1_000_000,
@@ -246,13 +249,19 @@ describe("buildCoveredCallCandidates (integration of gates + builder)", () => {
     expect(rejections[0].reason).toBe("no_coverage_available");
   });
 
-  it("skips a candidate that duplicates an existing pending proposal's fingerprint", () => {
-    const expiry = stubStrikeSelector(200).expiry;
-    const strike = stubStrikeSelector(200).strike;
+  it("skips a candidate that duplicates an existing pending proposal's fingerprint", async () => {
+    const stub = await stubStrikeSelector({ ticker: "AAPL", spot: 200, costBasis: 180, today: TODAY });
     const openProposals = [
-      makeOpenProposal({ ticker: "AAPL", structure: "covered_call", expiry, strike, status: "pending", qty: 1 }),
+      makeOpenProposal({
+        ticker: "AAPL",
+        structure: "covered_call",
+        expiry: stub!.expiry,
+        strike: stub!.strike,
+        status: "pending",
+        qty: 1,
+      }),
     ];
-    const { candidates, rejections } = buildCoveredCallCandidates({
+    const { candidates, rejections } = await buildCoveredCallCandidates({
       holdings: [baseHolding],
       openProposals,
       accountEquityUsd: 1_000_000,
@@ -262,8 +271,8 @@ describe("buildCoveredCallCandidates (integration of gates + builder)", () => {
     expect(rejections[0].reason).toBe("duplicate_fingerprint");
   });
 
-  it("rejects when the per-name open-risk cap would be exceeded", () => {
-    const { candidates, rejections } = buildCoveredCallCandidates({
+  it("rejects when the per-name open-risk cap would be exceeded", async () => {
+    const { candidates, rejections } = await buildCoveredCallCandidates({
       holdings: [baseHolding], // candidate risk = strike(~210)*100*3 ≈ $63,000
       openProposals: [],
       accountEquityUsd: 100_000, // 10% cap = $10,000 — far under candidate risk
@@ -273,8 +282,8 @@ describe("buildCoveredCallCandidates (integration of gates + builder)", () => {
     expect(rejections[0].reason).toBe("per_name_risk_cap_exceeded");
   });
 
-  it("processes multiple holdings independently, mixing approvals and rejections", () => {
-    const { candidates, rejections } = buildCoveredCallCandidates({
+  it("processes multiple holdings independently, mixing approvals and rejections", async () => {
+    const { candidates, rejections } = await buildCoveredCallCandidates({
       holdings: [baseHolding, { ticker: "SOFI", sharesHeld: 40, avgPrice: 10, marketValue: 400 }],
       openProposals: [],
       accountEquityUsd: 1_000_000,
@@ -284,5 +293,59 @@ describe("buildCoveredCallCandidates (integration of gates + builder)", () => {
     expect(candidates[0].ticker).toBe("AAPL");
     expect(rejections).toHaveLength(1);
     expect(rejections[0].ticker).toBe("SOFI");
+  });
+
+  it("rejects with no_valid_strike when the injected strike selector returns null (no chain)", async () => {
+    const { candidates, rejections } = await buildCoveredCallCandidates({
+      holdings: [baseHolding],
+      openProposals: [],
+      accountEquityUsd: 1_000_000,
+      today: TODAY,
+      strikeSelector: async () => null,
+    });
+    expect(candidates).toHaveLength(0);
+    expect(rejections[0].reason).toBe("no_valid_strike");
+  });
+
+  it("rejects with earnings_window_blocked when the earnings checker reports blocked", async () => {
+    const { candidates, rejections } = await buildCoveredCallCandidates({
+      holdings: [baseHolding],
+      openProposals: [],
+      accountEquityUsd: 1_000_000,
+      today: TODAY,
+      earningsChecker: async () => "blocked",
+    });
+    expect(candidates).toHaveLength(0);
+    expect(rejections[0].reason).toBe("earnings_window_blocked");
+  });
+
+  it("does not block on earnings_unknown, but carries the status onto the candidate", async () => {
+    const { candidates, rejections } = await buildCoveredCallCandidates({
+      holdings: [baseHolding],
+      openProposals: [],
+      accountEquityUsd: 1_000_000,
+      today: TODAY,
+      earningsChecker: async () => "unknown",
+    });
+    expect(rejections).toHaveLength(0);
+    expect(candidates).toHaveLength(1);
+    expect(candidates[0].earningsStatus).toBe("unknown");
+  });
+
+  it("passes ticker/spot/costBasis/today through to the injected strike selector", async () => {
+    const calls: unknown[] = [];
+    const { candidates } = await buildCoveredCallCandidates({
+      holdings: [baseHolding],
+      openProposals: [],
+      accountEquityUsd: 1_000_000,
+      today: TODAY,
+      strikeSelector: async (params) => {
+        calls.push(params);
+        return { strike: 215, expiry: "2026-08-20", delta: 0.25, bid: 1.2, method: "delta_band", chainSource: "tradier" };
+      },
+    });
+    expect(calls).toEqual([{ ticker: "AAPL", spot: 200, costBasis: 180, today: TODAY }]);
+    expect(candidates[0].strikeSource).toBe("tradier");
+    expect(candidates[0].delta).toBe(0.25);
   });
 });

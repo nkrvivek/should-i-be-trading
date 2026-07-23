@@ -12,6 +12,7 @@ import { ErrorBoundary } from "./components/shared/ErrorBoundary";
 
 const loadDashboardPage = () => import("./pages/DashboardPage").then(m => ({ default: m.DashboardPage }));
 const loadLoginPage = () => import("./pages/LoginPage").then(m => ({ default: m.LoginPage }));
+const loadAuthConfirmPage = () => import("./pages/AuthConfirmPage");
 const loadSettingsPage = () => import("./pages/SettingsPage").then(m => ({ default: m.SettingsPage }));
 const loadAlertsPage = () => import("./pages/AlertsPage").then(m => ({ default: m.AlertsPage }));
 const loadTermsPage = () => import("./pages/TermsPage").then(m => ({ default: m.TermsPage }));
@@ -30,6 +31,7 @@ const loadPaperPage = () => import("./pages/PaperPage").then(m => ({ default: m.
 // Lazy-load all pages — keeps initial bundle small
 const DashboardPage = lazy(loadDashboardPage);
 const LoginPage = lazy(loadLoginPage);
+const AuthConfirmPage = lazy(loadAuthConfirmPage);
 const SettingsPage = lazy(loadSettingsPage);
 const AlertsPage = lazy(loadAlertsPage);
 const TermsPage = lazy(loadTermsPage);
@@ -78,6 +80,7 @@ export default function App() {
           {/* Public / marketing */}
           <Route path="/welcome" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/confirm/:tokenHash" element={<AuthConfirmPage />} />
           <Route path="/pricing" element={<PricingPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />

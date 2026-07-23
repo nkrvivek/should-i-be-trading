@@ -13,6 +13,12 @@ import { supabase } from "../lib/supabase";
  * link survives every mailer. `type` rides as a query param safely: `=si`
  * is not valid QP hex.
  */
+// One verification promise per token, module-level: the token is single-use,
+// and React StrictMode mounts effects twice in dev — without this the second
+// invocation consumes an already-used token and paints a false failure over
+// a successful confirmation (observed 2026-07-23 on staging).
+const verifications = new Map<string, Promise<{ error: { message: string } | null }>>();
+
 export default function AuthConfirmPage() {
   const { tokenHash } = useParams<{ tokenHash: string }>();
   const [params] = useSearchParams();
@@ -32,10 +38,12 @@ export default function AuthConfirmPage() {
         | "recovery"
         | "invite"
         | "email_change";
-      const { error: verifyError } = await supabase.auth.verifyOtp({
-        type,
-        token_hash: tokenHash,
-      });
+      let pending = verifications.get(tokenHash);
+      if (!pending) {
+        pending = supabase.auth.verifyOtp({ type, token_hash: tokenHash });
+        verifications.set(tokenHash, pending);
+      }
+      const { error: verifyError } = await pending;
       if (cancelled) return;
       if (verifyError) {
         setError(verifyError.message);

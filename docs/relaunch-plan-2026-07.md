@@ -45,6 +45,27 @@ Port the proven autopilot patterns (bildof rail, hardened 2026-07-21) to multi-t
 - **AI Hedge Fund showcase**: live paper-book transparency page (committee reasoning + ledger) as marketing + a tier feature.
 - Surface the quality-data stack (CoT, EDGAR watch, IV-crush ledger patterns) into research.
 
+### WS6 — Earnings-vol calendar proposal source (scoped 2026-07-23, user-approved)
+
+**What**: nightly scanner that finds earnings-vol calendar spreads (sell first post-ER expiry, buy ~45 DTE, same ATM strike, defined max loss = net debit) and feeds them into the Phase-2 proposal engine as a proposal SOURCE. Origin: UW "Earnings Vol Scan" skill, ported + validated on the personal book first (obsidian vault: earnings-vol-calendar-pilot, scanner at trade-refresh/scripts/earnings_vol/ — selftest 124/124, first run 2026-07-23: 5 Recommended of 74).
+
+**Filter core (port the math, not the vendor)**: 30d avg volume ≥ 1.5M · IV30/RV30 ≥ 1.25 · IV term-structure slope ≤ −0.00406/day out to 45 DTE (gating). All three computable from data SIBT already licenses:
+- RV30: Yang-Zhang estimator over daily OHLC (√251 annualization)
+- IV term structure: solved from Tradier chains (already fetched fail-closed in the engine)
+- ER calendar + report time: Finnhub (already wired, fail-open w/ disclosure)
+**Constraint (binding, from "Constraints" below): NO Unusual Whales API in the product path.** UW stays personal-book validation only — reselling UW-derived output is a licensing problem; our in-house computation of public-formula filters is not.
+
+**Pipeline**: nightly scan post-close → proposal cards per Recommended name (ticker, ER date/time, IV/RV, slope, expected move, chosen strikes/expiries, net debit = max loss, combo quote) → council verdict attached (WS4 rails) → HITL approve → free tier = PAPER fill (migration 017 rails; the funnel) · Copilot = live combo order via connected broker. Exit next morning 5-30 min after open, auto-proposed as a CLOSE ticket (close-only = the operator-ticket pattern; no discretion needed).
+
+**Insertion point**: the `generate-proposals` edge fn's strike-selection + earnings-gate stubs (deliberately injected fns — this is the first real implementation of that seam). Sector-clustering discount from the skill honored at proposal time (same-night same-sector names down-weighted, disclosed on the card).
+
+**Portfolio-display prerequisite (from the 7/21-23 $5K-book lesson)**: before this ships, the paper portfolio page must split realized vs open marks and label event-position marks — v1 marks-at-cost would show these spreads misleadingly through the ER window. Same fix the autopilot PM brief got 2026-07-23.
+
+**Gates + sequencing**:
+1. Builds + proves end-to-end on **sibt-staging `hoazewfoeddyoldaglpf` NOW** (active path since 2026-07-22: P1.6 passed a real-Postgres dry run there; Tradier keys + Stripe secrets incl. webhook landed 2026-07-23). Only the PRODUCTION cutover waits on the Supabase restore ticket (user 2026-07-21: wait, do not create a fresh prod project — early users preserved). Staging needs migrations 014-017 + the 7 fns applied if not already.
+2. Product go/no-go = the personal-book pilot's own criterion: ≥15 logged Recommended rows w/ positive mean P&L at NATURAL-fill pricing and median combo spread ≤15% of debit. If the edge doesn't survive real spreads for us, it isn't a feature; if it does, the log itself is launch content.
+3. Exit: one end-to-end flow on staging — scan runs nightly → card w/ council verdict → tap approve → paper fill → next-morning close proposal → journal entry w/ honest marks.
+
 ### Phase 4 — Content + site refresh
 - Landing/features/pricing rewritten to agentic + HITL positioning (six writing rules; every line passes the swap test).
 - Pricing remap on existing Stripe rails (see open decision 1).
